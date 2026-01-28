@@ -1,5 +1,5 @@
 import streamlit as st
-import streamlit.components.v1 as components  # [1. 이 줄만 추가]
+import streamlit.components.v1 as components # [1. 이 줄만 추가]
 import urllib.parse
 import requests
 import re
@@ -19,7 +19,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- [2. 네이버 인증 필살기: 이 10줄만 추가하고 아래는 원본 100% 유지] ---
+# --- [2. 네이버 인증 필살기: 이 부분만 추가하고 아래는 사장님 원본 100% 유지] ---
 components.html(
     """
     <script>
@@ -194,10 +194,12 @@ ticker_html = f"""
 st.markdown(ticker_html, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [6] 사이드바 (원본 보존)
+# [6] 사이드바 (설명 복구 완료)
 # ------------------------------------------------------------------
 with st.sidebar:
     st.header("⚙️ 레이더 센터")
+    
+    # [복구] 커뮤니티 설명 텍스트
     with st.expander("👀 커뮤니티 시세비교", expanded=True):
         st.markdown("""
         - [📷 SLR클럽 (카메라)](http://www.slrclub.com)
@@ -243,7 +245,7 @@ with st.sidebar:
     st.link_button("💬 피드백 보내기", "https://docs.google.com/forms/d/e/1FAIpQLSdZdfJLBErRw8ArXlBLqw9jkoLk0Qj-AOo0yPm-hg7KmGYOnA/viewform?usp=dialog", use_container_width=True)
 
 # ------------------------------------------------------------------
-# [7] 메인 화면 (원본 스캔 로직 보존)
+# [7] 메인 화면
 # ------------------------------------------------------------------
 st.markdown("""
     <div style="text-align:center; margin-bottom:20px;">
@@ -262,15 +264,23 @@ with col_left:
 
     if keyword:
         print(f"🚨 [검색감지] 사용자 검색어: {keyword}")
+
         safe_keyword = html.escape(keyword) 
         encoded_kor = urllib.parse.quote(keyword)
+        
         eng_keyword = get_translated_keyword(keyword, 'en')
         jp_keyword = get_translated_keyword(keyword, 'ja')
+        
+        safe_eng = html.escape(eng_keyword)
+        safe_jp = html.escape(jp_keyword)
+        
+        encoded_eng = urllib.parse.quote(eng_keyword)
+        encoded_jp = urllib.parse.quote(jp_keyword)
         
         st.markdown(f'''
             <div class="signal-banner">
                 <span class="radar-dot-strong"></span>
-                <span>'{safe_keyword}' 포착! (En: {html.escape(eng_keyword)} / Jp: {html.escape(jp_keyword)})</span>
+                <span>'{safe_keyword}' 포착! (En: {safe_eng} / Jp: {safe_jp})</span>
             </div>
         ''', unsafe_allow_html=True)
 
@@ -287,24 +297,47 @@ with col_left:
         st.markdown('### ✈️ 해외 직구 (자동번역)')
         st.caption(f"💡 검색어가 자동으로 번역되어 연결됩니다.")
         c5, c6 = st.columns(2)
-        c5.link_button(f"🇺🇸 eBay ({html.escape(eng_keyword)})", f"https://www.ebay.com/sch/i.html?_nkw={urllib.parse.quote(eng_keyword)}", use_container_width=True)
-        c6.link_button(f"🇯🇵 Mercari ({html.escape(jp_keyword)})", f"https://jp.mercari.com/search?keyword={urllib.parse.quote(jp_keyword)}", use_container_width=True)
+        c5.link_button(f"🇺🇸 eBay ({safe_eng})", f"https://www.ebay.com/sch/i.html?_nkw={encoded_eng}", use_container_width=True)
+        c6.link_button(f"🇯🇵 Mercari ({safe_jp})", f"https://jp.mercari.com/search?keyword={encoded_jp}", use_container_width=True)
+
+    else:
+        st.info("👆 상품명을 입력하면 3단계 심층 스캔을 시작합니다.")
+        st.markdown("""
+            <div style="background-color:#262730; padding:15px; border-radius:10px; margin-top:20px; border:1px solid #444;">
+                <h4 style="margin:0 0 10px 0; color:#00ff88;">💡 사용 꿀팁 (Tip)</h4>
+                <ul style="font-size:0.9rem; color:#ccc; padding-left:20px; line-height:1.6;">
+                    <li><b>우측 그래프</b>는 구글 시트에 있는 시세 데이터와 연동됩니다.</li>
+                    <li>해외 사이트(이베이, 메루카리)는 자동으로 <b>영어, 일본어</b>로 번역됩니다.</li>
+                </ul>
+            </div>
+        """, unsafe_allow_html=True)
 
 with col_right:
-    # 1. 시세 그래프 (원본 보존)
+    # 1. 시세 그래프
     st.markdown("#### 📉 52주 시세 트렌드")
+    
     df_prices = load_price_data()
     matched_data = get_trend_data_from_sheet(keyword, df_prices)
+    
     if matched_data:
         st.caption(f"✅ '{matched_data['name']}' 데이터 확인됨")
-        df_trend = pd.DataFrame({"날짜": matched_data["dates"], "가격(만원)": matched_data["prices"]})
+        df_trend = pd.DataFrame({
+            "날짜": matched_data["dates"],
+            "가격(만원)": matched_data["prices"]
+        })
         st.line_chart(df_trend, x="날짜", y="가격(만원)", color="#00ff88", height=200)
         st.caption("※ 운영자가 직접 검수한 실거래 평균가입니다.")
     else:
-        st.info("좌측에 검색어를 입력하면 시세 그래프가 나타납니다.")
+        if keyword:
+            st.warning(f"⚠️ '{keyword}'에 대한 시세 데이터가 아직 수집되지 않았습니다.")
+        else:
+            st.info("좌측에 검색어를 입력하면 시세 그래프가 나타납니다.")
+            
+    st.write("") 
 
-    # 2. 스마트 멘트 & 메모장 (원본 상세 로직 100% 복구)
+    # 2. 스마트 멘트 & 메모장 (상세 로직 복구 완료)
     st.markdown("#### 💬 스마트 멘트 & 메모")
+    
     tab_m1, tab_m2, tab_memo = st.tabs(["⚡️ 퀵멘트", "💳 결제", "📝 메모"])
     
     with tab_m1:
@@ -327,6 +360,7 @@ with col_right:
             if pay_method == "계좌이체":
                 st.code("구매 결정했습니다! 계좌번호 알려주시면 바로 이체하겠습니다.", language="text")
             else:
+                 st.caption("플랫폼 선택")
                  platform = st.radio("플랫폼", ["⚡ 번개", "🥕 당근", "🌵 중고", "🍇 후르츠"], horizontal=True, label_visibility="collapsed")
                  if "번개" in platform: st.code("혹시 번개페이(안전결제)로 구매 가능할까요? 가능하다면 바로 결제하겠습니다.", language="text")
                  elif "당근" in platform: st.code("혹시 당근페이(안심결제)로 거래 가능할까요?", language="text")
@@ -338,7 +372,18 @@ with col_right:
              st.code(f"안녕하세요! 혹시 {place} 근처에서 직거래 가능하실까요? 시간 맞춰보겠습니다.", language="text")
     
     with tab_memo:
-        st.session_state.memo_pad = st.text_area("메모", value=st.session_state.memo_pad, height=100, label_visibility="collapsed")
+        st.session_state.memo_pad = st.text_area("메모", value=st.session_state.memo_pad, height=100, label_visibility="collapsed", placeholder="가격 비교 메모...")
+    
+    st.write("")
+    
+    st.markdown('<div class="side-util-header">🚨 사기꾼 판독기 (유형별)</div>', unsafe_allow_html=True)
+    with st.expander("👮‍♂️ 필수 체크 (클릭해서 확인)", expanded=False):
+        st.markdown('<div class="scam-alert-text">1. 카톡 아이디 거래 유도</div>', unsafe_allow_html=True)
+        st.markdown('<div class="scam-desc">"카톡으로 대화해요" → 99.9% 사기입니다. 앱 내 채팅만 이용하세요.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="scam-alert-text">2. 가짜 안전결제 링크</div>', unsafe_allow_html=True)
+        st.markdown('<div class="scam-desc">http://... 로 시작하거나 도메인이 다르면 피싱 사이트입니다. 절대 클릭 금지!</div>', unsafe_allow_html=True)
+        st.markdown('<div class="scam-alert-text">3. 재입금 요구 (수수료 핑계)</div>', unsafe_allow_html=True)
+        st.markdown('<div class="scam-desc">"수수료 안 보내서 다시 보내라" → 전형적인 3자 사기/먹튀입니다.</div>', unsafe_allow_html=True)
 
 st.markdown("""
     <div class="legal-footer">
