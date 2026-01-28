@@ -19,12 +19,12 @@ st.set_page_config(
 )
 
 # ------------------------------------------------------------------
-# [★ ADMIN] 운영자 수동 관리 시세 데이터 (여기를 바꾸면 그래프가 변함)
+# [★ ADMIN] 운영자 수동 관리 시세 데이터
 # ------------------------------------------------------------------
 admin_trend_data = {
     "아이폰 15 Pro": {
         "dates": ["12월 4주", "1월 1주", "1월 2주", "1월 3주", "1월 4주"],
-        "prices": [115, 112, 110, 108, 105]  # 단위: 만원
+        "prices": [115, 112, 110, 108, 105]
     },
     "갤럭시 S24 울트라": {
         "dates": ["12월 4주", "1월 1주", "1월 2주", "1월 3주", "1월 4주"],
@@ -78,7 +78,7 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [3] 유틸리티 함수 (번역 기능 강화)
+# [3] 유틸리티 함수
 # ------------------------------------------------------------------
 @st.cache_data(ttl=3600)
 def get_exchange_rates():
@@ -100,7 +100,7 @@ def get_translated_keyword(text, target_lang='en'):
     return text
 
 # ------------------------------------------------------------------
-# [4] CSS 스타일링 (Cyber-HUD Original 복구)
+# [4] CSS 스타일링
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -194,7 +194,7 @@ st.markdown("""
     @keyframes pulse-ring { 0% { width: 90%; opacity: 1; } 100% { width: 220%; opacity: 0; } }
     .title-text { font-size: 3rem; font-weight: 900; color: #FFFFFF !important; letter-spacing: -1px; }
 
-    .side-util-header { font-size: 1rem; font-weight: bold; color: #00ff88; margin-top: 10px; margin-bottom: 10px; border-left: 3px solid #00ff88; padding-left: 8px; }
+    .side-util-header { font-size: 1rem; font-weight: bold; color: #0A84FF; margin-top: 5px; margin-bottom: 5px; border-left: 3px solid #0A84FF; padding-left: 8px; }
     .small-link { font-size: 0.8rem; color: #888; text-decoration: none; margin-left: 5px; }
     .small-link:hover { color: #00ff88; }
     
@@ -208,6 +208,8 @@ st.markdown("""
     @keyframes pulse-strong { 0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); } 50% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); } }
     .guide-badge { display: inline-block; background-color: #f8f9fa !important; color: #000000 !important; font-size: 0.9rem; padding: 6px 14px; border-radius: 15px; margin-bottom: 15px; font-weight: 800; }
     .tip-banner { background-color: #1e252b; color: #4da6ff; padding: 8px 20px; border-radius: 20px; font-size: 0.9rem; font-weight: 600; text-align: center; margin: 0 auto 25px auto; width: fit-content; border: 1px solid #0A84FF; }
+    .scam-alert-text { color: #ff4b4b; font-weight: bold; font-size: 0.85rem; margin-bottom: 5px; }
+    .scam-desc { color: #aaa; font-size: 0.8rem; margin-bottom: 10px; line-height: 1.4; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -237,12 +239,12 @@ ticker_html = f"""
 """
 
 # ------------------------------------------------------------------
-# [6] 사이드바 (기능 대폭 추가)
+# [6] 사이드바
 # ------------------------------------------------------------------
 with st.sidebar:
     st.header("⚙️ 레이더 센터")
     
-    # [NEW] 적정가 판독기 (피드백 반영)
+    # [NEW] 적정가 판독기
     st.markdown('<div class="side-util-header">⚖️ 적정가 판독기 (Beta)</div>', unsafe_allow_html=True)
     with st.expander("📊 가격 분석하려면 클릭", expanded=True):
         st.caption("최근 거래된 최고가/최저가를 입력하면 현재 매물의 가성비를 분석해줍니다.")
@@ -254,12 +256,10 @@ with st.sidebar:
             if in_high <= in_low:
                 st.error("최고가가 최저가보다 낮을 수 없습니다.")
             else:
-                # 위치 계산 (0~100%)
                 position = (in_current - in_low) / (in_high - in_low) * 100
                 if position < 0: position = 0
                 if position > 100: position = 100
                 
-                # 판독 결과
                 verdict = ""
                 color = ""
                 if position <= 20:
@@ -334,6 +334,63 @@ with c_memo:
         placeholder="[시세 기록용]\n\n최저가: 35만\n적정가: 38만\n\n*검색한 시세를 여기에 적어두고\n왼쪽 '적정가 판독기'에 입력해보세요!"
     )
     st.session_state.memo_pad = memo_val
+    
+    # ------------------------------------------------------------------
+    # [복구 완료] 스마트 멘트 기능 다시 넣었습니다!
+    # ------------------------------------------------------------------
+    st.write("")
+    st.markdown('<div class="side-util-header">💬 스마트 멘트 완성</div>', unsafe_allow_html=True)
+    
+    tab_m1, tab_m2 = st.tabs(["⚡️ 퀵 멘트", "💳 결제/직거래"])
+    
+    with tab_m1:
+        st.caption("👇 상황을 선택하면 정중한 멘트가 완성됩니다.")
+        quick_opt = st.radio("빠른 선택", ["👋 첫 인사 (구매 가능 여부)", "💸 가격 제안 (네고 요청)", "📦 택배비 포함 요청"], label_visibility="collapsed")
+        
+        if quick_opt == "👋 첫 인사 (구매 가능 여부)":
+            st.code("안녕하세요! 게시글 보고 연락드립니다. 구매 가능할까요?", language="text")
+        elif quick_opt == "💸 가격 제안 (네고 요청)":
+            user_price = st.text_input("희망 가격", placeholder="예: 3만원", key="quick_price")
+            price = user_price if user_price else "[00원]"
+            st.code(f"상품이 너무 마음에 드는데, 혹시 실례가 안 된다면 {price} 정도로 가격 조정이 가능할까요? 가능하다면 바로 결제하겠습니다!", language="text")
+        elif quick_opt == "📦 택배비 포함 요청":
+            st.code("안녕하세요! 혹시 실례가 안 된다면 택배비 포함으로 부탁드릴 수 있을까요? 가능하다면 바로 구매하겠습니다!", language="text")
+
+    with tab_m2:
+        st.caption("👇 결제 방식 및 직거래")
+        pay_opt = st.radio("거래 방식", ["💳 계좌/안전결제 문의", "🤝 직거래 장소 제안"], horizontal=True, label_visibility="collapsed")
+        
+        if pay_opt == "💳 계좌/안전결제 문의":
+            pay_method = st.radio("결제 수단", ["계좌이체", "안전결제 (번개/당근/중나)"], horizontal=True)
+            if pay_method == "계좌이체":
+                st.code("구매 결정했습니다! 계좌번호 알려주시면 바로 이체하겠습니다.", language="text")
+            else:
+                 st.caption("플랫폼 선택")
+                 platform = st.radio("플랫폼", ["⚡ 번개", "🥕 당근", "🌵 중고", "🍇 후르츠"], horizontal=True, label_visibility="collapsed")
+                 if "번개" in platform: st.code("혹시 번개페이(안전결제)로 구매 가능할까요? 가능하다면 바로 결제하겠습니다.", language="text")
+                 elif "당근" in platform: st.code("혹시 당근페이(안심결제)로 거래 가능할까요?", language="text")
+                 elif "중고" in platform: st.code("혹시 중고나라 페이(안전결제)로 가능할까요?", language="text")
+                 elif "후르츠" in platform: st.code("혹시 앱 내 안전결제로 바로 결제해도 될까요?", language="text")
+        elif pay_opt == "🤝 직거래 장소 제안":
+             user_place = st.text_input("희망 장소", placeholder="예: 강남역 10번출구", key="direct_place")
+             place = user_place if user_place else "[OO역]"
+             st.code(f"안녕하세요! 혹시 {place} 근처에서 직거래 가능하실까요? 시간 맞춰보겠습니다.", language="text")
+
+    st.write("")
+    # [복구 완료] 사기꾼 판독기 다시 추가
+    st.markdown('<div class="side-util-header">🚨 사기꾼 판독기 (유형별)</div>', unsafe_allow_html=True)
+    with st.expander("👮‍♂️ 필수 체크 (클릭해서 확인)", expanded=False):
+        st.markdown('<div class="scam-alert-text">1. 카톡 아이디 거래 유도</div>', unsafe_allow_html=True)
+        st.markdown('<div class="scam-desc">"카톡으로 대화해요" → 99.9% 사기입니다. 앱 내 채팅만 이용하세요.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="scam-alert-text">2. 가짜 안전결제 링크</div>', unsafe_allow_html=True)
+        st.markdown('<div class="scam-desc">http://... 로 시작하거나 도메인이 다르면 피싱 사이트입니다. 절대 클릭 금지!</div>', unsafe_allow_html=True)
+        st.markdown('<div class="scam-alert-text">3. 재입금 요구 (수수료 핑계)</div>', unsafe_allow_html=True)
+        st.markdown('<div class="scam-desc">"수수료 안 보내서 다시 보내라" → 전형적인 3자 사기/먹튀입니다.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="scam-alert-text">4. 당근마켓 타지역 핑계</div>', unsafe_allow_html=True)
+        st.markdown('<div class="scam-desc">"출장중이라 택배만 가능해요" → 직거래 회피는 의심 1순위.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="scam-alert-text">5. 포인트/사이트 합산 결제</div>', unsafe_allow_html=True)
+        st.markdown('<div class="scam-desc">"제 사이트 포인트로 결제할게요"라며 링크 전송 → 피싱 사이트입니다.</div>', unsafe_allow_html=True)
+
 
 with c_main:
     col_status, col_btn = st.columns([0.8, 0.2], vertical_alignment="bottom")
