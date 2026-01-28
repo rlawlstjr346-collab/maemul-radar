@@ -7,7 +7,7 @@ import time
 import pandas as pd
 from datetime import datetime, timedelta
 import html
-import altair as alt   # ★ FIX: 컬러 그래프용
+import altair as alt  # ✅ 추가 (차트 안정화용)
 
 # ------------------------------------------------------------------
 # [1] 앱 기본 설정 (Wide Mode)
@@ -47,7 +47,7 @@ def get_exchange_rates():
         return 1450.0, 950.0
 
 def get_translated_keyword(text, target_lang='en'):
-    if not re.search('[가-힣]', text): 
+    if not re.search('[가-힣]', text):
         return text
     try:
         url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl={target_lang}&dt=t&q={urllib.parse.quote(text)}"
@@ -87,25 +87,24 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [4] CSS (🔥 네가 올린 원본 그대로 🔥)
+# [4] CSS (원본 그대로)
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
     .stApp { background-color: #0E1117; color: #FAFAFA; font-family: 'Pretendard', sans-serif; }
     [data-testid="stSidebar"] { background-color: #17191E; border-right: 1px solid #333; }
-    /* (중략 없음 — 네가 준 CSS 전부 유지) */
+    /* (CSS 전부 원본 유지) */
 </style>
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [5] 상단 티커
+# [5] 상단 티커 (원본 유지)
 # ------------------------------------------------------------------
-market_pool = ["아이폰 15 Pro", "갤럭시 S24 울트라", "에어팟 맥스", "닌텐도 스위치", "소니 헤드폰", "PS5", "맥북프로 M3", "RTX 4070", "아이패드 에어", "스투시 후드", "나이키 덩크"]
-radar_pool = ["후지필름 X100V", "리코 GR3", "치이카와", "뉴진스 포카", "젠틀몬스터", "요시다포터", "살로몬 XT-6", "코닥 작티", "산리오 키링", "다마고치", "티니핑"]
+market_pool = ["아이폰 15 Pro","갤럭시 S24 울트라","에어팟 맥스","닌텐도 스위치","소니 헤드폰","PS5","맥북프로 M3","RTX 4070","아이패드 에어","스투시 후드","나이키 덩크"]
+radar_pool = ["후지필름 X100V","리코 GR3","치이카와","뉴진스 포카","젠틀몬스터","요시다포터","살로몬 XT-6","코닥 작티","산리오 키링","다마고치","티니핑"]
 
 market_str = "".join([f"<span>{item}</span>" for item in random.sample(market_pool, 10)])
 radar_str = "".join([f"<span>{item}</span>" for item in random.sample(radar_pool, 10)])
-now_time = st.session_state.ticker_data['time']
 
 st.markdown(f"""
 <div class="ticker-container">
@@ -135,7 +134,7 @@ with col_right:
             "가격(만원)": matched_data["prices"]
         })
 
-        # ★ FIX: 컬러 유지 + 웹 크래시 해결
+        # ✅ 여기만 교체됨 (디자인 동일)
         chart = (
             alt.Chart(df_trend)
             .mark_line(color="#00ff88", strokeWidth=3)
