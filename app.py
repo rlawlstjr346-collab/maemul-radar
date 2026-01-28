@@ -4,7 +4,7 @@ import requests
 import re
 import random
 import time
-from datetime import datetime, timedelta # [수정] 시간 계산을 위해 timedelta 추가
+from datetime import datetime, timedelta
 import html
 
 # ------------------------------------------------------------------
@@ -18,7 +18,7 @@ st.set_page_config(
 )
 
 # ------------------------------------------------------------------
-# [2] 세션 및 데이터 관리 (한국 시간 적용 완료 🇰🇷)
+# [2] 세션 및 데이터 관리
 # ------------------------------------------------------------------
 market_pool = [
     "아이폰 15 Pro", "갤럭시 S24 울트라", "에어팟 맥스", "닌텐도 스위치 OLED", 
@@ -42,16 +42,13 @@ radar_pool = [
 
 def generate_new_data():
     """새로운 티커 데이터를 생성하고 한국 시간(KST)을 반환합니다."""
-    # [수정] 서버 시간(UTC)에 9시간을 더해 한국 시간(KST)으로 변환
     kst_now = datetime.now() + timedelta(hours=9)
-    
     return {
         'market': random.sample(market_pool, 12),
         'radar': random.sample(radar_pool, 12),
         'time': kst_now.strftime("%Y-%m-%d %H:%M:%S")
     }
 
-# 세션 초기화
 if 'ticker_data' not in st.session_state:
     st.session_state.ticker_data = generate_new_data()
 
@@ -131,6 +128,18 @@ st.markdown("""
     /* 🇯🇵 Mercari (White Style) */
     div[data-testid="stLinkButton"] > a[href*="mercari"] { border: 1px solid #EEEEEE !important; color: #EEEEEE !important; background-color: rgba(238, 238, 238, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="mercari"]:hover { background-color: #EEEEEE !important; color: #000000 !important; box-shadow: 0 0 15px rgba(238, 238, 238, 0.6); }
+
+    /* 🚨 [복구] 사기피해 조회 (Red Style - 강제 적용) */
+    div[data-testid="stLinkButton"] > a[href*="thecheat"] { 
+        border: 1px solid #ff4b4b !important; 
+        color: #ff4b4b !important; 
+        background-color: rgba(255, 75, 75, 0.1) !important; 
+    }
+    div[data-testid="stLinkButton"] > a[href*="thecheat"]:hover { 
+        background-color: #ff4b4b !important; 
+        color: white !important; 
+        box-shadow: 0 0 15px rgba(255, 75, 75, 0.6) !important; 
+    }
 
     /* 재가동(Scan) 버튼 스타일 */
     div.stButton > button {
@@ -255,7 +264,14 @@ with st.sidebar:
             else: st.error("🚨 관세 대상")
 
     st.write("---")
+    # [수정] 타입은 primary지만 CSS로 강제 레드 적용됨
     st.link_button("🚨 사기피해 조회 (더치트)", "https://thecheat.co.kr", type="primary", use_container_width=True)
+
+    # ▼▼▼ [구글 폼 피드백 버튼] ▼▼▼
+    st.write("---")
+    st.markdown("### 📢 Beta v1.0")
+    st.caption("불편한 점이나 아이디어를 남겨주세요! (2주간 운영)")
+    st.link_button("💬 개발자에게 피드백 보내기", "https://docs.google.com/forms/d/e/1FAIpQLSdZdfJLBErRw8ArXlBLqw9jkoLk0Qj-AOo0yPm-hg7KmGYOnA/viewform?usp=dialog", use_container_width=True)
 
 
 # ------------------------------------------------------------------
