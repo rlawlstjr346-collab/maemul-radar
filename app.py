@@ -41,7 +41,6 @@ radar_pool = [
 ]
 
 def generate_new_data():
-    """새로운 티커 데이터를 생성하고 한국 시간(KST)을 반환합니다."""
     kst_now = datetime.now() + timedelta(hours=9)
     return {
         'market': random.sample(market_pool, 12),
@@ -88,15 +87,18 @@ st.markdown("""
     .stApp { background-color: #0E1117; color: #FAFAFA; font-family: 'Pretendard', sans-serif; }
     [data-testid="stSidebar"] { background-color: #17191E; border-right: 1px solid #333; }
     
-    /* 입력창 네온 효과 */
+    /* ▼▼▼ [수정됨] 입력창 스타일 (항상 초록색 테두리 + 발광) ▼▼▼ */
     div[data-baseweb="input"] {
-        background-color: #262730; border: 1px solid #444; border-radius: 8px; transition: all 0.3s ease;
+        background-color: #262730; 
+        border: 2px solid #00ff88 !important; /* 두께 2px, 항상 초록색 */
+        border-radius: 8px; 
+        box-shadow: 0 0 10px rgba(0, 255, 136, 0.15); /* 은은한 네온 발광 */
+        transition: all 0.3s ease;
     }
     div[data-baseweb="input"]:focus-within {
-        border-color: #00ff88 !important;
-        box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        box-shadow: 0 0 15px rgba(0, 255, 136, 0.5); /* 클릭하면 더 밝게 발광 */
     }
-    .stTextInput input, .stTextArea textarea, .stNumberInput input { color: #FAFAFA; }
+    .stTextInput input, .stTextArea textarea, .stNumberInput input { color: #FAFAFA; font-weight: bold; }
 
     /* 링크 버튼 기본 스타일 */
     div[data-testid="stLinkButton"] > a {
@@ -104,32 +106,25 @@ st.markdown("""
     }
 
     /* --- [PLATFORM BRAND COLORS] --- */
-    
-    /* ⚡ 번개장터 (Red/Pink) */
     div[data-testid="stLinkButton"] > a[href*="bunjang"] { border: 1px solid #FF3E3E !important; color: #FF3E3E !important; background-color: rgba(255, 62, 62, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="bunjang"]:hover { background-color: #FF3E3E !important; color: white !important; box-shadow: 0 0 15px rgba(255, 62, 62, 0.6); }
 
-    /* 🥕 당근마켓 (Orange) */
     div[data-testid="stLinkButton"] > a[href*="daangn"] { border: 1px solid #FF8A3D !important; color: #FF8A3D !important; background-color: rgba(255, 138, 61, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="daangn"]:hover { background-color: #FF8A3D !important; color: white !important; box-shadow: 0 0 15px rgba(255, 138, 61, 0.6); }
 
-    /* 🌵 중고나라 (Green) */
     div[data-testid="stLinkButton"] > a[href*="joongna"] { border: 1px solid #00E676 !important; color: #00E676 !important; background-color: rgba(0, 230, 118, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="joongna"]:hover { background-color: #00E676 !important; color: black !important; box-shadow: 0 0 15px rgba(0, 230, 118, 0.6); }
 
-    /* 🍇 후르츠패밀리 (Purple) */
     div[data-testid="stLinkButton"] > a[href*="fruitsfamily"] { border: 1px solid #D500F9 !important; color: #D500F9 !important; background-color: rgba(213, 0, 249, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="fruitsfamily"]:hover { background-color: #D500F9 !important; color: white !important; box-shadow: 0 0 15px rgba(213, 0, 249, 0.6); }
 
-    /* 🇺🇸 eBay (Blue) */
     div[data-testid="stLinkButton"] > a[href*="ebay"] { border: 1px solid #2962FF !important; color: #2962FF !important; background-color: rgba(41, 98, 255, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="ebay"]:hover { background-color: #2962FF !important; color: white !important; box-shadow: 0 0 15px rgba(41, 98, 255, 0.6); }
 
-    /* 🇯🇵 Mercari (White Style) */
     div[data-testid="stLinkButton"] > a[href*="mercari"] { border: 1px solid #EEEEEE !important; color: #EEEEEE !important; background-color: rgba(238, 238, 238, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="mercari"]:hover { background-color: #EEEEEE !important; color: #000000 !important; box-shadow: 0 0 15px rgba(238, 238, 238, 0.6); }
 
-    /* 🚨 [복구] 사기피해 조회 (Red Style - 강제 적용) */
+    /* 사기피해 조회 (Red Style) */
     div[data-testid="stLinkButton"] > a[href*="thecheat"] { 
         border: 1px solid #ff4b4b !important; 
         color: #ff4b4b !important; 
@@ -141,7 +136,7 @@ st.markdown("""
         box-shadow: 0 0 15px rgba(255, 75, 75, 0.6) !important; 
     }
 
-    /* 재가동(Scan) 버튼 스타일 */
+    /* 재가동(Scan) 버튼 */
     div.stButton > button {
         background-color: #262730; border: 1px solid #00ff88; color: #00ff88;
         border-radius: 5px; font-size: 0.8rem; padding: 0.2rem 0.5rem; height: auto; width: 100%; transition: all 0.3s ease;
@@ -150,11 +145,10 @@ st.markdown("""
         background-color: #00ff88; color: #000000; box-shadow: 0 0 10px rgba(0, 255, 136, 0.6); border-color: #00ff88;
     }
 
-    /* 탭 스타일링 */
+    /* 기타 스타일 */
     button[data-baseweb="tab"] { color: #888; font-weight: bold; }
     button[data-baseweb="tab"][aria-selected="true"] { color: #00ff88 !important; background-color: transparent !important; border-bottom-color: #00ff88 !important; border-bottom-width: 3px !important; }
 
-    /* 2단 티커 애니메이션 */
     .ticker-container { width: 100%; background-color: #15181E; border-bottom: 2px solid #333; margin-bottom: 20px; display: flex; flex-direction: column; }
     .ticker-line { width: 100%; overflow: hidden; white-space: nowrap; padding: 8px 0; border-bottom: 1px solid #222; }
     .ticker-move-1 { display: inline-block; padding-left: 100%; animation: ticker 200s linear infinite; }
@@ -166,7 +160,6 @@ st.markdown("""
     .item-text { color: #eee; font-weight: 600; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-    /* 메인 UI 요소 */
     .radar-wrapper { position: relative; display: inline-block; margin-right: 10px; vertical-align: middle; }
     .radar-emoji { position: relative; z-index: 2; font-size: 3rem; }
     .pulse-ring { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.7); opacity: 0; animation: pulse-ring 2s infinite; }
@@ -192,13 +185,11 @@ st.markdown("""
 # ------------------------------------------------------------------
 # [5] 화면 구성: 상단 티커 및 레이아웃
 # ------------------------------------------------------------------
-# 티커 데이터 로드
 current_data = st.session_state.ticker_data
 market_str = "".join([f"<span><span class='rank-num'>{i}.</span><span class='item-text'>{item}</span></span>" for i, item in enumerate(current_data['market'], 1)])
 radar_str = "".join([f"<span><span class='rank-num'>{i}.</span><span class='item-text'>{item}</span></span>" for i, item in enumerate(current_data['radar'], 1)])
 now_time = current_data['time']
 
-# 티커 HTML
 ticker_html = f"""
 <div class="ticker-container">
     <div class="ticker-line">
@@ -264,10 +255,8 @@ with st.sidebar:
             else: st.error("🚨 관세 대상")
 
     st.write("---")
-    # [수정] 타입은 primary지만 CSS로 강제 레드 적용됨
     st.link_button("🚨 사기피해 조회 (더치트)", "https://thecheat.co.kr", type="primary", use_container_width=True)
 
-    # ▼▼▼ [구글 폼 피드백 버튼] ▼▼▼
     st.write("---")
     st.markdown("### 📢 Beta v1.0")
     st.caption("불편한 점이나 아이디어를 남겨주세요! (2주간 운영)")
@@ -279,7 +268,6 @@ with st.sidebar:
 # ------------------------------------------------------------------
 c_main, c_memo = st.columns([0.7, 0.3], gap="large")
 
-# === [오른쪽: 메모장 / 스마트 멘트 / 사기 예방] ===
 with c_memo:
     st.markdown('<div class="side-util-header">📝 쇼핑 메모장</div>', unsafe_allow_html=True)
     memo_val = st.text_area(
@@ -346,9 +334,7 @@ with c_memo:
         st.markdown('<div class="scam-desc">"제 사이트 포인트로 결제할게요"라며 링크 전송 → 피싱 사이트입니다.</div>', unsafe_allow_html=True)
 
 
-# === [중앙: 검색 및 결과] ===
 with c_main:
-    # 상단 상태바 및 버튼
     col_status, col_btn = st.columns([0.8, 0.2], vertical_alignment="bottom")
     with col_status:
         st.markdown(f"""
@@ -363,10 +349,8 @@ with c_main:
                 st.session_state.ticker_data = generate_new_data()
                 st.rerun()
 
-    # 티커
     st.markdown(ticker_html, unsafe_allow_html=True)
 
-    # 메인 타이틀
     st.markdown("""
         <div style="text-align:center; margin-bottom:20px; margin-top:20px;">
             <div class="radar-wrapper"><span class="radar-emoji">📡</span><div class="pulse-ring"></div></div>
@@ -378,12 +362,11 @@ with c_main:
     tips = ["💡 Tip: 일본 직구는 $150, 미국 직구는 $200까지 무관세!", "💡 Tip: 메모장에 가격을 적어두고 비교하면 편해요.", "💡 Tip: 안전결제 거부하는 판매자는 일단 의심해보세요."]
     st.markdown(f'<div class="tip-banner">{random.choice(tips)}</div>', unsafe_allow_html=True)
 
-    # 검색창
+    # ▼▼▼ [수정됨] 안내 멘트(placeholder) 직관적으로 변경 ▼▼▼
     st.markdown('<div style="margin-bottom: 5px;"><span class="radar-dot-idle"></span>타겟 탐색</div>', unsafe_allow_html=True)
-    keyword = st.text_input("검색어 입력", placeholder="원하시는 매물을 검색하세요", label_visibility="collapsed")
+    keyword = st.text_input("검색어 입력", placeholder="🔍 여기를 클릭하여 검색하세요! (예: 아이폰 15)", label_visibility="collapsed")
 
     if keyword:
-        # [보안] 검색어 HTML 소독
         safe_keyword = html.escape(keyword) 
         encoded_kor = urllib.parse.quote(keyword)
         eng_keyword = get_english_keyword(keyword)
@@ -417,7 +400,6 @@ with c_main:
     else:
         st.info("👆 찾으시는 매물을 입력하면 국내외 매물을 한 번에 스캔합니다.")
 
-    # [법적 면책 조항]
     st.markdown("""
         <div class="legal-footer">
             본 서비스는 온라인 쇼핑몰 및 중고 거래 사이트의 상품 정보를 검색하여 링크를 제공하는 서비스입니다.<br>
