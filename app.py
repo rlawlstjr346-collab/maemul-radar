@@ -367,6 +367,11 @@ with c_main:
     keyword = st.text_input("검색어 입력", placeholder="🔍 여기를 클릭하여 검색하세요! (예: 아이폰 15)", label_visibility="collapsed")
 
     if keyword:
+        # ------------------------------------------------------------------
+        # [★ CCTV] 여기에 print를 넣어서 서버 로그에 찍히게 함!
+        # ------------------------------------------------------------------
+        print(f"🚨 [검색감지] 사용자 검색어: {keyword}")
+
         safe_keyword = html.escape(keyword) 
         encoded_kor = urllib.parse.quote(keyword)
         eng_keyword = get_english_keyword(keyword)
