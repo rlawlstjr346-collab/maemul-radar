@@ -18,6 +18,16 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# --- [네이버 서치어드바이저 소유확인 메타태그] ---
+st.markdown(
+    """
+    <head>
+        <meta name="naver-site-verification" content="a7bae4091aaf4c82975ad74ddd22c1471281af7f" />
+    </head>
+    """,
+    unsafe_allow_html=True
+)
+
 # ------------------------------------------------------------------
 # [2] 데이터 관리 (구글 스프레드시트 연동)
 # ------------------------------------------------------------------
