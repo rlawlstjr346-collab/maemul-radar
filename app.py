@@ -19,10 +19,10 @@ st.set_page_config(
 )
 
 # ------------------------------------------------------------------
-# [★ ADMIN] 시세 데이터 (여기에 데이터를 추가하면 검색시 자동으로 뜹니다)
+# [★ ADMIN] 시세 데이터 (검색어 자동 매칭용)
 # ------------------------------------------------------------------
 admin_trend_data = {
-    "아이폰": { # 검색어에 '아이폰'이 들어가면 이 데이터가 뜸
+    "아이폰": { 
         "name": "Apple 아이폰 15 Pro (256GB)",
         "dates": ["12월 4주", "1월 1주", "1월 2주", "1월 3주", "1월 4주"],
         "prices": [115, 112, 110, 108, 105]
@@ -102,17 +102,15 @@ def get_translated_keyword(text, target_lang='en'):
     except: pass
     return text
 
-# 그래프용 데이터 매칭 함수
 def get_trend_data_by_keyword(keyword):
     if not keyword: return None
-    # 검색어에 Admin 데이터 키워드가 포함되어 있는지 확인 (예: "아이폰 15" 검색 -> "아이폰" 데이터 매칭)
     for key in admin_trend_data.keys():
         if key in keyword or keyword in key:
             return admin_trend_data[key]
     return None
 
 # ------------------------------------------------------------------
-# [4] CSS 스타일링 (Original Cyber-HUD 복구 완료)
+# [4] CSS 스타일링 (Original 복구 완료)
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -153,6 +151,18 @@ st.markdown("""
     div[data-testid="stLinkButton"] > a[href*="mercari"] { border: 1px solid #EEEEEE !important; color: #EEEEEE !important; background-color: rgba(238, 238, 238, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="mercari"]:hover { background-color: #EEEEEE !important; color: #000000 !important; box-shadow: 0 0 15px rgba(238, 238, 238, 0.6); }
 
+    /* [복구] 사기피해 조회 (빨간색) */
+    div[data-testid="stLinkButton"] > a[href*="thecheat"] { 
+        border: 1px solid #ff4b4b !important; 
+        color: #ff4b4b !important; 
+        background-color: rgba(255, 75, 75, 0.1) !important; 
+    }
+    div[data-testid="stLinkButton"] > a[href*="thecheat"]:hover { 
+        background-color: #ff4b4b !important; 
+        color: white !important; 
+        box-shadow: 0 0 15px rgba(255, 75, 75, 0.6) !important; 
+    }
+
     /* 티커 */
     .ticker-container { width: 100%; background-color: #15181E; border-bottom: 2px solid #333; margin-bottom: 20px; display: flex; flex-direction: column; }
     .ticker-line { width: 100%; overflow: hidden; white-space: nowrap; padding: 8px 0; border-bottom: 1px solid #222; }
@@ -165,13 +175,17 @@ st.markdown("""
     .item-text { color: #eee; font-weight: 600; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-    .title-text { font-size: 2.5rem; font-weight: 900; color: #FFFFFF !important; letter-spacing: -1px; }
+    /* [복구] 타이틀 애니메이션 스타일 */
+    .radar-wrapper { position: relative; display: inline-block; margin-right: 10px; vertical-align: middle; }
+    .radar-emoji { position: relative; z-index: 2; font-size: 3rem; }
+    .pulse-ring { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.7); opacity: 0; animation: pulse-ring 2s infinite; }
+    @keyframes pulse-ring { 0% { width: 90%; opacity: 1; } 100% { width: 220%; opacity: 0; } }
+    .title-text { font-size: 3rem; font-weight: 900; color: #FFFFFF !important; letter-spacing: -1px; }
+
     .side-util-header { font-size: 1rem; font-weight: bold; color: #0A84FF; margin-top: 5px; margin-bottom: 5px; border-left: 3px solid #0A84FF; padding-left: 8px; }
-    
     .signal-banner { background: linear-gradient(90deg, #0A84FF 0%, #0055FF 100%); color: white !important; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; font-weight: bold; font-size: 1rem; display: flex; align-items: center; box-shadow: 0 4px 15px rgba(10, 132, 255, 0.3); }
     .guide-badge { display: inline-block; background-color: #f8f9fa !important; color: #000000 !important; font-size: 0.9rem; padding: 6px 14px; border-radius: 15px; margin-bottom: 15px; font-weight: 800; }
-    
-    /* 카드형 컨테이너 스타일 */
+    .legal-footer { font-size: 0.75rem; color: #777; margin-top: 60px; padding: 30px 10px; border-top: 1px solid #333; text-align: center; line-height: 1.6; }
     .dashboard-card { background-color: #17191E; border-radius: 12px; border: 1px solid #333; padding: 20px; height: 100%; }
 </style>
 """, unsafe_allow_html=True)
@@ -203,14 +217,38 @@ ticker_html = f"""
 st.markdown(ticker_html, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [6] 사이드바 (도구 모음 - 적정가 판독기 삭제됨)
+# [6] 사이드바 (송장조회, 사기조회 복구)
 # ------------------------------------------------------------------
 with st.sidebar:
     st.header("⚙️ 레이더 센터")
     
+    with st.expander("👀 커뮤니티 시세비교", expanded=True):
+        st.markdown("""
+        - [📷 SLR클럽 (카메라)](http://www.slrclub.com)
+        - [💻 쿨엔조이 (PC/IT)](https://coolenjoy.net)
+        - [🔥 퀘이사존 (PC/게임)](https://quasarzone.com)
+        - [🍎 아사모 (애플)](https://cafe.naver.com/appleiphone)
+        """)
+    
+    st.write("---")
+
+    # [복구] 배송 조회
+    with st.expander("📦 배송 조회 레이더", expanded=True):
+        track_no = st.text_input("운송장 번호", placeholder="- 없이 숫자만 입력")
+        if track_no:
+            url = f"https://search.naver.com/search.naver?query=운송장번호+{track_no}"
+            st.link_button("🔍 택배사 자동 스캔 (조회)", url, use_container_width=True)
+        else:
+            st.caption("👇 편의점 택배 바로가기")
+            col_t1, col_t2 = st.columns(2)
+            col_t1.link_button("GS반값", "https://www.cvsnet.co.kr/reservation-tracking/tracking/index.do", use_container_width=True)
+            col_t2.link_button("CU알뜰", "https://www.cupost.co.kr/postbox/delivery/local.cupost", use_container_width=True)
+
+    st.write("---")
+    
     # 환율 계산기
     usd_rate, jpy_rate = get_exchange_rates()
-    with st.expander("💱 직구 안전선 계산기", expanded=True):
+    with st.expander("💱 관세 안전선 계산기", expanded=False):
         tab1, tab2 = st.tabs(["🇺🇸 USD", "🇯🇵 JPY"])
         with tab1:
             st.caption(f"환율: {usd_rate:,.1f}원/$")
@@ -228,24 +266,32 @@ with st.sidebar:
             else: st.error("🚨 관세 대상")
 
     st.write("---")
+    # [복구] 빨간색 버튼
     st.link_button("🚨 사기피해 조회 (더치트)", "https://thecheat.co.kr", type="primary", use_container_width=True)
     st.link_button("💬 피드백 보내기", "https://docs.google.com/forms/d/e/1FAIpQLSdZdfJLBErRw8ArXlBLqw9jkoLk0Qj-AOo0yPm-hg7KmGYOnA/viewform?usp=dialog", use_container_width=True)
 
 # ------------------------------------------------------------------
-# [7] 메인 대시보드 레이아웃 (Left: Search / Right: Info)
+# [7] 메인 대시보드 레이아웃
 # ------------------------------------------------------------------
+# [복구] 타이틀 애니메이션 (Main 화면 최상단)
+st.markdown("""
+    <div style="text-align:center; margin-bottom:20px;">
+        <div class="radar-wrapper"><span class="radar-emoji">📡</span><div class="pulse-ring"></div></div>
+        <span class="title-text">매물레이더</span>
+        <p style="color:#aaa; font-size:1rem; margin-top:5px;">숨어있는 꿀매물을 3단계 심층 스캔합니다.</p>
+    </div>
+""", unsafe_allow_html=True)
+
 col_left, col_right = st.columns([0.6, 0.4], gap="large")
 
 # --------------------- [좌측: 검색 및 실행] ---------------------
 with col_left:
-    st.markdown('<span class="title-text">매물레이더</span> <span style="font-size:1.5rem;">Pro</span>', unsafe_allow_html=True)
     st.caption(f"System Live | Last Scan: {now_time}")
     
     st.markdown('<div style="margin-bottom: 5px;"><span class="radar-dot-idle"></span>타겟 탐색</div>', unsafe_allow_html=True)
     keyword = st.text_input("검색어 입력", placeholder="🔍 찾으시는 물건을 입력하세요 (예: 아이폰15, 포켓몬스터)", label_visibility="collapsed")
 
     if keyword:
-        # [CCTV]
         print(f"🚨 [검색감지] 사용자 검색어: {keyword}")
 
         safe_keyword = html.escape(keyword) 
@@ -270,7 +316,6 @@ with col_left:
 
         st.markdown('### 🔥 국내 메이저')
         c1, c2 = st.columns(2)
-        # [수정완료] 링크 삭제함, 버튼만 남김
         c1.link_button("⚡ 번개장터", f"https://m.bunjang.co.kr/search/products?q={encoded_kor}", use_container_width=True)
         c2.link_button("🥕 당근마켓", f"https://www.daangn.com/search/{encoded_kor}", use_container_width=True)
 
@@ -291,22 +336,20 @@ with col_left:
                 <h4 style="margin:0 0 10px 0; color:#00ff88;">💡 사용 꿀팁 (Tip)</h4>
                 <ul style="font-size:0.9rem; color:#ccc; padding-left:20px; line-height:1.6;">
                     <li><b>우측 그래프</b>는 검색어와 일치하는 데이터가 있을 때만 자동 표시됩니다.</li>
-                    <li>해외 사이트(메루카리)는 자동으로 <b>일본어로 번역</b>됩니다.</li>
+                    <li>해외 사이트(메루카리)는 자동으로 <b>일본어로 번역</b>되어 검색됩니다.</li>
                 </ul>
             </div>
         """, unsafe_allow_html=True)
 
 # --------------------- [우측: 정보 및 도구] ---------------------
 with col_right:
-    # 1. 시세 그래프 (검색어 연동 자동화)
+    # 1. 시세 그래프 (자동매칭)
     st.markdown('<div class="dashboard-card">', unsafe_allow_html=True)
     st.markdown("#### 📉 52주 시세 트렌드")
     
-    # [핵심 기능] 검색어에 따라 자동으로 데이터 매칭
     matched_data = get_trend_data_by_keyword(keyword)
     
     if matched_data:
-        # 데이터가 있으면 그래프 그림
         st.caption(f"✅ '{matched_data['name']}' 데이터 확인됨")
         df_trend = pd.DataFrame({
             "날짜": matched_data["dates"],
@@ -315,19 +358,16 @@ with col_right:
         st.line_chart(df_trend, x="날짜", y="가격(만원)", color="#00ff88", height=200)
         st.caption("※ 운영자가 직접 검수한 실거래 평균가입니다.")
     else:
-        # 데이터가 없으면 안내 메시지
         if keyword:
             st.warning(f"⚠️ '{keyword}'에 대한 시세 데이터가 아직 수집되지 않았습니다.")
-            st.caption("운영자가 확인 후 업데이트 예정입니다.")
         else:
             st.info("좌측에 검색어를 입력하면 시세 그래프가 나타납니다.")
-            st.caption("(예: 아이폰, 갤럭시, 4070, 포켓몬)")
             
     st.markdown('</div>', unsafe_allow_html=True)
     
-    st.write("") # 간격
+    st.write("") 
 
-    # 2. 스마트 멘트 & 메모장
+    # 2. 스마트 멘트 & 메모장 [입력칸 복구 완료]
     st.markdown('<div class="dashboard-card">', unsafe_allow_html=True)
     st.markdown("#### 💬 스마트 멘트 & 메모")
     
@@ -347,14 +387,17 @@ with col_right:
         else: st.code("혹시 번개페이/안전결제로 가능할까요?", language="text")
     
     with tab_memo:
-        st.session_state.memo_pad = st.text_area("메모", st.session_state.memo_pad, height=100, label_visibility="collapsed", placeholder="가격 비교 메모...")
+        # [복구] 메모장 입력칸
+        st.session_state.memo_pad = st.text_area("메모", value=st.session_state.memo_pad, height=100, label_visibility="collapsed", placeholder="가격 비교 메모...")
     
     st.markdown('</div>', unsafe_allow_html=True)
 
-# Footer
+# Footer [원상복구]
 st.markdown("""
     <div class="legal-footer">
-        본 서비스는 링크를 제공하는 중개 서비스이며, 실제 거래의 책임은 각 판매자에게 있습니다.<br>
-        안전한 거래를 위해 반드시 <strong>안전결제(에스크로)</strong>를 이용하세요.
+        본 서비스는 온라인 쇼핑몰 및 중고 거래 사이트의 상품 정보를 검색하여 링크를 제공하는 서비스입니다.<br>
+        당사는 통신판매 당사자가 아니며, 상품의 주문/배송/환불 등 모든 거래에 대한 의무와 책임은 각 판매자에게 있습니다.<br>
+        <br>
+        ⚠️ <strong>안전한 거래를 위해 반드시 '안전결제(에스크로)'를 이용하시기 바랍니다.</strong>
     </div>
 """, unsafe_allow_html=True)
