@@ -186,6 +186,8 @@ st.markdown("""
     .signal-banner { background: linear-gradient(90deg, #0A84FF 0%, #0055FF 100%); color: white !important; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; font-weight: bold; font-size: 1rem; display: flex; align-items: center; box-shadow: 0 4px 15px rgba(10, 132, 255, 0.3); }
     .guide-badge { display: inline-block; background-color: #f8f9fa !important; color: #000000 !important; font-size: 0.9rem; padding: 6px 14px; border-radius: 15px; margin-bottom: 15px; font-weight: 800; }
     .legal-footer { font-size: 0.75rem; color: #777; margin-top: 60px; padding: 30px 10px; border-top: 1px solid #333; text-align: center; line-height: 1.6; }
+    
+    /* 대시보드 카드 스타일 */
     .dashboard-card { background-color: #17191E; border-radius: 12px; border: 1px solid #333; padding: 20px; height: 100%; }
 </style>
 """, unsafe_allow_html=True)
@@ -367,24 +369,46 @@ with col_right:
     
     st.write("") 
 
-    # 2. 스마트 멘트 & 메모장 [입력칸 복구 완료]
+    # 2. 스마트 멘트 & 메모장 [완벽 복구]
     st.markdown('<div class="dashboard-card">', unsafe_allow_html=True)
     st.markdown("#### 💬 스마트 멘트 & 메모")
     
     tab_m1, tab_m2, tab_memo = st.tabs(["⚡️ 퀵멘트", "💳 결제", "📝 메모"])
     
+    # [수정 완료] 퀵멘트: 구매문의 등 원래대로 복구
     with tab_m1:
-        opt = st.radio("상황 선택", ["구매 가능?", "네고 요청", "택포 요청"], label_visibility="collapsed")
-        if opt == "구매 가능?": st.code("안녕하세요! 게시글 보고 연락드립니다. 구매 가능할까요?", language="text")
-        elif opt == "네고 요청": 
-            p = st.text_input("희망가", placeholder="예: 3만원", key="p1")
-            st.code(f"혹시 실례가 안 된다면 {p if p else '00'}원 정도로 네고 가능할까요? 바로 입금하겠습니다!", language="text")
-        elif opt == "택포 요청": st.code("혹시 택배비 포함으로 부탁드려도 될까요?", language="text")
+        st.caption("👇 상황을 선택하면 정중한 멘트가 완성됩니다.")
+        quick_opt = st.radio("빠른 선택", ["👋 구매 문의 (재고 확인)", "💸 가격 제안 (네고 요청)", "📦 택배비 포함 요청"], label_visibility="collapsed")
+        
+        if quick_opt == "👋 구매 문의 (재고 확인)":
+            st.code("안녕하세요! 게시글 보고 연락드립니다. 구매 가능할까요?", language="text")
+        elif quick_opt == "💸 가격 제안 (네고 요청)":
+            user_price = st.text_input("희망 가격", placeholder="예: 3만원", key="quick_price")
+            price = user_price if user_price else "[00원]"
+            st.code(f"상품이 너무 마음에 드는데, 혹시 실례가 안 된다면 {price} 정도로 가격 조정이 가능할까요? 가능하다면 바로 결제하겠습니다!", language="text")
+        elif quick_opt == "📦 택배비 포함 요청":
+            st.code("안녕하세요! 혹시 실례가 안 된다면 택배비 포함으로 부탁드릴 수 있을까요? 가능하다면 바로 구매하겠습니다!", language="text")
 
+    # [수정 완료] 결제: 번개/당근/중나 페이 선택 기능 복구
     with tab_m2:
-        pay = st.radio("결제", ["계좌요청", "안전결제"], label_visibility="collapsed", horizontal=True)
-        if pay == "계좌요청": st.code("계좌 알려주시면 바로 이체하겠습니다.", language="text")
-        else: st.code("혹시 번개페이/안전결제로 가능할까요?", language="text")
+        st.caption("👇 결제 방식 및 직거래")
+        pay_opt = st.radio("거래 방식", ["💳 계좌/안전결제 문의", "🤝 직거래 장소 제안"], horizontal=True, label_visibility="collapsed")
+        
+        if pay_opt == "💳 계좌/안전결제 문의":
+            pay_method = st.radio("결제 수단", ["계좌이체", "안전결제 (번개/당근/중나)"], horizontal=True)
+            if pay_method == "계좌이체":
+                st.code("구매 결정했습니다! 계좌번호 알려주시면 바로 이체하겠습니다.", language="text")
+            else:
+                 st.caption("플랫폼 선택")
+                 platform = st.radio("플랫폼", ["⚡ 번개", "🥕 당근", "🌵 중고", "🍇 후르츠"], horizontal=True, label_visibility="collapsed")
+                 if "번개" in platform: st.code("혹시 번개페이(안전결제)로 구매 가능할까요? 가능하다면 바로 결제하겠습니다.", language="text")
+                 elif "당근" in platform: st.code("혹시 당근페이(안심결제)로 거래 가능할까요?", language="text")
+                 elif "중고" in platform: st.code("혹시 중고나라 페이(안전결제)로 가능할까요?", language="text")
+                 elif "후르츠" in platform: st.code("혹시 앱 내 안전결제로 바로 결제해도 될까요?", language="text")
+        elif pay_opt == "🤝 직거래 장소 제안":
+             user_place = st.text_input("희망 장소", placeholder="예: 강남역 10번출구", key="direct_place")
+             place = user_place if user_place else "[OO역]"
+             st.code(f"안녕하세요! 혹시 {place} 근처에서 직거래 가능하실까요? 시간 맞춰보겠습니다.", language="text")
     
     with tab_memo:
         # [복구] 메모장 입력칸
