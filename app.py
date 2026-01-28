@@ -780,4 +780,4 @@ with c_main:
 
         </div>
 
-    """, unsafe_allow_html=True) 
+    """, unsafe_allow_html=True)
