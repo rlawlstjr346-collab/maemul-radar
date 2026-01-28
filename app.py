@@ -163,7 +163,7 @@ st.markdown("""
         box-shadow: 0 0 15px rgba(255, 75, 75, 0.6) !important; 
     }
 
-    /* 티커 */
+    /* 티커 애니메이션 */
     .ticker-container { width: 100%; background-color: #15181E; border-bottom: 2px solid #333; margin-bottom: 20px; display: flex; flex-direction: column; }
     .ticker-line { width: 100%; overflow: hidden; white-space: nowrap; padding: 8px 0; border-bottom: 1px solid #222; }
     .ticker-move-1 { display: inline-block; padding-left: 100%; animation: ticker 200s linear infinite; }
@@ -183,17 +183,17 @@ st.markdown("""
     .title-text { font-size: 3rem; font-weight: 900; color: #FFFFFF !important; letter-spacing: -1px; }
 
     .side-util-header { font-size: 1rem; font-weight: bold; color: #0A84FF; margin-top: 5px; margin-bottom: 5px; border-left: 3px solid #0A84FF; padding-left: 8px; }
+    
+    /* [복구] 파란색 신호 배너 */
     .signal-banner { background: linear-gradient(90deg, #0A84FF 0%, #0055FF 100%); color: white !important; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; font-weight: bold; font-size: 1rem; display: flex; align-items: center; box-shadow: 0 4px 15px rgba(10, 132, 255, 0.3); }
+    
     .guide-badge { display: inline-block; background-color: #f8f9fa !important; color: #000000 !important; font-size: 0.9rem; padding: 6px 14px; border-radius: 15px; margin-bottom: 15px; font-weight: 800; }
     .legal-footer { font-size: 0.75rem; color: #777; margin-top: 60px; padding: 30px 10px; border-top: 1px solid #333; text-align: center; line-height: 1.6; }
-    
-    /* 대시보드 카드 스타일 */
-    .dashboard-card { background-color: #17191E; border-radius: 12px; border: 1px solid #333; padding: 20px; height: 100%; }
 </style>
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [5] 상단 티커
+# [5] 상단 티커 (초록/파랑 애니메이션)
 # ------------------------------------------------------------------
 current_data = st.session_state.ticker_data
 market_str = "".join([f"<span><span class='rank-num'>{i}.</span><span class='item-text'>{item}</span></span>" for i, item in enumerate(current_data['market'], 1)])
@@ -338,15 +338,14 @@ with col_left:
                 <h4 style="margin:0 0 10px 0; color:#00ff88;">💡 사용 꿀팁 (Tip)</h4>
                 <ul style="font-size:0.9rem; color:#ccc; padding-left:20px; line-height:1.6;">
                     <li><b>우측 그래프</b>는 검색어와 일치하는 데이터가 있을 때만 자동 표시됩니다.</li>
-                    <li>해외 사이트(메루카리)는 자동으로 <b>일본어로 번역</b>되어 검색됩니다.</li>
+                    <li>해외 사이트(이베이, 메루카리)는 자동으로 <b>영어, 일본어</b>로 번역됩니다.</li>
                 </ul>
             </div>
         """, unsafe_allow_html=True)
 
 # --------------------- [우측: 정보 및 도구] ---------------------
 with col_right:
-    # 1. 시세 그래프 (자동매칭)
-    st.markdown('<div class="dashboard-card">', unsafe_allow_html=True)
+    # 1. 시세 그래프 (자동매칭) - 박스(Box) 제거됨
     st.markdown("#### 📉 52주 시세 트렌드")
     
     matched_data = get_trend_data_by_keyword(keyword)
@@ -365,17 +364,14 @@ with col_right:
         else:
             st.info("좌측에 검색어를 입력하면 시세 그래프가 나타납니다.")
             
-    st.markdown('</div>', unsafe_allow_html=True)
-    
     st.write("") 
 
-    # 2. 스마트 멘트 & 메모장 [완벽 복구]
-    st.markdown('<div class="dashboard-card">', unsafe_allow_html=True)
+    # 2. 스마트 멘트 & 메모장 [완벽 복구] - 박스(Box) 제거됨
     st.markdown("#### 💬 스마트 멘트 & 메모")
     
     tab_m1, tab_m2, tab_memo = st.tabs(["⚡️ 퀵멘트", "💳 결제", "📝 메모"])
     
-    # [수정 완료] 퀵멘트: 구매문의 등 원래대로 복구
+    # [복구 완료] 퀵멘트: 구매문의 등 원래대로 복구
     with tab_m1:
         st.caption("👇 상황을 선택하면 정중한 멘트가 완성됩니다.")
         quick_opt = st.radio("빠른 선택", ["👋 구매 문의 (재고 확인)", "💸 가격 제안 (네고 요청)", "📦 택배비 포함 요청"], label_visibility="collapsed")
@@ -389,7 +385,7 @@ with col_right:
         elif quick_opt == "📦 택배비 포함 요청":
             st.code("안녕하세요! 혹시 실례가 안 된다면 택배비 포함으로 부탁드릴 수 있을까요? 가능하다면 바로 구매하겠습니다!", language="text")
 
-    # [수정 완료] 결제: 번개/당근/중나 페이 선택 기능 복구
+    # [복구 완료] 결제: 번개/당근/중나 페이 선택 기능 복구
     with tab_m2:
         st.caption("👇 결제 방식 및 직거래")
         pay_opt = st.radio("거래 방식", ["💳 계좌/안전결제 문의", "🤝 직거래 장소 제안"], horizontal=True, label_visibility="collapsed")
@@ -413,8 +409,6 @@ with col_right:
     with tab_memo:
         # [복구] 메모장 입력칸
         st.session_state.memo_pad = st.text_area("메모", value=st.session_state.memo_pad, height=100, label_visibility="collapsed", placeholder="가격 비교 메모...")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
 
 # Footer [원상복구]
 st.markdown("""
