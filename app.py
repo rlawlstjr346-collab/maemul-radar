@@ -9,32 +9,36 @@ from datetime import datetime, timedelta
 import html
 
 # ------------------------------------------------------------------
-# [1] 앱 기본 설정 (Wide Mode 필수)
+# [1] 앱 기본 설정 (Wide Mode)
 # ------------------------------------------------------------------
 st.set_page_config(
-    page_title="매물레이더 - Pro Dashboard",
+    page_title="매물레이더 Pro",
     page_icon="📡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # ------------------------------------------------------------------
-# [★ ADMIN] 운영자 수동 관리 시세 데이터
+# [★ ADMIN] 시세 데이터 (여기에 데이터를 추가하면 검색시 자동으로 뜹니다)
 # ------------------------------------------------------------------
 admin_trend_data = {
-    "아이폰 15 Pro": {
+    "아이폰": { # 검색어에 '아이폰'이 들어가면 이 데이터가 뜸
+        "name": "Apple 아이폰 15 Pro (256GB)",
         "dates": ["12월 4주", "1월 1주", "1월 2주", "1월 3주", "1월 4주"],
         "prices": [115, 112, 110, 108, 105]
     },
-    "갤럭시 S24 울트라": {
+    "갤럭시": {
+        "name": "Samsung 갤럭시 S24 울트라",
         "dates": ["12월 4주", "1월 1주", "1월 2주", "1월 3주", "1월 4주"],
         "prices": [130, 128, 125, 120, 118]
     },
-    "RTX 4070 Ti Super": {
+    "4070": {
+        "name": "NVIDIA RTX 4070 Ti Super",
         "dates": ["12월 4주", "1월 1주", "1월 2주", "1월 3주", "1월 4주"],
         "prices": [120, 119, 119, 115, 112]
     },
-    "포켓몬카드 (미개봉)": {
+    "포켓몬": {
+        "name": "포켓몬카드 (미개봉 박스)",
         "dates": ["12월 4주", "1월 1주", "1월 2주", "1월 3주", "1월 4주"],
         "prices": [5, 5.5, 6, 5.8, 6.2]
     }
@@ -98,8 +102,17 @@ def get_translated_keyword(text, target_lang='en'):
     except: pass
     return text
 
+# 그래프용 데이터 매칭 함수
+def get_trend_data_by_keyword(keyword):
+    if not keyword: return None
+    # 검색어에 Admin 데이터 키워드가 포함되어 있는지 확인 (예: "아이폰 15" 검색 -> "아이폰" 데이터 매칭)
+    for key in admin_trend_data.keys():
+        if key in keyword or keyword in key:
+            return admin_trend_data[key]
+    return None
+
 # ------------------------------------------------------------------
-# [4] CSS 스타일링
+# [4] CSS 스타일링 (Original Cyber-HUD 복구 완료)
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -140,12 +153,6 @@ st.markdown("""
     div[data-testid="stLinkButton"] > a[href*="mercari"] { border: 1px solid #EEEEEE !important; color: #EEEEEE !important; background-color: rgba(238, 238, 238, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="mercari"]:hover { background-color: #EEEEEE !important; color: #000000 !important; box-shadow: 0 0 15px rgba(238, 238, 238, 0.6); }
 
-    /* 적정가 게이지 */
-    .price-gauge-container { background-color: #1E1E1E; padding: 15px; border-radius: 10px; border: 1px solid #333; margin-bottom: 20px; }
-    .gauge-bar { height: 10px; width: 100%; background: linear-gradient(90deg, #00ff88 0%, #ffff00 50%, #ff0000 100%); border-radius: 5px; position: relative; margin-top: 10px; }
-    .gauge-marker { position: absolute; top: -5px; width: 4px; height: 20px; background-color: white; border: 1px solid black; transform: translateX(-50%); }
-    .verdict-text { font-size: 1.2rem; font-weight: bold; text-align: center; margin-top: 10px; }
-
     /* 티커 */
     .ticker-container { width: 100%; background-color: #15181E; border-bottom: 2px solid #333; margin-bottom: 20px; display: flex; flex-direction: column; }
     .ticker-line { width: 100%; overflow: hidden; white-space: nowrap; padding: 8px 0; border-bottom: 1px solid #222; }
@@ -160,8 +167,6 @@ st.markdown("""
 
     .title-text { font-size: 2.5rem; font-weight: 900; color: #FFFFFF !important; letter-spacing: -1px; }
     .side-util-header { font-size: 1rem; font-weight: bold; color: #0A84FF; margin-top: 5px; margin-bottom: 5px; border-left: 3px solid #0A84FF; padding-left: 8px; }
-    .small-link { font-size: 0.8rem; color: #888; text-decoration: none; margin-left: 5px; }
-    .small-link:hover { color: #00ff88; }
     
     .signal-banner { background: linear-gradient(90deg, #0A84FF 0%, #0055FF 100%); color: white !important; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; font-weight: bold; font-size: 1rem; display: flex; align-items: center; box-shadow: 0 4px 15px rgba(10, 132, 255, 0.3); }
     .guide-badge { display: inline-block; background-color: #f8f9fa !important; color: #000000 !important; font-size: 0.9rem; padding: 6px 14px; border-radius: 15px; margin-bottom: 15px; font-weight: 800; }
@@ -198,49 +203,14 @@ ticker_html = f"""
 st.markdown(ticker_html, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [6] 사이드바 (도구 모음)
+# [6] 사이드바 (도구 모음 - 적정가 판독기 삭제됨)
 # ------------------------------------------------------------------
 with st.sidebar:
     st.header("⚙️ 레이더 센터")
     
-    # 적정가 판독기
-    st.markdown('<div class="side-util-header">⚖️ 적정가 판독기</div>', unsafe_allow_html=True)
-    with st.expander("📊 가격 분석하려면 클릭", expanded=True):
-        st.caption("최고가/최저가 입력 시 가성비 분석")
-        in_high = st.number_input("최근 본 최고가", value=0, step=1000)
-        in_low = st.number_input("최근 본 최저가", value=0, step=1000)
-        in_current = st.number_input("현재 판매자 가격", value=0, step=1000)
-        
-        if in_high > 0 and in_low > 0 and in_current > 0:
-            if in_high <= in_low:
-                st.error("최고가가 최저가보다 낮을 수 없습니다.")
-            else:
-                position = (in_current - in_low) / (in_high - in_low) * 100
-                if position < 0: position = 0
-                if position > 100: position = 100
-                
-                verdict = ""; color = ""
-                if position <= 20: verdict = "🔥 강력 추천"; color = "#00ff88"
-                elif position <= 50: verdict = "✅ 적정 가격"; color = "#ffff00"
-                elif position <= 80: verdict = "🤔 조금 비쌈"; color = "#ffaa00"
-                else: verdict = "🚨 비추천"; color = "#ff4b4b"
-                
-                st.markdown(f"""
-                    <div class="price-gauge-container">
-                        <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#aaa;">
-                            <span>Low {in_low:,}</span><span>High {in_high:,}</span>
-                        </div>
-                        <div class="gauge-bar"><div class="gauge-marker" style="left: {position}%;"></div></div>
-                        <div class="verdict-text" style="color:{color};">{verdict}</div>
-                        <div style="text-align:center; font-size:0.9rem;">현재: {in_current:,}원</div>
-                    </div>
-                """, unsafe_allow_html=True)
-
-    st.write("---")
-    
     # 환율 계산기
     usd_rate, jpy_rate = get_exchange_rates()
-    with st.expander("💱 직구 안전선 계산기", expanded=False):
+    with st.expander("💱 직구 안전선 계산기", expanded=True):
         tab1, tab2 = st.tabs(["🇺🇸 USD", "🇯🇵 JPY"])
         with tab1:
             st.caption(f"환율: {usd_rate:,.1f}원/$")
@@ -300,11 +270,9 @@ with col_left:
 
         st.markdown('### 🔥 국내 메이저')
         c1, c2 = st.columns(2)
+        # [수정완료] 링크 삭제함, 버튼만 남김
         c1.link_button("⚡ 번개장터", f"https://m.bunjang.co.kr/search/products?q={encoded_kor}", use_container_width=True)
-        c1.markdown(f"<div style='text-align:right;'><a href='https://m.bunjang.co.kr/search/products?q={encoded_kor}&status=SOLDOUT' target='_blank' class='small-link'>✅ 시세(판완)</a></div>", unsafe_allow_html=True)
-        
         c2.link_button("🥕 당근마켓", f"https://www.daangn.com/search/{encoded_kor}", use_container_width=True)
-        c2.markdown(f"<div style='text-align:right;'><a href='https://www.daangn.com/search/{encoded_kor}' target='_blank' class='small-link'>✅ 거래내역</a></div>", unsafe_allow_html=True)
 
         st.markdown('### 💎 국내 마이너')
         c3, c4 = st.columns(2)
@@ -322,27 +290,39 @@ with col_left:
             <div style="background-color:#262730; padding:15px; border-radius:10px; margin-top:20px; border:1px solid #444;">
                 <h4 style="margin:0 0 10px 0; color:#00ff88;">💡 사용 꿀팁 (Tip)</h4>
                 <ul style="font-size:0.9rem; color:#ccc; padding-left:20px; line-height:1.6;">
-                    <li><b>우측 그래프</b>에서 요즘 시세를 확인하세요.</li>
+                    <li><b>우측 그래프</b>는 검색어와 일치하는 데이터가 있을 때만 자동 표시됩니다.</li>
                     <li>해외 사이트(메루카리)는 자동으로 <b>일본어로 번역</b>됩니다.</li>
-                    <li>거래 전 <b>사이드바의 적정가 판독기</b>를 꼭 돌려보세요!</li>
                 </ul>
             </div>
         """, unsafe_allow_html=True)
 
 # --------------------- [우측: 정보 및 도구] ---------------------
 with col_right:
-    # 1. 시세 그래프 (항상 보임)
+    # 1. 시세 그래프 (검색어 연동 자동화)
     st.markdown('<div class="dashboard-card">', unsafe_allow_html=True)
-    st.markdown("#### 📉 52주 시세 트렌드 (Admin)")
-    selected_item = st.selectbox("품목 선택", list(admin_trend_data.keys()), label_visibility="collapsed")
-    trend_info = admin_trend_data[selected_item]
+    st.markdown("#### 📉 52주 시세 트렌드")
     
-    df_trend = pd.DataFrame({
-        "날짜": trend_info["dates"],
-        "가격(만원)": trend_info["prices"]
-    })
-    st.line_chart(df_trend, x="날짜", y="가격(만원)", color="#00ff88", height=200)
-    st.caption(f"※ 운영자가 직접 검수한 '{selected_item}' 실거래 평균가입니다.")
+    # [핵심 기능] 검색어에 따라 자동으로 데이터 매칭
+    matched_data = get_trend_data_by_keyword(keyword)
+    
+    if matched_data:
+        # 데이터가 있으면 그래프 그림
+        st.caption(f"✅ '{matched_data['name']}' 데이터 확인됨")
+        df_trend = pd.DataFrame({
+            "날짜": matched_data["dates"],
+            "가격(만원)": matched_data["prices"]
+        })
+        st.line_chart(df_trend, x="날짜", y="가격(만원)", color="#00ff88", height=200)
+        st.caption("※ 운영자가 직접 검수한 실거래 평균가입니다.")
+    else:
+        # 데이터가 없으면 안내 메시지
+        if keyword:
+            st.warning(f"⚠️ '{keyword}'에 대한 시세 데이터가 아직 수집되지 않았습니다.")
+            st.caption("운영자가 확인 후 업데이트 예정입니다.")
+        else:
+            st.info("좌측에 검색어를 입력하면 시세 그래프가 나타납니다.")
+            st.caption("(예: 아이폰, 갤럭시, 4070, 포켓몬)")
+            
     st.markdown('</div>', unsafe_allow_html=True)
     
     st.write("") # 간격
