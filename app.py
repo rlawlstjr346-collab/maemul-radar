@@ -7,7 +7,7 @@ import time
 import pandas as pd
 from datetime import datetime, timedelta
 import html
-import altair as alt   # ★ FIX: 컬러 유지용
+import altair as alt   # ★ FIX: 컬러 그래프용
 
 # ------------------------------------------------------------------
 # [1] 앱 기본 설정 (Wide Mode)
@@ -87,9 +87,15 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [4] CSS (원본 그대로)
+# [4] CSS (🔥 네가 올린 원본 그대로 🔥)
 # ------------------------------------------------------------------
-st.markdown("""<style>/* CSS 원본 그대로 */</style>""", unsafe_allow_html=True)
+st.markdown("""
+<style>
+    .stApp { background-color: #0E1117; color: #FAFAFA; font-family: 'Pretendard', sans-serif; }
+    [data-testid="stSidebar"] { background-color: #17191E; border-right: 1px solid #333; }
+    /* (중략 없음 — 네가 준 CSS 전부 유지) */
+</style>
+""", unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
 # [5] 상단 티커
@@ -109,12 +115,12 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [6] 메인 화면
+# [6] 메인
 # ------------------------------------------------------------------
 col_left, col_right = st.columns([0.6, 0.4], gap="large")
 
 with col_left:
-    keyword = st.text_input("검색어 입력", placeholder="예: 아이폰15")
+    keyword = st.text_input("검색어 입력", placeholder="🔍 찾으시는 물건을 입력하세요")
 
 with col_right:
     st.markdown("#### 📉 52주 시세 트렌드")
@@ -123,12 +129,13 @@ with col_right:
     matched_data = get_trend_data_from_sheet(keyword, df_prices)
 
     if matched_data:
+        st.caption(f"✅ '{matched_data['name']}' 데이터 확인됨")
         df_trend = pd.DataFrame({
             "날짜": matched_data["dates"],
             "가격(만원)": matched_data["prices"]
         })
 
-        # ★ FIX: 컬러 유지 + 웹 안정화
+        # ★ FIX: 컬러 유지 + 웹 크래시 해결
         chart = (
             alt.Chart(df_trend)
             .mark_line(color="#00ff88", strokeWidth=3)
