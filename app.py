@@ -19,24 +19,22 @@ st.set_page_config(
 )
 
 # ------------------------------------------------------------------
-# [2] 데이터 관리 (구글 스프레드시트 연동 - Option 2)
+# [2] 데이터 관리 (구글 스프레드시트 연동)
 # ------------------------------------------------------------------
-# [수정 완료] 사장님이 주신 링크로 교체했습니다.
 sheet_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQS8AftSUmG9Cr7MfczpotB5hhl1DgjH4hRCgXH5R8j5hykRiEf0M9rEyEq3uj312a5RuI4zMdjI5Jr/pub?output=csv"
 
-@st.cache_data(ttl=60)  # 1분마다 데이터 갱신
+@st.cache_data(ttl=60)
 def load_price_data():
     try:
-        # 구글 시트에서 CSV 데이터 읽어오기
         df = pd.read_csv(sheet_url)
-        # 컬럼 공백 제거 (오류 방지)
+        # 컬럼 이름 공백 제거 (오류 방지)
         df.columns = df.columns.str.strip()
         return df
     except:
         return pd.DataFrame()
 
 # ------------------------------------------------------------------
-# [3] 유틸리티 함수 (번역기능 유지)
+# [3] 유틸리티 함수 (검색 로직 강화)
 # ------------------------------------------------------------------
 @st.cache_data(ttl=3600)
 def get_exchange_rates():
@@ -48,29 +46,31 @@ def get_exchange_rates():
     except:
         return 1450.0, 950.0
 
-# [중요] 자동 번역 함수
 def get_translated_keyword(text, target_lang='en'):
     if not re.search('[가-힣]', text): return text
     try:
-        # target_lang: 'en'(영어) 또는 'ja'(일본어)
         url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl={target_lang}&dt=t&q={urllib.parse.quote(text)}"
         response = requests.get(url, timeout=1)
         if response.status_code == 200: return response.json()[0][0][0]
     except: pass
     return text
 
-# [중요] 시트에서 데이터 매칭 (스마트 매칭)
+# [★ 업그레이드] 띄어쓰기 무시 & 양방향 스마트 매칭
 def get_trend_data_from_sheet(user_query, df):
     if df.empty or not user_query: return None
     
-    user_query = user_query.lower().strip()
+    # 사용자 검색어: 소문자 변환 + 띄어쓰기 제거
+    user_clean = user_query.lower().replace(" ", "").strip()
     
-    # 엑셀의 모든 행을 돌면서 확인
     for index, row in df.iterrows():
         try:
-            sheet_keyword = str(row['keyword']).lower().strip()
-            # 엑셀 키워드가 검색어에 포함되면 매칭 (예: '아이폰 16' -> '아이폰 16 pro')
-            if sheet_keyword in user_query:
+            # 엑셀 키워드: 소문자 변환 + 띄어쓰기 제거
+            sheet_keyword = str(row['keyword']).lower().replace(" ", "").strip()
+            
+            # [양방향 확인]
+            # 1. 사용자가 '아이폰16' 쳤는데 엑셀에 '아이폰'이 있으면 -> 매칭
+            # 2. 사용자가 '아이폰' 쳤는데 엑셀에 '아이폰16'이 있으면 -> 매칭
+            if sheet_keyword in user_clean or user_clean in sheet_keyword:
                 return {
                     "name": row['name'],
                     "dates": str(row['dates']).split(','),
@@ -90,26 +90,21 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [4] CSS 스타일링 (모든 디자인 요소 완벽 유지)
+# [4] CSS 스타일링 (완벽 유지)
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
-    /* 기본 테마 */
     .stApp { background-color: #0E1117; color: #FAFAFA; font-family: 'Pretendard', sans-serif; }
     [data-testid="stSidebar"] { background-color: #17191E; border-right: 1px solid #333; }
     
-    /* 입력창 (초록색 테두리) */
     div[data-baseweb="input"] {
-        background-color: #262730; border: 2px solid #00ff88 !important;
-        border-radius: 8px; box-shadow: 0 0 10px rgba(0, 255, 136, 0.15); transition: all 0.3s ease;
+        background-color: #262730; border: 2px solid #00ff88 !important; border-radius: 8px; 
+        box-shadow: 0 0 10px rgba(0, 255, 136, 0.15); transition: all 0.3s ease;
     }
     div[data-baseweb="input"]:focus-within { box-shadow: 0 0 15px rgba(0, 255, 136, 0.5); }
     .stTextInput input, .stTextArea textarea, .stNumberInput input { color: #FAFAFA; font-weight: bold; }
 
-    /* 버튼 스타일 */
     div[data-testid="stLinkButton"] > a { border-radius: 10px; font-weight: 700; transition: all 0.3s ease; text-decoration: none; }
-    
-    /* 플랫폼별 컬러 (번장, 당근, 중나, 등등) */
     div[data-testid="stLinkButton"] > a[href*="bunjang"] { border: 1px solid #FF3E3E !important; color: #FF3E3E !important; background-color: rgba(255, 62, 62, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="bunjang"]:hover { background-color: #FF3E3E !important; color: white !important; }
     div[data-testid="stLinkButton"] > a[href*="daangn"] { border: 1px solid #FF8A3D !important; color: #FF8A3D !important; background-color: rgba(255, 138, 61, 0.1); }
@@ -117,7 +112,6 @@ st.markdown("""
     div[data-testid="stLinkButton"] > a[href*="joongna"] { border: 1px solid #00E676 !important; color: #00E676 !important; background-color: rgba(0, 230, 118, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="joongna"]:hover { background-color: #00E676 !important; color: black !important; }
     
-    /* [후르츠 패밀리 보라색 유지] */
     div[data-testid="stLinkButton"] > a[href*="fruitsfamily"] { border: 1px solid #D500F9 !important; color: #D500F9 !important; background-color: rgba(213, 0, 249, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="fruitsfamily"]:hover { background-color: #D500F9 !important; color: white !important; }
     
@@ -125,12 +119,9 @@ st.markdown("""
     div[data-testid="stLinkButton"] > a[href*="ebay"]:hover { background-color: #2962FF !important; color: white !important; }
     div[data-testid="stLinkButton"] > a[href*="mercari"] { border: 1px solid #EEEEEE !important; color: #EEEEEE !important; background-color: rgba(238, 238, 238, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="mercari"]:hover { background-color: #EEEEEE !important; color: #000000 !important; }
-
-    /* 더치트 빨간 버튼 유지 */
     div[data-testid="stLinkButton"] > a[href*="thecheat"] { border: 1px solid #ff4b4b !important; color: #ff4b4b !important; background-color: rgba(255, 75, 75, 0.1) !important; }
     div[data-testid="stLinkButton"] > a[href*="thecheat"]:hover { background-color: #ff4b4b !important; color: white !important; }
 
-    /* [복구] 타이틀 애니메이션 (녹색 파동) */
     .radar-wrapper { position: relative; display: inline-block; margin-right: 10px; vertical-align: middle; }
     .radar-emoji { position: relative; z-index: 2; font-size: 3rem; }
     .pulse-ring { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.7); opacity: 0; animation: pulse-ring 2s infinite; }
@@ -138,21 +129,12 @@ st.markdown("""
     .title-text { font-size: 3rem; font-weight: 900; color: #FFFFFF !important; letter-spacing: -1px; }
 
     .side-util-header { font-size: 1rem; font-weight: bold; color: #0A84FF; margin-top: 5px; margin-bottom: 5px; border-left: 3px solid #0A84FF; padding-left: 8px; }
-    
-    /* [복구] 검색 시 신호 배너 (청색) */
     .signal-banner { background: linear-gradient(90deg, #0A84FF 0%, #0055FF 100%); color: white !important; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; font-weight: bold; font-size: 1rem; display: flex; align-items: center; box-shadow: 0 4px 15px rgba(10, 132, 255, 0.3); }
     .radar-dot-strong { display: inline-block; width: 12px; height: 12px; background-color: white; border-radius: 50%; margin-right: 12px; animation: pulse-strong 1.5s infinite; }
     @keyframes pulse-strong { 0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); } 50% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); } }
-    
     .radar-dot-idle { display: inline-block; width: 12px; height: 12px; background-color: #34c759; border-radius: 50%; margin-right: 8px; vertical-align: middle; animation: pulse-idle 2s infinite; }
     @keyframes pulse-idle { 0% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(52, 199, 89, 0); } 100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); } }
 
-    .guide-badge { display: inline-block; background-color: #f8f9fa !important; color: #000000 !important; font-size: 0.9rem; padding: 6px 14px; border-radius: 15px; margin-bottom: 15px; font-weight: 800; }
-    .legal-footer { font-size: 0.75rem; color: #777; margin-top: 60px; padding: 30px 10px; border-top: 1px solid #333; text-align: center; line-height: 1.6; }
-    .scam-alert-text { color: #ff4b4b; font-weight: bold; font-size: 0.85rem; margin-bottom: 5px; }
-    .scam-desc { color: #aaa; font-size: 0.8rem; margin-bottom: 10px; line-height: 1.4; }
-
-    /* 티커 컨테이너 */
     .ticker-container { width: 100%; background-color: #15181E; border-bottom: 2px solid #333; margin-bottom: 20px; display: flex; flex-direction: column; }
     .ticker-line { width: 100%; overflow: hidden; white-space: nowrap; padding: 8px 0; border-bottom: 1px solid #222; }
     .ticker-move-1 { display: inline-block; padding-left: 100%; animation: ticker 200s linear infinite; }
@@ -163,11 +145,15 @@ st.markdown("""
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
     .rank-num { color: #888; font-size: 0.8rem; margin-right: 4px; }
     .item-text { color: #eee; font-weight: 600; }
+
+    .legal-footer { font-size: 0.75rem; color: #777; margin-top: 60px; padding: 30px 10px; border-top: 1px solid #333; text-align: center; line-height: 1.6; }
+    .scam-alert-text { color: #ff4b4b; font-weight: bold; font-size: 0.85rem; margin-bottom: 5px; }
+    .scam-desc { color: #aaa; font-size: 0.8rem; margin-bottom: 10px; line-height: 1.4; }
 </style>
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [5] 상단 티커 (애니메이션)
+# [5] 상단 티커
 # ------------------------------------------------------------------
 market_pool = ["아이폰 15 Pro", "갤럭시 S24 울트라", "에어팟 맥스", "닌텐도 스위치", "소니 헤드폰", "PS5", "맥북프로 M3", "RTX 4070", "아이패드 에어", "스투시 후드", "나이키 덩크"]
 radar_pool = ["후지필름 X100V", "리코 GR3", "치이카와", "뉴진스 포카", "젠틀몬스터", "요시다포터", "살로몬 XT-6", "코닥 작티", "산리오 키링", "다마고치", "티니핑"]
@@ -195,17 +181,18 @@ ticker_html = f"""
 st.markdown(ticker_html, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [6] 사이드바 (송장조회, 계산기, 빨간버튼 복구)
+# [6] 사이드바 (설명 복구 완료)
 # ------------------------------------------------------------------
 with st.sidebar:
     st.header("⚙️ 레이더 센터")
     
+    # [복구] 커뮤니티 설명 텍스트
     with st.expander("👀 커뮤니티 시세비교", expanded=True):
         st.markdown("""
-        - [📷 SLR클럽](http://www.slrclub.com)
-        - [💻 쿨엔조이](https://coolenjoy.net)
-        - [🔥 퀘이사존](https://quasarzone.com)
-        - [🍎 아사모](https://cafe.naver.com/appleiphone)
+        - [📷 SLR클럽 (카메라)](http://www.slrclub.com)
+        - [💻 쿨엔조이 (PC/IT)](https://coolenjoy.net)
+        - [🔥 퀘이사존 (PC/게임)](https://quasarzone.com)
+        - [🍎 아사모 (애플)](https://cafe.naver.com/appleiphone)
         """)
     st.write("---")
 
@@ -222,7 +209,6 @@ with st.sidebar:
 
     st.write("---")
     
-    # [요청반영] 관세 계산기 열어두기 (expanded=True)
     usd_rate, jpy_rate = get_exchange_rates()
     with st.expander("💱 관세 안전선 계산기", expanded=True):
         tab1, tab2 = st.tabs(["🇺🇸 USD", "🇯🇵 JPY"])
@@ -242,7 +228,6 @@ with st.sidebar:
             else: st.error("🚨 관세 대상")
 
     st.write("---")
-    # [복구] 더치트 빨간 버튼
     st.link_button("🚨 사기피해 조회 (더치트)", "https://thecheat.co.kr", type="primary", use_container_width=True)
     st.link_button("💬 피드백 보내기", "https://docs.google.com/forms/d/e/1FAIpQLSdZdfJLBErRw8ArXlBLqw9jkoLk0Qj-AOo0yPm-hg7KmGYOnA/viewform?usp=dialog", use_container_width=True)
 
@@ -259,7 +244,6 @@ st.markdown("""
 
 col_left, col_right = st.columns([0.6, 0.4], gap="large")
 
-# [좌측: 검색]
 with col_left:
     st.caption(f"System Live | Last Scan: {now_time}")
     st.markdown('<div style="margin-bottom: 5px;"><span class="radar-dot-idle"></span>타겟 탐색</div>', unsafe_allow_html=True)
@@ -271,7 +255,6 @@ with col_left:
         safe_keyword = html.escape(keyword) 
         encoded_kor = urllib.parse.quote(keyword)
         
-        # [복구] 영어/일본어 번역 로직
         eng_keyword = get_translated_keyword(keyword, 'en')
         jp_keyword = get_translated_keyword(keyword, 'ja')
         
@@ -281,7 +264,6 @@ with col_left:
         encoded_eng = urllib.parse.quote(eng_keyword)
         encoded_jp = urllib.parse.quote(jp_keyword)
         
-        # [복구] 파란색 신호 배너
         st.markdown(f'''
             <div class="signal-banner">
                 <span class="radar-dot-strong"></span>
@@ -317,9 +299,8 @@ with col_left:
             </div>
         """, unsafe_allow_html=True)
 
-# [우측: 정보]
 with col_right:
-    # 1. 시세 그래프 (구글 시트 연동) - [유지] 박스 테두리 제거됨
+    # 1. 시세 그래프
     st.markdown("#### 📉 52주 시세 트렌드")
     
     df_prices = load_price_data()
@@ -341,7 +322,7 @@ with col_right:
             
     st.write("") 
 
-    # 2. 스마트 멘트 & 메모장 [복구 완료] - [유지] 박스 테두리 제거됨
+    # 2. 스마트 멘트 & 메모장
     st.markdown("#### 💬 스마트 멘트 & 메모")
     
     tab_m1, tab_m2, tab_memo = st.tabs(["⚡️ 퀵멘트", "💳 결제", "📝 메모"])
@@ -349,7 +330,6 @@ with col_right:
     with tab_m1:
         st.caption("👇 상황을 선택하면 정중한 멘트가 완성됩니다.")
         quick_opt = st.radio("빠른 선택", ["👋 구매 문의 (재고 확인)", "💸 가격 제안 (네고 요청)", "📦 택배비 포함 요청"], label_visibility="collapsed")
-        
         if quick_opt == "👋 구매 문의 (재고 확인)":
             st.code("안녕하세요! 게시글 보고 연락드립니다. 구매 가능할까요?", language="text")
         elif quick_opt == "💸 가격 제안 (네고 요청)":
@@ -362,7 +342,6 @@ with col_right:
     with tab_m2:
         st.caption("👇 결제 방식 및 직거래")
         pay_opt = st.radio("거래 방식", ["💳 계좌/안전결제 문의", "🤝 직거래 장소 제안"], horizontal=True, label_visibility="collapsed")
-        
         if pay_opt == "💳 계좌/안전결제 문의":
             pay_method = st.radio("결제 수단", ["계좌이체", "안전결제 (번개/당근/중나)"], horizontal=True)
             if pay_method == "계좌이체":
