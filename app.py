@@ -46,11 +46,8 @@ def get_exchange_rates():
     except:
         return 1450.0, 950.0
 
-# [수정] 번역 함수 강화 (재시도 로직 추가)
 def get_translated_keyword(text, target_lang='en'):
     if not re.search('[가-힣]', text): return text
-    
-    # 1차 시도
     try:
         url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl={target_lang}&dt=t&q={urllib.parse.quote(text)}"
         response = requests.get(url, timeout=2)
@@ -58,8 +55,6 @@ def get_translated_keyword(text, target_lang='en'):
             result = response.json()[0][0][0]
             if result and result.strip(): return result
     except: pass
-    
-    # 2차 시도 (실패 시 원본 반환)
     return text
 
 def get_trend_data_from_sheet(user_query, df):
@@ -121,7 +116,7 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [4] CSS 스타일링
+# [4] CSS 스타일링 (빨간맛 복구)
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -140,7 +135,17 @@ st.markdown("""
     div[data-testid="stLinkButton"] > a[href*="ebay"] { border: 1px solid #2962FF !important; color: #2962FF !important; background-color: rgba(41, 98, 255, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="mercari"] { border: 1px solid #EEEEEE !important; color: #EEEEEE !important; background-color: rgba(238, 238, 238, 0.1); }
     
-    /* 호버 효과 */
+    /* [복구] 더치트 버튼 빨간색 강제 적용 */
+    div[data-testid="stLinkButton"] > a[href*="thecheat"] { 
+        border: 2px solid #ff4b4b !important; 
+        color: #ffffff !important; 
+        background-color: #ff4b4b !important; 
+    }
+    div[data-testid="stLinkButton"] > a[href*="thecheat"]:hover { 
+        background-color: #ff0000 !important; 
+        box-shadow: 0 0 10px rgba(255, 0, 0, 0.5) !important;
+    }
+    
     div[data-testid="stLinkButton"] > a:hover { transform: translateY(-2px); opacity: 0.8; }
 
     .radar-wrapper { position: relative; display: inline-block; margin-right: 10px; vertical-align: middle; }
@@ -151,22 +156,24 @@ st.markdown("""
     
     .side-util-header { font-size: 1rem; font-weight: bold; color: #0A84FF; margin-top: 5px; margin-bottom: 5px; border-left: 3px solid #0A84FF; padding-left: 8px; }
     
-    /* 커뮤니티 리스트 스타일 (수정됨) */
+    /* 커뮤니티 리스트 스타일 (설명 포함) */
     .community-link { 
         display: flex; 
         align_items: center; 
-        padding: 8px; 
-        margin-bottom: 5px; 
+        padding: 10px; 
+        margin-bottom: 8px; 
         background-color: #262730; 
         border-radius: 8px; 
         text-decoration: none !important; 
         color: #eee !important; 
         transition: background-color 0.2s;
+        border: 1px solid #333;
     }
-    .community-link:hover { background-color: #33343d; }
-    .comm-icon { font-size: 1.2rem; margin-right: 10px; min-width: 25px; text-align: center; }
-    .comm-name { font-weight: bold; margin-right: 8px; }
-    .comm-desc { font-size: 0.8rem; color: #aaa; }
+    .community-link:hover { background-color: #33343d; border-color: #555; }
+    .comm-icon { font-size: 1.2rem; margin-right: 12px; min-width: 25px; text-align: center; }
+    .comm-info { display: flex; flex-direction: column; }
+    .comm-name { font-weight: bold; font-size: 0.95rem; }
+    .comm-desc { font-size: 0.75rem; color: #aaa; margin-top: 2px; }
 
     .signal-banner { background: linear-gradient(90deg, #0A84FF 0%, #0055FF 100%); color: white !important; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; font-weight: bold; font-size: 1rem; display: flex; align-items: center; box-shadow: 0 4px 15px rgba(10, 132, 255, 0.3); }
     .radar-dot-strong { display: inline-block; width: 12px; height: 12px; background-color: white; border-radius: 50%; margin-right: 12px; animation: pulse-strong 1.5s infinite; }
@@ -220,27 +227,35 @@ st.markdown(ticker_html, unsafe_allow_html=True)
 with st.sidebar:
     st.header("⚙️ 레이더 센터")
     with st.expander("👀 커뮤니티 시세비교", expanded=True):
-        # [수정] 커뮤니티 링크를 HTML로 직접 구현하여 가독성 개선
+        # [수정] HTML 구조 개선하여 아이콘+이름+설명이 잘 보이도록 변경
         st.markdown("""
         <a href="http://www.slrclub.com" target="_blank" class="community-link">
-            <span class="comm-icon">📷</span>
-            <span class="comm-name">SLR클럽</span>
-            <span class="comm-desc">카메라/렌즈</span>
+            <div class="comm-icon">📷</div>
+            <div class="comm-info">
+                <span class="comm-name">SLR클럽</span>
+                <span class="comm-desc">카메라/렌즈 전문</span>
+            </div>
         </a>
         <a href="https://coolenjoy.net" target="_blank" class="community-link">
-            <span class="comm-icon">💻</span>
-            <span class="comm-name">쿨엔조이</span>
-            <span class="comm-desc">PC/하드웨어</span>
+            <div class="comm-icon">💻</div>
+            <div class="comm-info">
+                <span class="comm-name">쿨엔조이</span>
+                <span class="comm-desc">PC 하드웨어/부품</span>
+            </div>
         </a>
         <a href="https://quasarzone.com" target="_blank" class="community-link">
-            <span class="comm-icon">🔥</span>
-            <span class="comm-name">퀘이사존</span>
-            <span class="comm-desc">PC/게이밍</span>
+            <div class="comm-icon">🔥</div>
+            <div class="comm-info">
+                <span class="comm-name">퀘이사존</span>
+                <span class="comm-desc">게이밍 기어/PC</span>
+            </div>
         </a>
         <a href="https://cafe.naver.com/appleiphone" target="_blank" class="community-link">
-            <span class="comm-icon">🍎</span>
-            <span class="comm-name">아사모</span>
-            <span class="comm-desc">애플 기기</span>
+            <div class="comm-icon">🍎</div>
+            <div class="comm-info">
+                <span class="comm-name">아사모</span>
+                <span class="comm-desc">아이폰/애플 기기</span>
+            </div>
         </a>
         """, unsafe_allow_html=True)
 
@@ -255,19 +270,27 @@ with st.sidebar:
             c1.link_button("GS반값", "https://www.cvsnet.co.kr/reservation-tracking/tracking/index.do", use_container_width=True)
             c2.link_button("CU알뜰", "https://www.cupost.co.kr/postbox/delivery/local.cupost", use_container_width=True)
     st.write("---")
+    
+    # [복구] 실시간 환율 계산기 기능 원복
     usd, jpy = get_exchange_rates()
     with st.expander("💱 관세 안전선 계산기", expanded=True):
         t1, t2 = st.tabs(["🇺🇸 USD", "🇯🇵 JPY"])
         with t1:
             st.caption(f"환율: {usd:,.1f}원/$")
             p_u = st.number_input("가격($)", 190, step=10)
-            if p_u <= 200: st.success(f"✅ 면세 (약 {p_u*usd:,.0f}원)")
+            krw_val = p_u * usd
+            st.markdown(f"**≈ {krw_val:,.0f} 원**") # [복구] 계산 결과 즉시 표시
+            if p_u <= 200: st.success("✅ 면세 범위")
             else: st.error("🚨 관세 대상")
         with t2:
             st.caption(f"환율: {jpy:,.1f}원/100¥")
             p_j = st.number_input("가격(¥)", 15000, step=1000)
-            if (p_j*(jpy/100)/usd) <= 150: st.success(f"✅ 면세 (약 {p_j*(jpy/100):,.0f}원)")
+            krw_val = p_j * (jpy/100)
+            usd_val = krw_val / usd
+            st.markdown(f"**≈ {krw_val:,.0f} 원** ($ {usd_val:.1f})") # [복구] 계산 결과 즉시 표시
+            if usd_val <= 150: st.success("✅ 면세 범위 ($150 이하)")
             else: st.error("🚨 관세 대상")
+            
     st.write("---")
     st.link_button("🚨 사기피해 조회 (더치트)", "https://thecheat.co.kr", type="primary", use_container_width=True)
     st.link_button("💬 피드백 보내기", "https://docs.google.com/forms/d/e/1FAIpQLSdZdfJLBErRw8ArXlBLqw9jkoLk0Qj-AOo0yPm-hg7KmGYOnA/viewform?usp=dialog", use_container_width=True)
