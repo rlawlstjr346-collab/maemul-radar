@@ -55,11 +55,11 @@ def get_translated_keyword(text, target_lang='en'):
     except: pass
     return text
 
-# [★ 업그레이드] 띄어쓰기 무시 & 양방향 스마트 매칭
+# [★ 신규 기능 탑재] 띄어쓰기 무시 & 양방향 스마트 매칭 로직
 def get_trend_data_from_sheet(user_query, df):
     if df.empty or not user_query: return None
     
-    # 사용자 검색어: 소문자 변환 + 띄어쓰기 제거
+    # 사용자 검색어: 소문자 변환 + 띄어쓰기 제거 (예: "아이폰 16" -> "아이폰16")
     user_clean = user_query.lower().replace(" ", "").strip()
     
     for index, row in df.iterrows():
@@ -67,9 +67,7 @@ def get_trend_data_from_sheet(user_query, df):
             # 엑셀 키워드: 소문자 변환 + 띄어쓰기 제거
             sheet_keyword = str(row['keyword']).lower().replace(" ", "").strip()
             
-            # [양방향 확인]
-            # 1. 사용자가 '아이폰16' 쳤는데 엑셀에 '아이폰'이 있으면 -> 매칭
-            # 2. 사용자가 '아이폰' 쳤는데 엑셀에 '아이폰16'이 있으면 -> 매칭
+            # [양방향 확인] 교차 검증으로 매칭 확률 극대화
             if sheet_keyword in user_clean or user_clean in sheet_keyword:
                 return {
                     "name": row['name'],
@@ -90,7 +88,7 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [4] CSS 스타일링 (완벽 유지)
+# [4] CSS 스타일링 (사장님 원본 디자인 100% 유지)
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -181,12 +179,11 @@ ticker_html = f"""
 st.markdown(ticker_html, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [6] 사이드바 (설명 복구 완료)
+# [6] 사이드바 (디자인 유지)
 # ------------------------------------------------------------------
 with st.sidebar:
     st.header("⚙️ 레이더 센터")
     
-    # [복구] 커뮤니티 설명 텍스트
     with st.expander("👀 커뮤니티 시세비교", expanded=True):
         st.markdown("""
         - [📷 SLR클럽 (카메라)](http://www.slrclub.com)
@@ -250,7 +247,7 @@ with col_left:
     keyword = st.text_input("검색어 입력", placeholder="🔍 찾으시는 물건을 입력하세요 (예: 아이폰15, 포켓몬스터)", label_visibility="collapsed")
 
     if keyword:
-        print(f"🚨 [검색감지] 사용자 검색어: {keyword}")
+        # print(f"🚨 [검색감지] 사용자 검색어: {keyword}")
 
         safe_keyword = html.escape(keyword) 
         encoded_kor = urllib.parse.quote(keyword)
