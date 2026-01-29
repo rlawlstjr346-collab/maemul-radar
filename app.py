@@ -55,14 +55,13 @@ def get_translated_keyword(text, target_lang='en'):
     except: pass
     return text
 
-# [수정] 엑셀 컬럼을 정확하게 매핑하여 순서 꼬임 방지
+# [수정] 데이터 파싱 시 "노이즈(0원, 1만원 등)" 자동 제거 로직 추가
 def get_trend_data_from_sheet(user_query, df):
     if df.empty or not user_query: return None
     user_clean = user_query.lower().replace(" ", "").strip()
     best_match = None
     min_len_diff = float('inf')
     
-    # 엑셀의 날짜 컬럼명들을 순서대로 지정 (여기가 핵심!)
     date_cols = ["12월 4주", "1월 1주", "1월 2주", "1월 3주", "1월 4주"]
     
     for index, row in df.iterrows():
@@ -76,24 +75,28 @@ def get_trend_data_from_sheet(user_query, df):
                     min_len_diff = diff
                     n_val = row.get('모델명 (상세스펙/상태)')
                     
-                    # 1. 시세 흐름용 데이터 (주별 평균가)
+                    # 1. 시세 흐름용 데이터 (5만원 이하 무시)
                     trend_prices = []
                     valid_dates = []
                     for col in date_cols:
                         if col in df.columns:
                             try:
                                 val = float(row.get(col, 0))
-                                if val > 0: 
+                                if val > 5: # [필터] 5만원 이하는 그래프에서 제외
                                     trend_prices.append(val)
                                     valid_dates.append(col)
                             except: pass
                     
                     # 2. 분포도용 데이터 (Raw Data 덩어리)
                     raw_str = str(row.get('시세 (5주치)', '')).replace('"', '').strip()
+                    raw_prices = []
                     if raw_str:
-                        raw_prices = [float(p) for p in raw_str.split(',') if p.strip()]
-                    else:
-                        raw_prices = trend_prices # 없을 경우 흐름 데이터 사용
+                        # [핵심] 여기서 0, 1, 2 같은 이상한 숫자 싹 거름 (5만원 이상만 인정)
+                        temp_list = [float(p) for p in raw_str.split(',') if p.strip()]
+                        raw_prices = [p for p in temp_list if p > 5] 
+                    
+                    if not raw_prices: 
+                        raw_prices = trend_prices
 
                     best_match = { 
                         "name": n_val, 
