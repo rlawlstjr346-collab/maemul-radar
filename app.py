@@ -55,26 +55,44 @@ def get_translated_keyword(text, target_lang='en'):
     except: pass
     return text
 
-# [★ 업그레이드] 띄어쓰기 무시 & 양방향 스마트 매칭
+# [★수정됨] 사장님 엑셀(한글 컬럼) + 띄어쓰기 무시 로직 적용
 def get_trend_data_from_sheet(user_query, df):
     if df.empty or not user_query: return None
     
-    # 사용자 검색어: 소문자 변환 + 띄어쓰기 제거
+    # 1. 유저 검색어 공백 제거
     user_clean = user_query.lower().replace(" ", "").strip()
     
     for index, row in df.iterrows():
         try:
-            # 엑셀 키워드: 소문자 변환 + 띄어쓰기 제거
-            sheet_keyword = str(row['keyword']).lower().replace(" ", "").strip()
+            # [수정] 엑셀의 '키워드' 또는 'keyword' 컬럼 읽기
+            k_val = row.get('키워드') if '키워드' in df.columns else row.get('keyword')
+            sheet_keyword = str(k_val).lower().replace(" ", "").strip()
             
-            # [양방향 확인]
-            # 1. 사용자가 '아이폰16' 쳤는데 엑셀에 '아이폰'이 있으면 -> 매칭
-            # 2. 사용자가 '아이폰' 쳤는데 엑셀에 '아이폰16'이 있으면 -> 매칭
+            # 2. 매칭 확인
             if sheet_keyword in user_clean or user_clean in sheet_keyword:
+                
+                # [수정] 모델명 읽기
+                n_val = row.get('모델명 (상세스펙/상태)') if '모델명 (상세스펙/상태)' in df.columns else row.get('name')
+                
+                # [수정] 가격 읽기 ('시세 (5주치)' 또는 'prices')
+                p_val = row.get('시세 (5주치)') if '시세 (5주치)' in df.columns else row.get('prices')
+                price_str = str(p_val).replace('"', '').strip()
+                prices = [float(p) for p in price_str.split(',')]
+
+                # [수정] 날짜 처리 (사장님 엑셀엔 날짜 컬럼이 없으므로 자동 할당)
+                if 'dates' in df.columns:
+                    dates = str(row['dates']).split(',')
+                else:
+                    # 엑셀 헤더 기준 (최근 5주)
+                    dates = ["12월 4주", "1월 1주", "1월 2주", "1월 3주", "1월 4주"]
+                    # 데이터 개수가 안 맞으면 개수만큼 자동 생성
+                    if len(dates) != len(prices):
+                        dates = [f"{i}주전" for i in range(len(prices), 0, -1)]
+
                 return {
-                    "name": row['name'],
-                    "dates": str(row['dates']).split(','),
-                    "prices": [float(p) for p in str(row['prices']).split(',')]
+                    "name": n_val,
+                    "dates": dates,
+                    "prices": prices
                 }
         except:
             continue
@@ -90,7 +108,7 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [4] CSS 스타일링 (완벽 유지)
+# [4] CSS 스타일링 (사장님 원본 완벽 유지)
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -153,7 +171,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [5] 상단 티커
+# [5] 상단 티커 (유지)
 # ------------------------------------------------------------------
 market_pool = ["아이폰 15 Pro", "갤럭시 S24 울트라", "에어팟 맥스", "닌텐도 스위치", "소니 헤드폰", "PS5", "맥북프로 M3", "RTX 4070", "아이패드 에어", "스투시 후드", "나이키 덩크"]
 radar_pool = ["후지필름 X100V", "리코 GR3", "치이카와", "뉴진스 포카", "젠틀몬스터", "요시다포터", "살로몬 XT-6", "코닥 작티", "산리오 키링", "다마고치", "티니핑"]
@@ -181,12 +199,11 @@ ticker_html = f"""
 st.markdown(ticker_html, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [6] 사이드바 (설명 복구 완료)
+# [6] 사이드바 (원본 기능 복구)
 # ------------------------------------------------------------------
 with st.sidebar:
     st.header("⚙️ 레이더 센터")
     
-    # [복구] 커뮤니티 설명 텍스트
     with st.expander("👀 커뮤니티 시세비교", expanded=True):
         st.markdown("""
         - [📷 SLR클럽 (카메라)](http://www.slrclub.com)
@@ -250,7 +267,7 @@ with col_left:
     keyword = st.text_input("검색어 입력", placeholder="🔍 찾으시는 물건을 입력하세요 (예: 아이폰15, 포켓몬스터)", label_visibility="collapsed")
 
     if keyword:
-        print(f"🚨 [검색감지] 사용자 검색어: {keyword}")
+        # print(f"🚨 [검색감지] 사용자 검색어: {keyword}")
 
         safe_keyword = html.escape(keyword) 
         encoded_kor = urllib.parse.quote(keyword)
@@ -322,7 +339,7 @@ with col_right:
             
     st.write("") 
 
-    # 2. 스마트 멘트 & 메모장
+    # 2. 스마트 멘트 & 메모장 (원본 기능 복구)
     st.markdown("#### 💬 스마트 멘트 & 메모")
     
     tab_m1, tab_m2, tab_memo = st.tabs(["⚡️ 퀵멘트", "💳 결제", "📝 메모"])
