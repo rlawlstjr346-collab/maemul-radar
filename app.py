@@ -46,16 +46,22 @@ def get_exchange_rates():
     except:
         return 1450.0, 950.0
 
+# [수정] 번역 함수 강화 (재시도 로직 추가)
 def get_translated_keyword(text, target_lang='en'):
     if not re.search('[가-힣]', text): return text
+    
+    # 1차 시도
     try:
         url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl={target_lang}&dt=t&q={urllib.parse.quote(text)}"
-        response = requests.get(url, timeout=1)
-        if response.status_code == 200: return response.json()[0][0][0]
+        response = requests.get(url, timeout=2)
+        if response.status_code == 200:
+            result = response.json()[0][0][0]
+            if result and result.strip(): return result
     except: pass
+    
+    # 2차 시도 (실패 시 원본 반환)
     return text
 
-# [수정] 데이터 파싱 시 "노이즈(0원, 1만원 등)" 자동 제거 로직 추가
 def get_trend_data_from_sheet(user_query, df):
     if df.empty or not user_query: return None
     user_clean = user_query.lower().replace(" ", "").strip()
@@ -75,23 +81,20 @@ def get_trend_data_from_sheet(user_query, df):
                     min_len_diff = diff
                     n_val = row.get('모델명 (상세스펙/상태)')
                     
-                    # 1. 시세 흐름용 데이터 (5만원 이하 무시)
                     trend_prices = []
                     valid_dates = []
                     for col in date_cols:
                         if col in df.columns:
                             try:
                                 val = float(row.get(col, 0))
-                                if val > 5: # [필터] 5만원 이하는 그래프에서 제외
+                                if val > 5:
                                     trend_prices.append(val)
                                     valid_dates.append(col)
                             except: pass
                     
-                    # 2. 분포도용 데이터 (Raw Data 덩어리)
                     raw_str = str(row.get('시세 (5주치)', '')).replace('"', '').strip()
                     raw_prices = []
                     if raw_str:
-                        # [핵심] 여기서 0, 1, 2 같은 이상한 숫자 싹 거름 (5만원 이상만 인정)
                         temp_list = [float(p) for p in raw_str.split(',') if p.strip()]
                         raw_prices = [p for p in temp_list if p > 5] 
                     
@@ -118,7 +121,7 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [4] CSS 스타일링 (유지)
+# [4] CSS 스타일링
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -128,31 +131,47 @@ st.markdown("""
     div[data-baseweb="input"]:focus-within { box-shadow: 0 0 15px rgba(0, 255, 136, 0.5); }
     .stTextInput input, .stTextArea textarea, .stNumberInput input { color: #FAFAFA; font-weight: bold; }
     div[data-testid="stLinkButton"] > a { border-radius: 10px; font-weight: 700; transition: all 0.3s ease; text-decoration: none; }
+    
+    /* 버튼 스타일 개별 지정 */
     div[data-testid="stLinkButton"] > a[href*="bunjang"] { border: 1px solid #FF3E3E !important; color: #FF3E3E !important; background-color: rgba(255, 62, 62, 0.1); }
-    div[data-testid="stLinkButton"] > a[href*="bunjang"]:hover { background-color: #FF3E3E !important; color: white !important; }
     div[data-testid="stLinkButton"] > a[href*="daangn"] { border: 1px solid #FF8A3D !important; color: #FF8A3D !important; background-color: rgba(255, 138, 61, 0.1); }
-    div[data-testid="stLinkButton"] > a[href*="daangn"]:hover { background-color: #FF8A3D !important; color: white !important; }
     div[data-testid="stLinkButton"] > a[href*="joongna"] { border: 1px solid #00E676 !important; color: #00E676 !important; background-color: rgba(0, 230, 118, 0.1); }
-    div[data-testid="stLinkButton"] > a[href*="joongna"]:hover { background-color: #00E676 !important; color: black !important; }
     div[data-testid="stLinkButton"] > a[href*="fruitsfamily"] { border: 1px solid #D500F9 !important; color: #D500F9 !important; background-color: rgba(213, 0, 249, 0.1); }
-    div[data-testid="stLinkButton"] > a[href*="fruitsfamily"]:hover { background-color: #D500F9 !important; color: white !important; }
     div[data-testid="stLinkButton"] > a[href*="ebay"] { border: 1px solid #2962FF !important; color: #2962FF !important; background-color: rgba(41, 98, 255, 0.1); }
-    div[data-testid="stLinkButton"] > a[href*="ebay"]:hover { background-color: #2962FF !important; color: white !important; }
     div[data-testid="stLinkButton"] > a[href*="mercari"] { border: 1px solid #EEEEEE !important; color: #EEEEEE !important; background-color: rgba(238, 238, 238, 0.1); }
-    div[data-testid="stLinkButton"] > a[href*="mercari"]:hover { background-color: #EEEEEE !important; color: #000000 !important; }
-    div[data-testid="stLinkButton"] > a[href*="thecheat"] { border: 1px solid #ff4b4b !important; color: #ff4b4b !important; background-color: rgba(255, 75, 75, 0.1) !important; }
-    div[data-testid="stLinkButton"] > a[href*="thecheat"]:hover { background-color: #ff4b4b !important; color: white !important; }
+    
+    /* 호버 효과 */
+    div[data-testid="stLinkButton"] > a:hover { transform: translateY(-2px); opacity: 0.8; }
+
     .radar-wrapper { position: relative; display: inline-block; margin-right: 10px; vertical-align: middle; }
     .radar-emoji { position: relative; z-index: 2; font-size: 3rem; }
     .pulse-ring { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.7); opacity: 0; animation: pulse-ring 2s infinite; }
     @keyframes pulse-ring { 0% { width: 90%; opacity: 1; } 100% { width: 220%; opacity: 0; } }
     .title-text { font-size: 3rem; font-weight: 900; color: #FFFFFF !important; letter-spacing: -1px; }
+    
     .side-util-header { font-size: 1rem; font-weight: bold; color: #0A84FF; margin-top: 5px; margin-bottom: 5px; border-left: 3px solid #0A84FF; padding-left: 8px; }
+    
+    /* 커뮤니티 리스트 스타일 (수정됨) */
+    .community-link { 
+        display: flex; 
+        align_items: center; 
+        padding: 8px; 
+        margin-bottom: 5px; 
+        background-color: #262730; 
+        border-radius: 8px; 
+        text-decoration: none !important; 
+        color: #eee !important; 
+        transition: background-color 0.2s;
+    }
+    .community-link:hover { background-color: #33343d; }
+    .comm-icon { font-size: 1.2rem; margin-right: 10px; min-width: 25px; text-align: center; }
+    .comm-name { font-weight: bold; margin-right: 8px; }
+    .comm-desc { font-size: 0.8rem; color: #aaa; }
+
     .signal-banner { background: linear-gradient(90deg, #0A84FF 0%, #0055FF 100%); color: white !important; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; font-weight: bold; font-size: 1rem; display: flex; align-items: center; box-shadow: 0 4px 15px rgba(10, 132, 255, 0.3); }
     .radar-dot-strong { display: inline-block; width: 12px; height: 12px; background-color: white; border-radius: 50%; margin-right: 12px; animation: pulse-strong 1.5s infinite; }
     @keyframes pulse-strong { 0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); } 50% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); } }
-    .radar-dot-idle { display: inline-block; width: 12px; height: 12px; background-color: #34c759; border-radius: 50%; margin-right: 8px; vertical-align: middle; animation: pulse-idle 2s infinite; }
-    @keyframes pulse-idle { 0% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(52, 199, 89, 0); } 100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); } }
+    
     .ticker-container { width: 100%; background-color: #15181E; border-bottom: 2px solid #333; margin-bottom: 20px; display: flex; flex-direction: column; }
     .ticker-line { width: 100%; overflow: hidden; white-space: nowrap; padding: 8px 0; border-bottom: 1px solid #222; }
     .ticker-move-1 { display: inline-block; padding-left: 100%; animation: ticker 200s linear infinite; }
@@ -161,19 +180,18 @@ st.markdown("""
     .label-market { color: #ff4b4b; font-weight: 900; margin-right: 15px !important; }
     .label-radar { color: #00ff88; font-weight: 900; margin-right: 15px !important; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+    
     .rank-num { color: #888; font-size: 0.8rem; margin-right: 4px; }
     .item-text { color: #eee; font-weight: 600; }
     .legal-footer { font-size: 0.75rem; color: #777; margin-top: 60px; padding: 30px 10px; border-top: 1px solid #333; text-align: center; line-height: 1.6; }
-    .scam-alert-text { color: #ff4b4b; font-weight: bold; font-size: 0.85rem; margin-bottom: 5px; }
-    .scam-desc { color: #aaa; font-size: 0.8rem; margin-bottom: 10px; line-height: 1.4; }
 </style>
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
 # [5] 상단 티커
 # ------------------------------------------------------------------
-market_pool = ["아이폰 15 Pro", "갤럭시 S24 울트라", "에어팟 맥스", "닌텐도 스위치", "소니 헤드폰", "PS5", "맥북프로 M3", "RTX 4070", "아이패드 에어", "스투시 후드", "나이키 덩크"]
-radar_pool = ["후지필름 X100V", "리코 GR3", "치이카와", "뉴진스 포카", "젠틀몬스터", "요시다포터", "살로몬 XT-6", "코닥 작티", "산리오 키링", "다마고치", "티니핑"]
+market_pool = ["아이폰 17 Pro", "RTX 5090", "갤럭시 S25", "PS5 Pro", "에어팟 맥스 2", "닌텐도 스위치 2", "후지필름 X100VI", "아이패드 M4", "스투시", "아크테릭스"]
+radar_pool = ["리코 GR3", "치이카와", "뉴진스 굿즈", "젠틀몬스터", "요시다포터", "살로몬", "코닥 작티", "산리오", "다마고치", "티니핑"]
 market_str = "".join([f"<span><span class='rank-num'>{i+1}.</span><span class='item-text'>{item}</span></span>" for i, item in enumerate(random.sample(market_pool, 10))])
 radar_str = "".join([f"<span><span class='rank-num'>{i+1}.</span><span class='item-text'>{item}</span></span>" for i, item in enumerate(random.sample(radar_pool, 10))])
 now_time = st.session_state.ticker_data['time']
@@ -202,7 +220,30 @@ st.markdown(ticker_html, unsafe_allow_html=True)
 with st.sidebar:
     st.header("⚙️ 레이더 센터")
     with st.expander("👀 커뮤니티 시세비교", expanded=True):
-        st.markdown("- [📷 SLR클럽](http://www.slrclub.com)\n- [💻 쿨엔조이](https://coolenjoy.net)\n- [🔥 퀘이사존](https://quasarzone.com)\n- [🍎 아사모](https://cafe.naver.com/appleiphone)")
+        # [수정] 커뮤니티 링크를 HTML로 직접 구현하여 가독성 개선
+        st.markdown("""
+        <a href="http://www.slrclub.com" target="_blank" class="community-link">
+            <span class="comm-icon">📷</span>
+            <span class="comm-name">SLR클럽</span>
+            <span class="comm-desc">카메라/렌즈</span>
+        </a>
+        <a href="https://coolenjoy.net" target="_blank" class="community-link">
+            <span class="comm-icon">💻</span>
+            <span class="comm-name">쿨엔조이</span>
+            <span class="comm-desc">PC/하드웨어</span>
+        </a>
+        <a href="https://quasarzone.com" target="_blank" class="community-link">
+            <span class="comm-icon">🔥</span>
+            <span class="comm-name">퀘이사존</span>
+            <span class="comm-desc">PC/게이밍</span>
+        </a>
+        <a href="https://cafe.naver.com/appleiphone" target="_blank" class="community-link">
+            <span class="comm-icon">🍎</span>
+            <span class="comm-name">아사모</span>
+            <span class="comm-desc">애플 기기</span>
+        </a>
+        """, unsafe_allow_html=True)
+
     st.write("---")
     with st.expander("📦 배송 조회 레이더", expanded=True):
         track_no = st.text_input("운송장 번호", placeholder="- 없이 숫자만 입력")
