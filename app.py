@@ -55,48 +55,61 @@ def get_translated_keyword(text, target_lang='en'):
     except: pass
     return text
 
-# [★수정됨] 사장님 엑셀(한글 컬럼) + 띄어쓰기 무시 로직 적용
+# [★최종 수정] '선착순'이 아니라 '가장 정확한 놈'을 찾는 로직
 def get_trend_data_from_sheet(user_query, df):
     if df.empty or not user_query: return None
     
-    # 1. 유저 검색어 공백 제거
+    # 사용자 검색어: 소문자 변환 + 띄어쓰기 제거
     user_clean = user_query.lower().replace(" ", "").strip()
+    
+    best_match = None
+    min_len_diff = float('inf')  # 글자 수 차이 (작을수록 정확함)
     
     for index, row in df.iterrows():
         try:
-            # [수정] 엑셀의 '키워드' 또는 'keyword' 컬럼 읽기
+            # 1. 키워드 컬럼 읽기
             k_val = row.get('키워드') if '키워드' in df.columns else row.get('keyword')
             sheet_keyword = str(k_val).lower().replace(" ", "").strip()
             
-            # 2. 매칭 확인
+            # 2. 매칭 확인 (포함 관계인지 확인)
             if sheet_keyword in user_clean or user_clean in sheet_keyword:
                 
-                # [수정] 모델명 읽기
-                n_val = row.get('모델명 (상세스펙/상태)') if '모델명 (상세스펙/상태)' in df.columns else row.get('name')
+                # [중요] 정확도 계산: 검색어와 엑셀키워드의 길이 차이를 봅니다.
+                # '아이폰17프로'(6글자) vs '아이폰17프로맥스'(8글자) -> 차이 2
+                # '아이폰17프로'(6글자) vs '아이폰17프로'(6글자) -> 차이 0 (당첨!)
+                diff = abs(len(sheet_keyword) - len(user_clean))
                 
-                # [수정] 가격 읽기 ('시세 (5주치)' 또는 'prices')
-                p_val = row.get('시세 (5주치)') if '시세 (5주치)' in df.columns else row.get('prices')
-                price_str = str(p_val).replace('"', '').strip()
-                prices = [float(p) for p in price_str.split(',')]
+                # 더 정확한 매칭을 찾으면 갱신 (또는 차이가 0이면 즉시 반환)
+                if diff < min_len_diff:
+                    min_len_diff = diff
+                    
+                    # 데이터 추출
+                    n_val = row.get('모델명 (상세스펙/상태)') if '모델명 (상세스펙/상태)' in df.columns else row.get('name')
+                    p_val = row.get('시세 (5주치)') if '시세 (5주치)' in df.columns else row.get('prices')
+                    price_str = str(p_val).replace('"', '').strip()
+                    prices = [float(p) for p in price_str.split(',')]
 
-                # [수정] 날짜 처리 (사장님 엑셀엔 날짜 컬럼이 없으므로 자동 할당)
-                if 'dates' in df.columns:
-                    dates = str(row['dates']).split(',')
-                else:
-                    # 엑셀 헤더 기준 (최근 5주)
-                    dates = ["12월 4주", "1월 1주", "1월 2주", "1월 3주", "1월 4주"]
-                    # 데이터 개수가 안 맞으면 개수만큼 자동 생성
-                    if len(dates) != len(prices):
-                        dates = [f"{i}주전" for i in range(len(prices), 0, -1)]
+                    if 'dates' in df.columns:
+                        dates = str(row['dates']).split(',')
+                    else:
+                        dates = ["12월 4주", "1월 1주", "1월 2주", "1월 3주", "1월 4주"]
+                        if len(dates) != len(prices):
+                            dates = [f"{i}주전" for i in range(len(prices), 0, -1)]
+                    
+                    best_match = {
+                        "name": n_val,
+                        "dates": dates,
+                        "prices": prices
+                    }
+                    
+                    # 만약 완전히 똑같으면(차이 0) 더 볼 것도 없이 확정
+                    if diff == 0:
+                        return best_match
 
-                return {
-                    "name": n_val,
-                    "dates": dates,
-                    "prices": prices
-                }
         except:
             continue
-    return None
+            
+    return best_match
 
 def generate_new_data():
     now = datetime.now() + timedelta(hours=9)
@@ -108,7 +121,7 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [4] CSS 스타일링 (사장님 원본 완벽 유지)
+# [4] CSS 스타일링 (완벽 유지)
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -171,7 +184,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [5] 상단 티커 (유지)
+# [5] 상단 티커
 # ------------------------------------------------------------------
 market_pool = ["아이폰 15 Pro", "갤럭시 S24 울트라", "에어팟 맥스", "닌텐도 스위치", "소니 헤드폰", "PS5", "맥북프로 M3", "RTX 4070", "아이패드 에어", "스투시 후드", "나이키 덩크"]
 radar_pool = ["후지필름 X100V", "리코 GR3", "치이카와", "뉴진스 포카", "젠틀몬스터", "요시다포터", "살로몬 XT-6", "코닥 작티", "산리오 키링", "다마고치", "티니핑"]
