@@ -355,9 +355,13 @@ with col_right:
             st.caption("※ 운영자가 직접 검수한 실거래 평균가입니다.")
         
         with tab_dist:
-            # Altair 스마트 버킷팅 히스토그램
-            hist_chart = alt.Chart(df_trend).mark_bar(color='#0A84FF').encode(
-                x=alt.X('가격', bin=alt.Bin(maxbins=10), title='가격 구간 (만원)'),
+            # Altair 스마트 버킷팅 히스토그램 (스타일 개선: 막대 두께 조절)
+            hist_chart = alt.Chart(df_trend).mark_bar(
+                color='#0A84FF',
+                cornerRadiusTopLeft=3,
+                cornerRadiusTopRight=3
+            ).encode(
+                x=alt.X('가격', bin=alt.Bin(maxbins=20), title='가격 구간 (만원)'), # maxbins를 20으로 늘려 더 세밀하게
                 y=alt.Y('count()', title='데이터 수'),
                 tooltip=['count()', alt.Tooltip('가격', bin=True, title='가격 범위')]
             ).properties(
@@ -387,7 +391,7 @@ with col_right:
             
     st.write("") 
 
-    # 2. 스마트 멘트 & 메모장 (원본 기능 유지)
+    # 2. 스마트 멘트 & 메모장 (원본 기능 복구)
     st.markdown("#### 💬 스마트 멘트 & 메모")
     
     tab_m1, tab_m2, tab_memo = st.tabs(["⚡️ 퀵멘트", "💳 결제", "📝 메모"])
