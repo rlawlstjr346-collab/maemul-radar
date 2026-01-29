@@ -116,7 +116,7 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [4] CSS 스타일링 (빨간맛 복구)
+# [4] CSS 스타일링
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -135,7 +135,7 @@ st.markdown("""
     div[data-testid="stLinkButton"] > a[href*="ebay"] { border: 1px solid #2962FF !important; color: #2962FF !important; background-color: rgba(41, 98, 255, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="mercari"] { border: 1px solid #EEEEEE !important; color: #EEEEEE !important; background-color: rgba(238, 238, 238, 0.1); }
     
-    /* [복구] 더치트 버튼 빨간색 강제 적용 */
+    /* [복구 완료] 더치트 버튼 빨간색 강제 적용 */
     div[data-testid="stLinkButton"] > a[href*="thecheat"] { 
         border: 2px solid #ff4b4b !important; 
         color: #ffffff !important; 
@@ -156,7 +156,7 @@ st.markdown("""
     
     .side-util-header { font-size: 1rem; font-weight: bold; color: #0A84FF; margin-top: 5px; margin-bottom: 5px; border-left: 3px solid #0A84FF; padding-left: 8px; }
     
-    /* 커뮤니티 리스트 스타일 (설명 포함) */
+    /* 커뮤니티 리스트 스타일 */
     .community-link { 
         display: flex; 
         align_items: center; 
@@ -227,7 +227,6 @@ st.markdown(ticker_html, unsafe_allow_html=True)
 with st.sidebar:
     st.header("⚙️ 레이더 센터")
     with st.expander("👀 커뮤니티 시세비교", expanded=True):
-        # [수정] HTML 구조 개선하여 아이콘+이름+설명이 잘 보이도록 변경
         st.markdown("""
         <a href="http://www.slrclub.com" target="_blank" class="community-link">
             <div class="comm-icon">📷</div>
@@ -271,7 +270,7 @@ with st.sidebar:
             c2.link_button("CU알뜰", "https://www.cupost.co.kr/postbox/delivery/local.cupost", use_container_width=True)
     st.write("---")
     
-    # [복구] 실시간 환율 계산기 기능 원복
+    # [복구 완료] 관세 계산기 실시간 금액 표시 기능
     usd, jpy = get_exchange_rates()
     with st.expander("💱 관세 안전선 계산기", expanded=True):
         t1, t2 = st.tabs(["🇺🇸 USD", "🇯🇵 JPY"])
@@ -279,17 +278,21 @@ with st.sidebar:
             st.caption(f"환율: {usd:,.1f}원/$")
             p_u = st.number_input("가격($)", 190, step=10)
             krw_val = p_u * usd
-            st.markdown(f"**≈ {krw_val:,.0f} 원**") # [복구] 계산 결과 즉시 표시
+            st.markdown(f"**≈ {krw_val:,.0f} 원**") 
             if p_u <= 200: st.success("✅ 면세 범위")
-            else: st.error("🚨 관세 대상")
+            else: 
+                tax_est = krw_val * 0.1
+                st.error(f"🚨 관세 대상 (예상 세금: 약 {tax_est:,.0f}원)")
         with t2:
             st.caption(f"환율: {jpy:,.1f}원/100¥")
             p_j = st.number_input("가격(¥)", 15000, step=1000)
             krw_val = p_j * (jpy/100)
             usd_val = krw_val / usd
-            st.markdown(f"**≈ {krw_val:,.0f} 원** ($ {usd_val:.1f})") # [복구] 계산 결과 즉시 표시
+            st.markdown(f"**≈ {krw_val:,.0f} 원** ($ {usd_val:.1f})")
             if usd_val <= 150: st.success("✅ 면세 범위 ($150 이하)")
-            else: st.error("🚨 관세 대상")
+            else: 
+                tax_est = krw_val * 0.1
+                st.error(f"🚨 관세 대상 (예상 세금: 약 {tax_est:,.0f}원)")
             
     st.write("---")
     st.link_button("🚨 사기피해 조회 (더치트)", "https://thecheat.co.kr", type="primary", use_container_width=True)
@@ -398,10 +401,11 @@ with col_right:
                 mean_val = df_dist['가격'].mean()
                 
                 # 히스토그램 (막대)
+                # [복구 완료] 데이터 타입 ':Q' 명시 및 구간 10개로 설정
                 bars = alt.Chart(df_dist).mark_bar(
                     color='#0A84FF', cornerRadiusTopLeft=3, cornerRadiusTopRight=3
                 ).encode(
-                    x=alt.X('가격', bin=alt.Bin(maxbins=20), title='가격 구간 (만원)'),
+                    x=alt.X('가격:Q', bin=alt.Bin(maxbins=10), title='가격 구간 (만원)'),
                     y=alt.Y('count()', title='매물 수'),
                     tooltip=['count()', alt.Tooltip('가격', bin=True, title='가격 범위')]
                 )
@@ -409,7 +413,7 @@ with col_right:
                 # 평균선 (빨간색 세로줄)
                 rule = alt.Chart(pd.DataFrame({'mean_price': [mean_val]})).mark_rule(
                     color='red', strokeDash=[4, 4]
-                ).encode(x='mean_price')
+                ).encode(x='mean_price:Q')
                 
                 # 차트 합치기 (레이어)
                 final_chart = (bars + rule).properties(height=250).configure_axis(
