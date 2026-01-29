@@ -5,6 +5,7 @@ import re
 import random
 import time
 import pandas as pd
+import altair as alt  # [추가] 히스토그램용 라이브러리
 from datetime import datetime, timedelta
 import html
 
@@ -55,7 +56,7 @@ def get_translated_keyword(text, target_lang='en'):
     except: pass
     return text
 
-# [★최종 수정] '선착순'이 아니라 '가장 정확한 놈'을 찾는 로직
+# [최종] 띄어쓰기 무시 & 최적 매칭(Best Match) 로직 유지
 def get_trend_data_from_sheet(user_query, df):
     if df.empty or not user_query: return None
     
@@ -74,12 +75,9 @@ def get_trend_data_from_sheet(user_query, df):
             # 2. 매칭 확인 (포함 관계인지 확인)
             if sheet_keyword in user_clean or user_clean in sheet_keyword:
                 
-                # [중요] 정확도 계산: 검색어와 엑셀키워드의 길이 차이를 봅니다.
-                # '아이폰17프로'(6글자) vs '아이폰17프로맥스'(8글자) -> 차이 2
-                # '아이폰17프로'(6글자) vs '아이폰17프로'(6글자) -> 차이 0 (당첨!)
+                # 정확도 계산: 길이 차이가 작을수록 더 정확한 매칭
                 diff = abs(len(sheet_keyword) - len(user_clean))
                 
-                # 더 정확한 매칭을 찾으면 갱신 (또는 차이가 0이면 즉시 반환)
                 if diff < min_len_diff:
                     min_len_diff = diff
                     
@@ -102,7 +100,6 @@ def get_trend_data_from_sheet(user_query, df):
                         "prices": prices
                     }
                     
-                    # 만약 완전히 똑같으면(차이 0) 더 볼 것도 없이 확정
                     if diff == 0:
                         return best_match
 
@@ -121,7 +118,7 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [4] CSS 스타일링 (완벽 유지)
+# [4] CSS 스타일링 (사장님 원본 디자인 100% 유지)
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -212,7 +209,7 @@ ticker_html = f"""
 st.markdown(ticker_html, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [6] 사이드바 (원본 기능 복구)
+# [6] 사이드바 (원본 기능 유지)
 # ------------------------------------------------------------------
 with st.sidebar:
     st.header("⚙️ 레이더 센터")
@@ -330,7 +327,7 @@ with col_left:
         """, unsafe_allow_html=True)
 
 with col_right:
-    # 1. 시세 그래프
+    # 1. 시세 그래프 및 히스토그램 (v2.0 업그레이드)
     st.markdown("#### 📉 52주 시세 트렌드")
     
     df_prices = load_price_data()
@@ -340,10 +337,48 @@ with col_right:
         st.caption(f"✅ '{matched_data['name']}' 데이터 확인됨")
         df_trend = pd.DataFrame({
             "날짜": matched_data["dates"],
-            "가격(만원)": matched_data["prices"]
+            "가격": matched_data["prices"] # 단위: 만원
         })
-        st.line_chart(df_trend, x="날짜", y="가격(만원)", color="#00ff88", height=200)
-        st.caption("※ 운영자가 직접 검수한 실거래 평균가입니다.")
+
+        # [v2.0] 탭으로 트렌드와 분포도 분리
+        tab_trend, tab_dist = st.tabs(["📈 시세 흐름", "📊 가격 분포도"])
+
+        with tab_trend:
+            st.line_chart(df_trend, x="날짜", y="가격", color="#00ff88", height=250)
+            
+            # 요약 정보
+            curr_price = matched_data['prices'][-1]
+            avg_price = sum(matched_data['prices']) / len(matched_data['prices'])
+            c_m1, c_m2 = st.columns(2)
+            c_m1.metric("현재 시세", f"{curr_price:,.0f}만")
+            c_m2.metric("평균 시세", f"{avg_price:,.0f}만")
+            st.caption("※ 운영자가 직접 검수한 실거래 평균가입니다.")
+        
+        with tab_dist:
+            # Altair 스마트 버킷팅 히스토그램
+            hist_chart = alt.Chart(df_trend).mark_bar(color='#0A84FF').encode(
+                x=alt.X('가격', bin=alt.Bin(maxbins=10), title='가격 구간 (만원)'),
+                y=alt.Y('count()', title='데이터 수'),
+                tooltip=['count()', alt.Tooltip('가격', bin=True, title='가격 범위')]
+            ).properties(
+                height=250
+            ).configure_axis(
+                grid=False,
+                labelColor='#eee',
+                titleColor='#eee'
+            ).configure_view(
+                strokeWidth=0
+            )
+            st.altair_chart(hist_chart, use_container_width=True)
+            
+            # 분포 분석 코멘트
+            p_min = min(matched_data['prices'])
+            p_max = max(matched_data['prices'])
+            if (p_max - p_min) > 50:
+                st.warning(f"🚨 가격 차이가 큽니다 ({p_min}만 ~ {p_max}만). 상태(S급/C급)를 꼭 확인하세요.")
+            else:
+                st.success("✅ 시세가 특정 구간에 집중되어 있어 안정적입니다.")
+
     else:
         if keyword:
             st.warning(f"⚠️ '{keyword}'에 대한 시세 데이터가 아직 수집되지 않았습니다.")
@@ -352,7 +387,7 @@ with col_right:
             
     st.write("") 
 
-    # 2. 스마트 멘트 & 메모장 (원본 기능 복구)
+    # 2. 스마트 멘트 & 메모장 (원본 기능 유지)
     st.markdown("#### 💬 스마트 멘트 & 메모")
     
     tab_m1, tab_m2, tab_memo = st.tabs(["⚡️ 퀵멘트", "💳 결제", "📝 메모"])
