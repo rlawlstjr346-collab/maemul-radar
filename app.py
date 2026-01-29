@@ -299,27 +299,21 @@ with col_left:
             </div>
         """, unsafe_allow_html=True)
 
-        # -------------------------
-        # 📊 가격 분포 히스토그램 (추가)
-        # -------------------------
-        st.markdown("##### 📊 가격 분포")
-
-        prices = pd.Series(matched_data["prices"])
-
-        BIN_SIZE = 5  # 5만원 단위 (이미 '가격(만원)' 기준)
-        min_bin = int(prices.min() // BIN_SIZE * BIN_SIZE)
-        max_bin = int(prices.max() // BIN_SIZE * BIN_SIZE + BIN_SIZE)
-
-        bins = list(range(min_bin, max_bin + BIN_SIZE, BIN_SIZE))
-        hist = pd.cut(prices, bins=bins)
-        hist_df = hist.value_counts().sort_index().reset_index()
-        hist_df.columns = ["가격 구간", "매물 수"]
-
-        st.bar_chart(hist_df, x="가격 구간", y="매물 수", height=160)
-
-        top_bin = hist_df.loc[hist_df["매물 수"].idxmax(), "가격 구간"]
-        st.caption(f"📌 가장 많은 거래가 형성된 구간: **{top_bin}만원대**")
-
+with col_right:
+    # 1. 시세 그래프
+    st.markdown("#### 📉 52주 시세 트렌드")
+    
+    df_prices = load_price_data()
+    matched_data = get_trend_data_from_sheet(keyword, df_prices)
+    
+    if matched_data:
+        st.caption(f"✅ '{matched_data['name']}' 데이터 확인됨")
+        df_trend = pd.DataFrame({
+            "날짜": matched_data["dates"],
+            "가격(만원)": matched_data["prices"]
+        })
+        st.line_chart(df_trend, x="날짜", y="가격(만원)", color="#00ff88", height=200)
+        st.caption("※ 운영자가 직접 검수한 실거래 평균가입니다.")
     else:
         if keyword:
             st.warning(f"⚠️ '{keyword}'에 대한 시세 데이터가 아직 수집되지 않았습니다.")
