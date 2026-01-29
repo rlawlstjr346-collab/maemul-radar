@@ -81,18 +81,25 @@ def get_trend_data_from_sheet(user_query, df):
                     for col in date_cols:
                         if col in df.columns:
                             try:
-                                val = float(row.get(col, 0))
-                                if val > 5:
+                                # 지수 표기법(E+) 방어하며 숫자로 변환
+                                val = float(str(row.get(col, 0)).replace(',', ''))
+                                if val > 0:
                                     trend_prices.append(val)
                                     valid_dates.append(col)
                             except: pass
                     
-                    raw_str = str(row.get('시세 (5주치)', '')).replace('"', '').strip()
+                    # [V2.0 핵심 수정] Raw Data (쉼표 데이터) 처리 로직
+                    raw_str = str(row.get('시세 (Raw Data)', row.get('시세 (5주치)', ''))).strip()
                     raw_prices = []
-                    if raw_str:
-                        temp_list = [float(p) for p in raw_str.split(',') if p.strip()]
-                        raw_prices = [p for p in temp_list if p > 5] 
                     
+                    if raw_str and 'E+' not in raw_str: # 지수 표기법 오염 안 된 경우만 실행
+                        # 쉼표로 쪼개서 리스트화
+                        try:
+                            temp_list = [float(p.strip()) for p in raw_str.split(',') if p.strip()]
+                            raw_prices = [p for p in temp_list if p > 0]
+                        except: pass
+                    
+                    # 만약 Raw Data가 비어있거나 지수표기법으로 깨졌다면 트렌드 가격이라도 복사
                     if not raw_prices: 
                         raw_prices = trend_prices
 
@@ -116,7 +123,7 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [4] CSS 스타일링
+# [4] CSS 스타일링 (원본 디자인 100% 유지)
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -134,7 +141,6 @@ st.markdown("""
     div[data-testid="stLinkButton"] > a[href*="ebay"] { border: 1px solid #2962FF !important; color: #2962FF !important; background-color: rgba(41, 98, 255, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="mercari"] { border: 1px solid #EEEEEE !important; color: #EEEEEE !important; background-color: rgba(238, 238, 238, 0.1); }
     
-    /* [기능 유지] 더치트 버튼 빨간색 강제 적용 */
     div[data-testid="stLinkButton"] > a[href*="thecheat"] { 
         border: 2px solid #ff4b4b !important; 
         color: #ffffff !important; 
@@ -153,12 +159,9 @@ st.markdown("""
     @keyframes pulse-ring { 0% { width: 90%; opacity: 1; } 100% { width: 220%; opacity: 0; } }
     .title-text { font-size: 3rem; font-weight: 900; color: #FFFFFF !important; letter-spacing: -1px; }
     
-    .side-util-header { font-size: 1rem; font-weight: bold; color: #0A84FF; margin-top: 5px; margin-bottom: 5px; border-left: 3px solid #0A84FF; padding-left: 8px; }
-    
-    /* [기능 유지] 커뮤니티 리스트 스타일 (설명 포함) */
     .community-link { 
         display: flex; 
-        align_items: center; 
+        align-items: center; 
         padding: 10px; 
         margin-bottom: 8px; 
         background-color: #262730; 
@@ -187,8 +190,6 @@ st.markdown("""
     .label-radar { color: #00ff88; font-weight: 900; margin-right: 15px !important; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
     
-    .rank-num { color: #888; font-size: 0.8rem; margin-right: 4px; }
-    .item-text { color: #eee; font-weight: 600; }
     .legal-footer { font-size: 0.75rem; color: #777; margin-top: 60px; padding: 30px 10px; border-top: 1px solid #333; text-align: center; line-height: 1.6; }
 </style>
 """, unsafe_allow_html=True)
@@ -261,7 +262,7 @@ with st.sidebar:
     with st.expander("📦 배송 조회 레이더", expanded=True):
         track_no = st.text_input("운송장 번호", placeholder="- 없이 숫자만 입력")
         if track_no:
-            st.link_button("🔍 택배사 자동 스캔", f"https://search.naver.com/search.naver?query=운송장번호+{track_no}", use_container_width=True)
+            st.link_button("🔍 택택배사 자동 스캔", f"https://search.naver.com/search.naver?query=운송장번호+{track_no}", use_container_width=True)
         else:
             st.caption("👇 편의점 택배 바로가기")
             c1, c2 = st.columns(2)
@@ -269,7 +270,6 @@ with st.sidebar:
             c2.link_button("CU알뜰", "https://www.cupost.co.kr/postbox/delivery/local.cupost", use_container_width=True)
     st.write("---")
     
-    # [기능 유지] 관세 계산기
     usd, jpy = get_exchange_rates()
     with st.expander("💱 관세 안전선 계산기", expanded=True):
         t1, t2 = st.tabs(["🇺🇸 USD", "🇯🇵 JPY"])
@@ -368,13 +368,11 @@ with col_right:
     if matched_data:
         st.caption(f"✅ '{matched_data['name']}' 데이터 확인됨")
         
-        # 1. 시세 흐름용 데이터프레임
         df_trend = pd.DataFrame({
             "날짜": matched_data["dates"],
             "가격": matched_data["trend_prices"]
         })
         
-        # 2. 분포도용 데이터프레임
         df_dist = pd.DataFrame({
             "가격": matched_data["raw_prices"]
         })
@@ -384,53 +382,46 @@ with col_right:
         with tab_trend:
             if not df_trend.empty:
                 st.line_chart(df_trend, x="날짜", y="가격", color="#00ff88", height=250)
-                
                 curr_price = matched_data['trend_prices'][-1]
                 avg_price = sum(matched_data['trend_prices']) / len(matched_data['trend_prices'])
                 c_m1, c_m2 = st.columns(2)
-                c_m1.metric("현재 주간 평균", f"{curr_price:,.0f}만")
-                c_m2.metric("5주 전체 평균", f"{avg_price:,.0f}만")
+                c_m1.metric("현재 주간 평균", f"{curr_price:,.1f}만")
+                c_m2.metric("5주 전체 평균", f"{avg_price:,.1f}만")
             else:
                 st.warning("표시할 시세 흐름 데이터가 부족합니다.")
         
         with tab_dist:
             if not df_dist.empty:
-                # [수정] 강제 형변환 (String -> Float) 및 Altair 정량적 데이터(:Q) 명시
-                df_dist['가격'] = df_dist['가격'].astype(float)
+                # 데이터 강제 형변환 (매우 중요)
+                df_dist['가격'] = pd.to_numeric(df_dist['가격'], errors='coerce')
+                df_dist = df_dist.dropna()
                 mean_val = df_dist['가격'].mean()
                 
-                # 히스토그램 (막대)
+                # 히스토그램 - bin 간격을 명시적으로 조절하여 층층이 쌓이게 함
                 bars = alt.Chart(df_dist).mark_bar(
-                    color='#0A84FF', cornerRadiusTopLeft=3, cornerRadiusTopRight=3
+                    color='#0A84FF', stroke="#111", strokeWidth=1
                 ).encode(
-                    # :Q 옵션 추가로 숫자로 인식시킴 + bin=True로 자동 뭉침
-                    x=alt.X('가격:Q', bin=alt.Bin(maxbins=20), title='가격 구간 (만원)'),
+                    x=alt.X('가격:Q', bin=alt.Bin(maxbins=15), title='가격 구간 (만원)'),
                     y=alt.Y('count()', title='매물 수'),
-                    tooltip=['count()', alt.Tooltip('가격', bin=True, title='가격 범위')]
+                    tooltip=[alt.Tooltip('가격', bin=True, title='가격 범위'), 'count()']
                 )
                 
-                # 평균선 (빨간색 세로줄)
                 rule = alt.Chart(pd.DataFrame({'mean_price': [mean_val]})).mark_rule(
-                    color='red', strokeDash=[4, 4]
+                    color='red', strokeDash=[4, 4], size=2
                 ).encode(x='mean_price:Q')
                 
-                # 차트 합치기 (레이어)
                 final_chart = (bars + rule).properties(height=250).configure_axis(
                     grid=False, labelColor='#eee', titleColor='#eee'
                 ).configure_view(strokeWidth=0)
                 
                 st.altair_chart(final_chart, use_container_width=True)
                 
-                p_min = min(matched_data['raw_prices'])
-                p_max = max(matched_data['raw_prices'])
-                
-                st.caption(f"📍 빨간 점선: 평균 거래가 ({mean_val:,.0f}만원)")
+                p_min, p_max = df_dist['가격'].min(), df_dist['가격'].max()
+                st.caption(f"📍 빨간 점선: 평균 거래가 ({mean_val:,.1f}만원)")
                 if (p_max - p_min) > 50:
-                    st.warning(f"🚨 가격 차이가 큽니다 ({p_min}만 ~ {p_max}만). 상태(S급/C급)를 꼭 확인하세요.")
+                    st.warning(f"🚨 가격 차이가 큽니다 ({p_min:,.0f}만 ~ {p_max:,.0f}만). 상태를 확인하세요.")
                 else:
                     st.success("✅ 시세가 특정 구간에 집중되어 있어 안정적입니다.")
-            else:
-                st.warning("분석할 가격 데이터가 없습니다.")
 
     else:
         if keyword:
@@ -478,15 +469,14 @@ with col_right:
         st.session_state.memo_pad = st.text_area("메모", value=st.session_state.memo_pad, height=100, label_visibility="collapsed", placeholder="가격 비교 메모...")
     
     st.write("")
-    
     st.markdown('<div class="side-util-header">🚨 사기꾼 판독기 (유형별)</div>', unsafe_allow_html=True)
     with st.expander("👮‍♂️ 필수 체크 (클릭해서 확인)", expanded=False):
-        st.markdown('<div class="scam-alert-text">1. 카톡 아이디 거래 유도</div>', unsafe_allow_html=True)
-        st.markdown('<div class="scam-desc">"카톡으로 대화해요" → 99.9% 사기입니다. 앱 내 채팅만 이용하세요.</div>', unsafe_allow_html=True)
-        st.markdown('<div class="scam-alert-text">2. 가짜 안전결제 링크</div>', unsafe_allow_html=True)
-        st.markdown('<div class="scam-desc">http://... 로 시작하거나 도메인이 다르면 피싱 사이트입니다. 절대 클릭 금지!</div>', unsafe_allow_html=True)
-        st.markdown('<div class="scam-alert-text">3. 재입금 요구 (수수료 핑계)</div>', unsafe_allow_html=True)
-        st.markdown('<div class="scam-desc">"수수료 안 보내서 다시 보내라" → 전형적인 3자 사기/먹튀입니다.</div>', unsafe_allow_html=True)
+        st.markdown('**1. 카톡 아이디 거래 유도**')
+        st.markdown('"카톡으로 대화해요" → 99.9% 사기입니다. 앱 내 채팅만 이용하세요.')
+        st.markdown('**2. 가짜 안전결제 링크**')
+        st.markdown('http://... 로 시작하거나 도메인이 다르면 피싱 사이트입니다. 절대 클릭 금지!')
+        st.markdown('**3. 재입금 요구 (수수료 핑계)**')
+        st.markdown('"수수료 안 보내서 다시 보내라" → 전형적인 3자 사기/먹튀입니다.')
 
 st.markdown("""
     <div class="legal-footer">
