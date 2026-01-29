@@ -5,7 +5,6 @@ import re
 import random
 import time
 import pandas as pd
-import numpy as np # [추가] 그래프 연산을 위한 라이브러리
 import altair as alt
 from datetime import datetime, timedelta
 import html
@@ -135,6 +134,7 @@ st.markdown("""
     div[data-testid="stLinkButton"] > a[href*="ebay"] { border: 1px solid #2962FF !important; color: #2962FF !important; background-color: rgba(41, 98, 255, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="mercari"] { border: 1px solid #EEEEEE !important; color: #EEEEEE !important; background-color: rgba(238, 238, 238, 0.1); }
     
+    /* [기능 유지] 더치트 버튼 빨간색 강제 적용 */
     div[data-testid="stLinkButton"] > a[href*="thecheat"] { 
         border: 2px solid #ff4b4b !important; 
         color: #ffffff !important; 
@@ -155,6 +155,7 @@ st.markdown("""
     
     .side-util-header { font-size: 1rem; font-weight: bold; color: #0A84FF; margin-top: 5px; margin-bottom: 5px; border-left: 3px solid #0A84FF; padding-left: 8px; }
     
+    /* [기능 유지] 커뮤니티 리스트 스타일 (설명 포함) */
     .community-link { 
         display: flex; 
         align_items: center; 
@@ -268,6 +269,7 @@ with st.sidebar:
             c2.link_button("CU알뜰", "https://www.cupost.co.kr/postbox/delivery/local.cupost", use_container_width=True)
     st.write("---")
     
+    # [기능 유지] 관세 계산기
     usd, jpy = get_exchange_rates()
     with st.expander("💱 관세 안전선 계산기", expanded=True):
         t1, t2 = st.tabs(["🇺🇸 USD", "🇯🇵 JPY"])
@@ -393,36 +395,36 @@ with col_right:
         
         with tab_dist:
             if not df_dist.empty:
-                # [Fix] Numpy를 사용하여 직접 히스토그램 데이터 생성 (막대가 1로만 뜨는 문제 해결)
-                counts, edges = np.histogram(df_dist['가격'], bins=10) # 10개 구간으로 강제 분할
-                
-                # 시각화용 데이터프레임 생성
-                hist_df = pd.DataFrame()
-                hist_df['start'] = edges[:-1]
-                hist_df['end'] = edges[1:]
-                hist_df['count'] = counts
-                # x축 라벨 생성 (예: 10~15)
-                hist_df['label'] = hist_df['start'].apply(lambda x: f"{int(x)}") + "~" + hist_df['end'].apply(lambda x: f"{int(x)}")
-                
-                # 평균가 계산
+                # [수정] 강제 형변환 (String -> Float) 및 Altair 정량적 데이터(:Q) 명시
+                df_dist['가격'] = df_dist['가격'].astype(float)
                 mean_val = df_dist['가격'].mean()
                 
-                # 막대 차트 (직접 계산된 count 사용)
-                bars = alt.Chart(hist_df).mark_bar(
+                # 히스토그램 (막대)
+                bars = alt.Chart(df_dist).mark_bar(
                     color='#0A84FF', cornerRadiusTopLeft=3, cornerRadiusTopRight=3
                 ).encode(
-                    x=alt.X('label', sort=alt.EncodingSortField(field='start'), title='가격 구간 (만원)'),
-                    y=alt.Y('count', title='매물 수'),
-                    tooltip=['label', 'count']
+                    # :Q 옵션 추가로 숫자로 인식시킴 + bin=True로 자동 뭉침
+                    x=alt.X('가격:Q', bin=alt.Bin(maxbins=20), title='가격 구간 (만원)'),
+                    y=alt.Y('count()', title='매물 수'),
+                    tooltip=['count()', alt.Tooltip('가격', bin=True, title='가격 범위')]
                 )
                 
-                # 차트 그리기
-                st.altair_chart(bars.properties(height=250), use_container_width=True)
+                # 평균선 (빨간색 세로줄)
+                rule = alt.Chart(pd.DataFrame({'mean_price': [mean_val]})).mark_rule(
+                    color='red', strokeDash=[4, 4]
+                ).encode(x='mean_price:Q')
+                
+                # 차트 합치기 (레이어)
+                final_chart = (bars + rule).properties(height=250).configure_axis(
+                    grid=False, labelColor='#eee', titleColor='#eee'
+                ).configure_view(strokeWidth=0)
+                
+                st.altair_chart(final_chart, use_container_width=True)
                 
                 p_min = min(matched_data['raw_prices'])
                 p_max = max(matched_data['raw_prices'])
                 
-                st.caption(f"📍 평균 거래가: 약 {mean_val:,.0f}만원 (최저 {p_min} ~ 최고 {p_max})")
+                st.caption(f"📍 빨간 점선: 평균 거래가 ({mean_val:,.0f}만원)")
                 if (p_max - p_min) > 50:
                     st.warning(f"🚨 가격 차이가 큽니다 ({p_min}만 ~ {p_max}만). 상태(S급/C급)를 꼭 확인하세요.")
                 else:
