@@ -5,6 +5,7 @@ import re
 import random
 import time
 import pandas as pd
+import numpy as np # [추가] 그래프 연산을 위한 라이브러리
 import altair as alt
 from datetime import datetime, timedelta
 import html
@@ -127,7 +128,6 @@ st.markdown("""
     .stTextInput input, .stTextArea textarea, .stNumberInput input { color: #FAFAFA; font-weight: bold; }
     div[data-testid="stLinkButton"] > a { border-radius: 10px; font-weight: 700; transition: all 0.3s ease; text-decoration: none; }
     
-    /* 버튼 스타일 개별 지정 */
     div[data-testid="stLinkButton"] > a[href*="bunjang"] { border: 1px solid #FF3E3E !important; color: #FF3E3E !important; background-color: rgba(255, 62, 62, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="daangn"] { border: 1px solid #FF8A3D !important; color: #FF8A3D !important; background-color: rgba(255, 138, 61, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="joongna"] { border: 1px solid #00E676 !important; color: #00E676 !important; background-color: rgba(0, 230, 118, 0.1); }
@@ -135,7 +135,6 @@ st.markdown("""
     div[data-testid="stLinkButton"] > a[href*="ebay"] { border: 1px solid #2962FF !important; color: #2962FF !important; background-color: rgba(41, 98, 255, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="mercari"] { border: 1px solid #EEEEEE !important; color: #EEEEEE !important; background-color: rgba(238, 238, 238, 0.1); }
     
-    /* [복구 완료] 더치트 버튼 빨간색 강제 적용 */
     div[data-testid="stLinkButton"] > a[href*="thecheat"] { 
         border: 2px solid #ff4b4b !important; 
         color: #ffffff !important; 
@@ -156,7 +155,6 @@ st.markdown("""
     
     .side-util-header { font-size: 1rem; font-weight: bold; color: #0A84FF; margin-top: 5px; margin-bottom: 5px; border-left: 3px solid #0A84FF; padding-left: 8px; }
     
-    /* 커뮤니티 리스트 스타일 */
     .community-link { 
         display: flex; 
         align_items: center; 
@@ -270,7 +268,6 @@ with st.sidebar:
             c2.link_button("CU알뜰", "https://www.cupost.co.kr/postbox/delivery/local.cupost", use_container_width=True)
     st.write("---")
     
-    # [복구 완료] 관세 계산기 실시간 금액 표시 기능
     usd, jpy = get_exchange_rates()
     with st.expander("💱 관세 안전선 계산기", expanded=True):
         t1, t2 = st.tabs(["🇺🇸 USD", "🇯🇵 JPY"])
@@ -278,7 +275,7 @@ with st.sidebar:
             st.caption(f"환율: {usd:,.1f}원/$")
             p_u = st.number_input("가격($)", 190, step=10)
             krw_val = p_u * usd
-            st.markdown(f"**≈ {krw_val:,.0f} 원**") 
+            st.markdown(f"**≈ {krw_val:,.0f} 원**")
             if p_u <= 200: st.success("✅ 면세 범위")
             else: 
                 tax_est = krw_val * 0.1
@@ -369,13 +366,13 @@ with col_right:
     if matched_data:
         st.caption(f"✅ '{matched_data['name']}' 데이터 확인됨")
         
-        # 1. 시세 흐름용 데이터프레임 (날짜 순서 강제)
+        # 1. 시세 흐름용 데이터프레임
         df_trend = pd.DataFrame({
             "날짜": matched_data["dates"],
             "가격": matched_data["trend_prices"]
         })
         
-        # 2. 분포도용 데이터프레임 (Raw Data)
+        # 2. 분포도용 데이터프레임
         df_dist = pd.DataFrame({
             "가격": matched_data["raw_prices"]
         })
@@ -384,7 +381,6 @@ with col_right:
 
         with tab_trend:
             if not df_trend.empty:
-                # X축 순서 강제 고정 (sort=None)
                 st.line_chart(df_trend, x="날짜", y="가격", color="#00ff88", height=250)
                 
                 curr_price = matched_data['trend_prices'][-1]
@@ -397,35 +393,36 @@ with col_right:
         
         with tab_dist:
             if not df_dist.empty:
-                # [핵심] 평균가 계산
+                # [Fix] Numpy를 사용하여 직접 히스토그램 데이터 생성 (막대가 1로만 뜨는 문제 해결)
+                counts, edges = np.histogram(df_dist['가격'], bins=10) # 10개 구간으로 강제 분할
+                
+                # 시각화용 데이터프레임 생성
+                hist_df = pd.DataFrame()
+                hist_df['start'] = edges[:-1]
+                hist_df['end'] = edges[1:]
+                hist_df['count'] = counts
+                # x축 라벨 생성 (예: 10~15)
+                hist_df['label'] = hist_df['start'].apply(lambda x: f"{int(x)}") + "~" + hist_df['end'].apply(lambda x: f"{int(x)}")
+                
+                # 평균가 계산
                 mean_val = df_dist['가격'].mean()
                 
-                # 히스토그램 (막대)
-                # [복구 완료] 데이터 타입 ':Q' 명시 및 구간 10개로 설정
-                bars = alt.Chart(df_dist).mark_bar(
+                # 막대 차트 (직접 계산된 count 사용)
+                bars = alt.Chart(hist_df).mark_bar(
                     color='#0A84FF', cornerRadiusTopLeft=3, cornerRadiusTopRight=3
                 ).encode(
-                    x=alt.X('가격:Q', bin=alt.Bin(maxbins=10), title='가격 구간 (만원)'),
-                    y=alt.Y('count()', title='매물 수'),
-                    tooltip=['count()', alt.Tooltip('가격', bin=True, title='가격 범위')]
+                    x=alt.X('label', sort=alt.EncodingSortField(field='start'), title='가격 구간 (만원)'),
+                    y=alt.Y('count', title='매물 수'),
+                    tooltip=['label', 'count']
                 )
                 
-                # 평균선 (빨간색 세로줄)
-                rule = alt.Chart(pd.DataFrame({'mean_price': [mean_val]})).mark_rule(
-                    color='red', strokeDash=[4, 4]
-                ).encode(x='mean_price:Q')
-                
-                # 차트 합치기 (레이어)
-                final_chart = (bars + rule).properties(height=250).configure_axis(
-                    grid=False, labelColor='#eee', titleColor='#eee'
-                ).configure_view(strokeWidth=0)
-                
-                st.altair_chart(final_chart, use_container_width=True)
+                # 차트 그리기
+                st.altair_chart(bars.properties(height=250), use_container_width=True)
                 
                 p_min = min(matched_data['raw_prices'])
                 p_max = max(matched_data['raw_prices'])
                 
-                st.caption(f"📍 빨간 점선: 평균 거래가 ({mean_val:,.0f}만원)")
+                st.caption(f"📍 평균 거래가: 약 {mean_val:,.0f}만원 (최저 {p_min} ~ 최고 {p_max})")
                 if (p_max - p_min) > 50:
                     st.warning(f"🚨 가격 차이가 큽니다 ({p_min}만 ~ {p_max}만). 상태(S급/C급)를 꼭 확인하세요.")
                 else:
