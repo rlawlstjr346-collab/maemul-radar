@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 import html
 
 # ------------------------------------------------------------------
-# [1] 앱 기본 설정 (RADAR V9.5: Final Fixed Version)
+# [1] 앱 기본 설정 (RADAR V9.6: Final Corrected Version)
 # ------------------------------------------------------------------
 st.set_page_config(
     page_title="RADAR",
@@ -18,7 +18,7 @@ st.set_page_config(
 )
 
 # ------------------------------------------------------------------
-# [2] 데이터 로드 (기존 기능 유지)
+# [2] 데이터 로드 (기존 기능 100% 유지)
 # ------------------------------------------------------------------
 sheet_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQS8AftSUmG9Cr7MfczpotB5hhl1DgjH4hRCgXH5R8j5hykRiEf0M9rEyEq3uj312a5RuI4zMdjI5Jr/pub?output=csv"
 
@@ -135,7 +135,7 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [4] CSS 스타일링 (Linear Theme + Italic Title + Hover Fill)
+# [4] CSS 스타일링 (Linear Theme + Left Align Header + Boxed List)
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -239,7 +239,7 @@ st.markdown("""
         transform: translateY(-2px);
     }
 
-    /* Fruits (Purple) */
+    /* 후르츠패밀리 (Purple) */
     div[data-testid="stLinkButton"] > a[href*="fruits"] { border-color: #D500F988 !important; color: #EA80FC !important; }
     div[data-testid="stLinkButton"] > a[href*="fruits"]:hover { 
         background-color: #D500F9 !important;
@@ -269,25 +269,26 @@ st.markdown("""
         transform: translateY(-2px);
     }
     
-    /* 6. Market Source Links */
+    /* 6. Market Source Links (Box Style) */
     .community-link { 
         display: flex; 
         align-items: center; 
-        padding: 8px 10px; 
-        margin-bottom: 4px; 
-        border-radius: 6px; 
+        padding: 10px 12px; 
+        margin-bottom: 6px; 
+        border-radius: 8px; 
         text-decoration: none !important; 
-        color: #999 !important; 
+        color: #ccc !important; 
         transition: 0.2s;
-        border: 1px solid transparent;
+        border: 1px solid #333; /* 박스 테두리 추가 */
+        background-color: #1A1A1A; /* 박스 배경 */
     }
     .community-link:hover { 
-        background-color: #1C1C1E; 
+        background-color: #252525; 
         color: #fff !important; 
-        border: 1px solid #333;
+        border-color: #555;
     }
     .comm-icon { margin-right: 12px; width: 20px; text-align: center; font-size: 1.1rem; }
-    .comm-name { font-weight: 500; font-size: 0.9rem; }
+    .comm-name { font-weight: 600; font-size: 0.85rem; }
     
     /* 7. Scam Warning Box */
     .scam-box {
@@ -301,17 +302,17 @@ st.markdown("""
     .scam-text { font-size: 0.8rem; color: #ccc; margin-bottom: 5px; display: block; }
     .scam-strong { color: #ff4b4b; font-weight: 700; }
 
-    /* 8. Radar Animation & Header (Italic Title) */
+    /* 8. Radar Animation & Header (Left Align) */
     .radar-wrapper { position: relative; display: inline-block; margin-right: 10px; vertical-align: middle; }
     .radar-emoji { position: relative; z-index: 2; font-size: 2.5rem; }
     .pulse-ring { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.2); opacity: 0; animation: pulse-ring 2s infinite; }
     @keyframes pulse-ring { 0% { width: 90%; opacity: 1; } 100% { width: 220%; opacity: 0; } }
     
-    /* Italic 적용 */
+    /* Italic + Left Align */
     .radar-title { font-size: 2.5rem; font-weight: 900; color: #FFF; letter-spacing: -1px; font-style: italic; }
     .radar-subtitle { font-size: 0.85rem; color: #666; font-weight: 500; margin-top: 5px; letter-spacing: 0.5px; }
 
-    /* Ticker (Korean Standard: Red=Up, Blue=Down) */
+    /* Ticker */
     .ticker-wrap { position: fixed; bottom: 0; left: 0; width: 100%; height: 32px; background-color: #0E1117; border-top: 1px solid #1C1C1E; z-index: 999; display: flex; align-items: center; }
     .ticker { display: inline-block; white-space: nowrap; padding-left: 100%; animation: ticker 40s linear infinite; }
     .ticker-item { margin-right: 40px; font-size: 0.8rem; color: #888; font-family: 'Inter', sans-serif; font-weight: 500; }
@@ -320,18 +321,23 @@ st.markdown("""
     .ticker-down { color: #4b89ff; background: rgba(75, 137, 255, 0.1); padding: 2px 4px; border-radius: 4px; font-size: 0.75rem; } /* 하락: 파랑 */
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
     
+    /* Expander Styling for Sidebar */
+    div[data-testid="stExpander"] { border: none !important; background-color: transparent !important; }
+    div[data-testid="stExpander"] summary { padding-left: 0 !important; color: #bbb !important; font-weight: 600; font-size: 0.85rem; }
+    div[data-testid="stExpander"] summary:hover { color: #fff !important; }
+
     .legal-footer { font-size: 0.7rem; color: #333; margin-top: 80px; text-align: center; margin-bottom: 50px; }
 </style>
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [5] 메인 헤더
+# [5] 메인 헤더 (Left Align)
 # ------------------------------------------------------------------
 now_time = st.session_state.ticker_data['time']
 usd, jpy, usd_prev, jpy_prev = get_exchange_rates()
 
 st.markdown("""
-    <div style="text-align:center; margin-bottom:40px; margin-top: 20px;">
+    <div style="text-align:left; margin-bottom:30px; margin-top: 10px; padding-left: 10px;">
         <div class="radar-wrapper"><span class="radar-emoji">📡</span><div class="pulse-ring"></div></div>
         <span class="radar-title">RADAR</span>
         <div class="radar-subtitle">Global Arbitrage Intelligence</div>
@@ -339,23 +345,23 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [6] 사이드바
+# [6] 사이드바 (Expander + Boxed List)
 # ------------------------------------------------------------------
 with st.sidebar:
-    # 1. Market Sources
-    st.markdown("<div class='sidebar-header'>MARKET SOURCES</div>", unsafe_allow_html=True)
-    st.markdown("""
-        <a href="http://www.slrclub.com" target="_blank" class="community-link">
-            <span class="comm-icon">📷</span>
-            <div class="comm-info"><span class="comm-name">SLR클럽</span></div>
-        </a>
-        <a href="https://coolenjoy.net" target="_blank" class="community-link"><span class="comm-icon">💻</span><span class="comm-name">쿨엔조이</span></a>
-        <a href="https://quasarzone.com" target="_blank" class="community-link"><span class="comm-icon">🔥</span><span class="comm-name">퀘이사존</span></a>
-        <a href="https://cafe.naver.com/appleiphone" target="_blank" class="community-link"><span class="comm-icon">🍎</span><span class="comm-name">아사모</span></a>
-    """, unsafe_allow_html=True)
+    # 1. Market Sources (Expander + Boxed Design)
+    with st.expander("📂 마켓 소스 (커뮤니티)", expanded=True):
+        st.markdown("""
+            <a href="http://www.slrclub.com" target="_blank" class="community-link">
+                <span class="comm-icon">📷</span>
+                <div class="comm-info"><span class="comm-name">SLR클럽</span></div>
+            </a>
+            <a href="https://coolenjoy.net" target="_blank" class="community-link"><span class="comm-icon">💻</span><span class="comm-name">쿨엔조이</span></a>
+            <a href="https://quasarzone.com" target="_blank" class="community-link"><span class="comm-icon">🔥</span><span class="comm-name">퀘이사존</span></a>
+            <a href="https://cafe.naver.com/appleiphone" target="_blank" class="community-link"><span class="comm-icon">🍎</span><span class="comm-name">아사모</span></a>
+        """, unsafe_allow_html=True)
 
     # 2. Tools Section
-    st.markdown("<div class='sidebar-header'>TOOLS</div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True) # Spacer
     
     with st.expander("📦 배송 조회", expanded=False):
         track_no = st.text_input("운송장 번호", placeholder="숫자만 입력")
@@ -393,13 +399,12 @@ with st.sidebar:
                 st.error("🚨 과세 대상")
                 st.caption(f"예상 세금: 약 {total_tax:,.0f}원\n(관세 8% + 부가세 10%)")
 
-    # 3. Safety Section (Expander + Warning Box + Button)
-    st.markdown("<div class='sidebar-header'>SAFETY</div>", unsafe_allow_html=True)
+    # 3. Safety Section (Original Text Restored)
     with st.expander("👮‍♂️ 사기 피해 조회 (더치트)", expanded=False):
         st.markdown("""
         <div class="scam-box">
-            <span class="scam-text"><span class="scam-strong">🚫 카톡 유도</span> : 99% 사기</span>
-            <span class="scam-text"><span class="scam-strong">🚫 가짜 결제창</span> : URL 확인</span>
+            <span class="scam-text"><span class="scam-strong">🚫 카톡 유도 금지</span> : 99% 사기</span>
+            <span class="scam-text"><span class="scam-strong">🚫 가짜 결제창 주의</span> : URL 도메인 확인 필수</span>
         </div>
         """, unsafe_allow_html=True)
         st.link_button("더치트 바로가기", "https://thecheat.co.kr", type="primary", use_container_width=True)
@@ -425,15 +430,15 @@ with col_left:
         
         st.markdown(f"<div style='margin-top:20px; font-size:1.2rem; font-weight:700; color:#eee;'>'{html.escape(keyword)}' 분석 결과</div>", unsafe_allow_html=True)
 
-        # 1층: 국내 (한글 타이틀)
+        # 1층: 국내 (풀네임 적용)
         st.markdown("<div class='capsule-title'>🇰🇷 국내 마켓</div>", unsafe_allow_html=True)
         c1, c2, c3, c4 = st.columns(4)
-        c1.link_button("⚡ 번개", f"https://m.bunjang.co.kr/search/products?q={encoded_kor}", use_container_width=True)
-        c2.link_button("🥕 당근", f"https://www.daangn.com/search/{encoded_kor}", use_container_width=True)
+        c1.link_button("⚡ 번개장터", f"https://m.bunjang.co.kr/search/products?q={encoded_kor}", use_container_width=True)
+        c2.link_button("🥕 당근마켓", f"https://www.daangn.com/search/{encoded_kor}", use_container_width=True)
         c3.link_button("🟢 중고나라", f"https://web.joongna.com/search?keyword={encoded_kor}", use_container_width=True)
-        c4.link_button("🟣 Fruits", f"https://fruitsfamily.com/search/{encoded_kor}", use_container_width=True)
+        c4.link_button("🟣 후르츠패밀리", f"https://fruitsfamily.com/search/{encoded_kor}", use_container_width=True)
 
-        # 2층: 해외 (한글 타이틀)
+        # 2층: 해외
         st.markdown("<div class='capsule-title'>🌎 해외 직구</div>", unsafe_allow_html=True)
         c5, c6 = st.columns(2)
         c5.link_button(f"🔵 eBay ({eng_keyword})", f"https://www.ebay.com/sch/i.html?_nkw={encoded_eng}", use_container_width=True)
@@ -464,14 +469,24 @@ with col_right:
         
         st.write("")
 
-        # 탭 메뉴 한글화
+        # 탭 메뉴
         tab_trend, tab_dist = st.tabs(["📈 시세 추이", "📊 매물 분포"])
         with tab_trend:
             chart_df = pd.DataFrame({"날짜": matched["dates"], "국내": matched["trend_prices"], "해외직구": [global_krw] * len(matched["dates"])})
+            
+            # [수정] Area Chart (Gradient Filled)
             base = alt.Chart(chart_df).encode(x=alt.X('날짜:N', sort=None))
-            charts = base.mark_line(color='#ffffff', size=2).encode(y=alt.Y('국내:Q', title=None))
+            
+            # 영역 채우기 (Opacity 0.2)
+            area = base.mark_area(opacity=0.2, color='#ffffff').encode(y=alt.Y('국내:Q', title=None))
+            # 선 그리기
+            line = base.mark_line(color='#ffffff', size=2).encode(y=alt.Y('국내:Q', title=None))
+            
+            charts = area + line
+            
             if global_krw > 0:
                 charts += base.mark_line(color='#444', strokeDash=[5,5]).encode(y='해외직구:Q')
+            
             st.altair_chart(charts.properties(height=250), use_container_width=True)
         
         with tab_dist:
@@ -489,7 +504,7 @@ with col_right:
         ).properties(height=250, title="데이터 대기중")
         st.altair_chart(dummy_chart, use_container_width=True)
 
-    # 스마트 트레이더 한글화
+    # 스마트 트레이더
     st.markdown("#### ⚡ 스마트 트레이더")
     tab_m1, tab_m2, tab_memo = st.tabs(["💬 멘트", "💳 결제", "📝 메모"])
     
@@ -517,12 +532,12 @@ with col_right:
 st.markdown('<div class="legal-footer">© 2026 RADAR | Global Price Intelligence</div>', unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [8] 하단 고정 티커 (한국 주식시장 컬러: 상승=빨강 / 하락=파랑)
+# [8] 하단 고정 티커 (Online Green, Full Text)
 # ------------------------------------------------------------------
 diff_usd = usd - usd_prev
 diff_jpy = jpy - jpy_prev
 
-sign_usd = "🔺" if diff_usd >= 0 else "▼"
+sign_usd = "🔺" if diff_usd >= 0 else "🔻"
 class_usd = "ticker-up" if diff_usd >= 0 else "ticker-down"
 usd_text = f"{usd:,.0f}원 <span class='{class_usd}'>{sign_usd} {abs(diff_usd):.1f}</span>"
 
@@ -538,9 +553,9 @@ ticker_content = f"""
     <div class="ticker">
         <span class="ticker-item">USD/KRW <span class="ticker-val">{usd_text}</span></span>
         <span class="ticker-item">JPY/KRW <span class="ticker-val">{jpy_text}</span></span>
-        <span class="ticker-item">미국 면세 <span class="ticker-val">${us_limit:,.0f}</span></span>
-        <span class="ticker-item">일본 면세 <span class="ticker-val">{jp_limit:,.0f}원</span></span>
-        <span class="ticker-item">SYSTEM <span class="ticker-up">ONLINE ●</span></span>
+        <span class="ticker-item">미국면세 한도 <span class="ticker-val">${us_limit:,.0f}</span></span>
+        <span class="ticker-item">일본면세 한도 <span class="ticker-val">{jp_limit:,.0f}원</span></span>
+        <span class="ticker-item">SYSTEM <span class="ticker-val" style="color:#00ff88">ONLINE 🟢</span></span>
     </div>
 </div>
 """
