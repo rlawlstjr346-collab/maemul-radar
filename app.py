@@ -132,7 +132,7 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [4] CSS 스타일링 (SLR클럽 수정 / 사기조회 박스 추가)
+# [4] CSS 스타일링 (SLR클럽 줄바꿈 해결 + 공백 채우기)
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -147,15 +147,15 @@ st.markdown("""
     @keyframes pulse-ring { 0% { width: 90%; opacity: 1; } 100% { width: 220%; opacity: 0; } }
     .title-text { font-size: 3rem; font-weight: 900; color: #FFFFFF !important; letter-spacing: -1px; }
 
-    /* 커뮤니티 링크 (SLR클럽 깨짐 방지: min-width 적용) */
+    /* [수정] 커뮤니티 링크: 줄바꿈 금지(white-space: nowrap) 적용 */
     .community-link { display: flex; align-items: center; padding: 10px; margin-bottom: 8px; background-color: #262730; border-radius: 8px; text-decoration: none !important; color: #eee !important; border: 1px solid #333; }
     .community-link:hover { background-color: #33343d; border-color: #555; }
-    .comm-icon { font-size: 1.2rem; margin-right: 12px; min-width: 35px; text-align: center; } /* min-width 추가 */
-    .comm-info { display: flex; flex-direction: column; }
+    .comm-icon { font-size: 1.2rem; margin-right: 12px; min-width: 35px; text-align: center; } 
+    .comm-info { display: flex; flex-direction: column; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* 줄바꿈 방지 핵심 코드 */
     .comm-name { font-weight: bold; font-size: 0.95rem; }
     .comm-desc { font-size: 0.75rem; color: #aaa; margin-top: 2px; }
 
-    /* 사기 조회 박스 스타일 */
+    /* 사기 조회 박스 */
     .scam-box { border: 1px solid #ff4b4b; background-color: rgba(255, 75, 75, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 8px; color: #eee; font-size: 0.9rem; }
     .scam-title { color: #ff4b4b; font-weight: bold; margin-bottom: 4px; display: block; }
 
@@ -201,7 +201,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [6] 사이드바 (커뮤니티 + 배송 + 관세 + 사기조회)
+# [6] 사이드바 (기능 100% 유지)
 # ------------------------------------------------------------------
 with st.sidebar:
     st.header("⚙️ 레이더 센터")
@@ -248,7 +248,6 @@ with st.sidebar:
                 st.error(f"🚨 관세 대상 (예상 약 {tax_est:,.0f}원)")
     
     st.write("---")
-    # [수정 완료] 사기 조회 가이드 박스형 디자인 적용
     with st.expander("🚨 사기꾼 판독 가이드", expanded=False):
         st.markdown("""
         <div class="scam-box"><span class="scam-title">🚫 카톡 아이디 거래 유도</span>"카톡으로 대화해요" → 99.9% 사기입니다.</div>
@@ -301,12 +300,14 @@ with col_left:
     else:
         st.info("👆 상품명을 입력하면 3단계 심층 스캔을 시작합니다.")
 
+# [수정] 우측 패널 (검색 전/후 모두 표시)
 with col_right:
     st.markdown("#### 📉 52주 시세 트렌드")
     df_prices = load_price_data()
     matched = get_trend_data_from_sheet(keyword, df_prices)
     
     if matched:
+        # [실제 데이터 모드]
         global_krw = calculate_total_import_cost(matched['global_usd'], usd)
         kr_avg = sum(matched['trend_prices'])/len(matched['trend_prices']) if matched['trend_prices'] else 0
         
@@ -323,7 +324,6 @@ with col_right:
         
         st.write("")
 
-        # [수정] 차트 소수점 제거 & 강제 정수 표시
         tab_trend, tab_dist = st.tabs(["📈 시세 흐름", "📊 가격 분포도"])
         with tab_trend:
             chart_df = pd.DataFrame({"날짜": matched["dates"], "국내": matched["trend_prices"], "해외직구": [global_krw] * len(matched["dates"])})
@@ -337,42 +337,48 @@ with col_right:
              dist_df = pd.DataFrame({"가격": matched["raw_prices"]})
              dist_chart = alt.Chart(dist_df).mark_bar(color='#0A84FF').encode(
                  x=alt.X('가격:Q', bin=alt.Bin(maxbins=15)), 
-                 # Y축 정수 강제 설정 (tickMinStep=1)
                  y=alt.Y('count()', axis=alt.Axis(tickMinStep=1, format='d'))
              ).properties(height=250)
              st.altair_chart(dist_chart, use_container_width=True)
 
-        # [수정 완료] 스마트 멘트 (가격 제안 기능 추가)
-        st.markdown("#### 💬 스마트 멘트 & 메모")
-        tab_m1, tab_m2, tab_memo = st.tabs(["⚡️ 퀵멘트", "💳 결제", "📝 메모"])
-        
-        with tab_m1:
-            quick_opt = st.radio("빠른 선택", ["👋 구매 문의", "💸 가격 제안"], label_visibility="collapsed")
-            if quick_opt == "👋 구매 문의": 
-                st.code("안녕하세요! 게시글 보고 연락드립니다. 구매 가능할까요?", language="text")
+    else:
+        # [공백 채우기 모드] 예시 데이터 표시
+        if not keyword:
+            st.info("👇 좌측에 검색어를 입력하면 실제 시세가 표시됩니다. (아래는 예시)")
+        else:
+            st.warning(f"⚠️ '{keyword}' 데이터가 시트에 없습니다. (아래는 예시 기능)")
+
+        # 예시용 빈 그래프 (꽉 찬 느낌 주기)
+        dummy_df = pd.DataFrame({'x': range(5), 'y': [10, 12, 11, 13, 12]})
+        dummy_chart = alt.Chart(dummy_df).mark_line(color='#333', strokeDash=[5,5]).encode(
+            x=alt.X('x', axis=None), y=alt.Y('y', axis=None, title='시세 데이터 대기중')
+        ).properties(height=250, title="데이터 대기중...")
+        st.altair_chart(dummy_chart, use_container_width=True)
+
+    # [수정] 퀵멘트 기능: 검색 전에도 항상 표시 (공간 채우기)
+    st.markdown("#### 💬 스마트 멘트 & 메모")
+    tab_m1, tab_m2, tab_memo = st.tabs(["⚡️ 퀵멘트", "💳 결제", "📝 메모"])
+    
+    with tab_m1:
+        quick_opt = st.radio("빠른 선택", ["👋 구매 문의", "💸 가격 제안"], label_visibility="collapsed")
+        if quick_opt == "👋 구매 문의": 
+            st.code("안녕하세요! 게시글 보고 연락드립니다. 구매 가능할까요?", language="text")
+        else:
+            nego_price = st.text_input("희망 가격 (숫자만 입력)", placeholder="예: 30000")
+            if nego_price:
+                try: fmt_price = f"{int(nego_price):,}"
+                except: fmt_price = nego_price
+                st.code(f"안녕하세요. 혹시 실례지만 {fmt_price}원에 가격조정 가능할지 여쭤보고 싶습니다. 가능하시다면 바로 구매가능합니다.", language="text")
             else:
-                # 가격 입력 기능 추가
-                nego_price = st.text_input("희망 가격 (숫자만 입력)", placeholder="예: 30000")
-                if nego_price:
-                    # 천단위 콤마 찍기
-                    try:
-                         fmt_price = f"{int(nego_price):,}"
-                    except:
-                         fmt_price = nego_price
-                    st.code(f"안녕하세요. 혹시 실례지만 {fmt_price}원에 가격조정 가능할지 여쭤보고 싶습니다. 가능하시다면 바로 구매가능합니다.", language="text")
-                else:
-                    st.caption("☝️ 위 칸에 가격을 입력하면 멘트가 완성됩니다.")
-                    st.code("안녕하세요. 혹시 실례지만 [   ]원에 가격조정 가능할지 여쭤보고 싶습니다. 가능하시다면 바로 구매가능합니다.", language="text")
+                st.caption("☝️ 위 칸에 가격을 입력하면 멘트가 완성됩니다.")
+                st.code("안녕하세요. 혹시 실례지만 [   ]원에 가격조정 가능할지 여쭤보고 싶습니다. 가능하시다면 바로 구매가능합니다.", language="text")
 
-        with tab_m2:
-             pay_opt = st.radio("거래 방식", ["💳 계좌 문의", "🤝 직거래"], horizontal=True, label_visibility="collapsed")
-             if pay_opt == "💳 계좌 문의": st.code("계좌번호 알려주시면 바로 이체하겠습니다.", language="text")
-             else: st.code("혹시 직거래 가능하신가요? 장소는 조율 가능합니다.", language="text")
-        with tab_memo:
-            st.session_state.memo_pad = st.text_area("메모", value=st.session_state.memo_pad, height=100)
-
-    elif keyword:
-        st.warning(f"⚠️ '{keyword}'에 대한 시세 데이터가 시트에 없습니다.")
+    with tab_m2:
+            pay_opt = st.radio("거래 방식", ["💳 계좌 문의", "🤝 직거래"], horizontal=True, label_visibility="collapsed")
+            if pay_opt == "💳 계좌 문의": st.code("계좌번호 알려주시면 바로 이체하겠습니다.", language="text")
+            else: st.code("혹시 직거래 가능하신가요? 장소는 조율 가능합니다.", language="text")
+    with tab_memo:
+        st.session_state.memo_pad = st.text_area("메모", value=st.session_state.memo_pad, height=100, placeholder="가격 비교 메모...")
 
 st.markdown('<div class="legal-footer">© 2026 매물레이더 Pro | Global Price Intelligence</div>', unsafe_allow_html=True)
 
