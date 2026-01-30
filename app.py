@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 import html
 
 # ------------------------------------------------------------------
-# [1] 앱 기본 설정 (RADAR V11.0: Glass Tile Design)
+# [1] 앱 기본 설정 (RADAR V12.0: Final Complete Version)
 # ------------------------------------------------------------------
 st.set_page_config(
     page_title="RADAR",
@@ -18,7 +18,7 @@ st.set_page_config(
 )
 
 # ------------------------------------------------------------------
-# [2] 데이터 로드
+# [2] 데이터 로드 (기능 100% 유지)
 # ------------------------------------------------------------------
 sheet_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQS8AftSUmG9Cr7MfczpotB5hhl1DgjH4hRCgXH5R8j5hykRiEf0M9rEyEq3uj312a5RuI4zMdjI5Jr/pub?output=csv"
 
@@ -32,7 +32,7 @@ def load_price_data():
         return pd.DataFrame()
 
 # ------------------------------------------------------------------
-# [3] 로직 (금융/계산)
+# [3] 로직 (금융/계산/번역)
 # ------------------------------------------------------------------
 @st.cache_data(ttl=3600)
 def get_exchange_rates():
@@ -114,7 +114,7 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [4] CSS 스타일링 (Premium Glass Tiles)
+# [4] CSS 스타일링 (Neon Glass Tiles + Red Header Scam List)
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -149,15 +149,16 @@ st.markdown("""
     }
     div[data-baseweb="input"]:focus-within { border: 1px solid #5E6AD2 !important; box-shadow: 0 0 0 1px #5E6AD2, 0 0 15px rgba(94, 106, 210, 0.3) !important; }
 
-    /* 4. [NEW] Glass Tile Buttons (Premium Look) */
+    /* 4. [NEW] Neon Glass Buttons (Border -> Fill) */
     div[data-testid="stLinkButton"] > a { 
-        background-color: rgba(255, 255, 255, 0.03) !important; /* 반투명 유리 느낌 */
+        background-color: rgba(255, 255, 255, 0.03) !important; /* 반투명 배경 */
         backdrop-filter: blur(5px);
         border-radius: 16px; 
         font-weight: 700; 
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); 
+        transition: all 0.3s ease; 
         text-decoration: none; 
-        border: 1px solid rgba(255, 255, 255, 0.1); 
+        border-width: 2px !important; /* 테두리 강조 */
+        border-style: solid !important;
         height: 110px;
         display: flex; flex-direction: column; align-items: center; justify-content: center; 
         font-size: 1.1rem; letter-spacing: -0.5px;
@@ -165,41 +166,40 @@ st.markdown("""
         box-shadow: 0 4px 6px rgba(0,0,0,0.2);
     }
     
-    /* Hover Effects: Vivid Neon Fill */
-    a[href*="bunjang"]:hover { 
-        background-color: #D32F2F !important; border-color: #D32F2F !important; color: #FFF !important; 
-        box-shadow: 0 0 20px rgba(211, 47, 47, 0.6); transform: translateY(-2px);
-    }
-    a[href*="daangn"]:hover { 
-        background-color: #FF6F00 !important; border-color: #FF6F00 !important; color: #FFF !important; 
-        box-shadow: 0 0 20px rgba(255, 111, 0, 0.6); transform: translateY(-2px);
-    }
-    a[href*="joongna"]:hover { 
-        background-color: #2E7D32 !important; border-color: #2E7D32 !important; color: #FFF !important; 
-        box-shadow: 0 0 20px rgba(46, 125, 50, 0.6); transform: translateY(-2px);
-    }
-    a[href*="fruits"]:hover { 
-        background-color: #7B1FA2 !important; border-color: #7B1FA2 !important; color: #FFF !important; 
-        box-shadow: 0 0 20px rgba(123, 31, 162, 0.6); transform: translateY(-2px);
-    }
-    a[href*="ebay"]:hover { 
-        background-color: #0055ff !important; border-color: #0055ff !important; color: #FFF !important; 
-        box-shadow: 0 0 20px rgba(0, 85, 255, 0.6); transform: translateY(-2px);
-    }
-    a[href*="mercari"]:hover { 
-        background-color: #EEEEEE !important; border-color: #FFFFFF !important; color: #000 !important; 
-        box-shadow: 0 0 20px rgba(255, 255, 255, 0.5); transform: translateY(-2px);
-    }
+    /* Bunjang (Red) */
+    a[href*="bunjang"] { border-color: #D32F2F !important; color: #ddd !important; }
+    a[href*="bunjang"]:hover { background-color: #D32F2F !important; color: #FFF !important; box-shadow: 0 0 25px rgba(211, 47, 47, 0.5); transform: translateY(-3px); }
+    
+    /* Daangn (Orange) */
+    a[href*="daangn"] { border-color: #FF6F00 !important; color: #ddd !important; }
+    a[href*="daangn"]:hover { background-color: #FF6F00 !important; color: #FFF !important; box-shadow: 0 0 25px rgba(255, 111, 0, 0.5); transform: translateY(-3px); }
+    
+    /* Joongna (Green) */
+    a[href*="joongna"] { border-color: #2E7D32 !important; color: #ddd !important; }
+    a[href*="joongna"]:hover { background-color: #2E7D32 !important; color: #FFF !important; box-shadow: 0 0 25px rgba(46, 125, 50, 0.5); transform: translateY(-3px); }
+    
+    /* Fruits (Purple) */
+    a[href*="fruits"] { border-color: #7B1FA2 !important; color: #ddd !important; }
+    a[href*="fruits"]:hover { background-color: #7B1FA2 !important; color: #FFF !important; box-shadow: 0 0 25px rgba(123, 31, 162, 0.5); transform: translateY(-3px); }
+    
+    /* eBay (Blue) */
+    a[href*="ebay"] { border-color: #0055ff !important; color: #ddd !important; }
+    a[href*="ebay"]:hover { background-color: #0055ff !important; color: #FFF !important; box-shadow: 0 0 25px rgba(0, 85, 255, 0.5); transform: translateY(-3px); }
+    
+    /* Mercari (White) */
+    a[href*="mercari"] { border-color: #999 !important; color: #ddd !important; }
+    a[href*="mercari"]:hover { background-color: #eee !important; color: #000 !important; box-shadow: 0 0 25px rgba(255, 255, 255, 0.4); transform: translateY(-3px); }
 
     /* 5. Source Cards (Box Style) */
     .source-card {
-        background-color: #1A1A1A; border: 1px solid #333; border-radius: 12px; padding: 20px; 
+        background-color: #1A1A1A; border: 1px solid #333; border-radius: 12px; padding: 15px; 
         display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; transition: 0.2s; text-decoration: none;
+        height: 80px;
     }
-    .source-card:hover { border-color: #666; background-color: #252525; transform: translateX(5px); }
-    .source-name { font-weight: 700; color: #eee; font-size: 1.1rem; }
-    .source-desc { font-size: 0.8rem; color: #888; margin-top: 4px; }
-    .source-icon { font-size: 2rem; margin-right: 15px; }
+    .source-card:hover { border-color: #666; background-color: #252525; transform: translateX(3px); }
+    .source-name { font-weight: 700; color: #eee; font-size: 1rem; }
+    .source-desc { font-size: 0.75rem; color: #888; margin-top: 2px; }
+    .source-icon { font-size: 1.8rem; margin-right: 10px; }
 
     /* Ticker */
     .ticker-wrap { position: fixed; bottom: 0; left: 0; width: 100%; height: 32px; background-color: #0E1117; border-top: 1px solid #1C1C1E; z-index: 999; display: flex; align-items: center; }
@@ -210,11 +210,12 @@ st.markdown("""
     .ticker-down { color: #4b89ff; background: rgba(75, 137, 255, 0.1); padding: 2px 4px; border-radius: 4px; font-size: 0.75rem; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
     
-    /* Scam Box Styling */
+    /* Scam Box Styling (Red Header, White Text) */
     .scam-box { border: 1px solid #333; border-left: 4px solid #ff4b4b; background-color: #1A0505; padding: 25px; border-radius: 12px; margin-bottom: 20px; }
-    .scam-list { margin-top: 15px; padding-left: 20px; }
-    .scam-item { color: #ccc; margin-bottom: 10px; line-height: 1.6; font-size: 0.95rem; }
-    .scam-strong { color: #ff4b4b; font-weight: 700; }
+    .scam-list { margin-top: 10px; padding-left: 0; list-style-type: none; }
+    .scam-item { color: #ddd; margin-bottom: 15px; line-height: 1.5; font-size: 1rem; border-bottom: 1px solid #333; padding-bottom: 10px; }
+    .scam-item:last-child { border-bottom: none; }
+    .scam-head { color: #ff4b4b; font-weight: 800; font-size: 1.1rem; display: block; margin-bottom: 4px; }
     
     .legal-footer { font-size: 0.7rem; color: #333; margin-top: 80px; text-align: center; margin-bottom: 50px; }
 </style>
@@ -240,7 +241,7 @@ st.markdown("""
 tab_home, tab_source, tab_tools, tab_safety = st.tabs(["🏠 시세 분석", "📂 마켓 소스", "🧰 도구", "👮‍♂️ 사기 조회"])
 
 # ==========================================
-# 🏠 TAB 1: 홈 (분석 & 직관적 바로가기)
+# 🏠 TAB 1: 홈 (분석 & 글래스 타일)
 # ==========================================
 with tab_home:
     col_left, col_right = st.columns([0.6, 0.4], gap="large")
@@ -258,7 +259,7 @@ with tab_home:
             
             st.markdown(f"<div style='margin-top:20px; font-size:1.3rem; font-weight:700; color:#eee;'>'{html.escape(keyword)}' 분석 결과</div>", unsafe_allow_html=True)
 
-            # [업그레이드] Glass Tile 2x2 Grid
+            # [NEON GLASS TILES]
             st.markdown("<div class='capsule-title'>🇰🇷 국내 마켓 (Direct Access)</div>", unsafe_allow_html=True)
             d1, d2 = st.columns(2)
             d1.link_button("⚡ 번개장터", f"https://m.bunjang.co.kr/search/products?q={encoded_kor}", use_container_width=True)
@@ -326,36 +327,63 @@ with tab_home:
         with tab_memo: st.session_state.memo_pad = st.text_area("메모장", value=st.session_state.memo_pad, height=100)
 
 # ==========================================
-# 📂 TAB 2: 마켓 소스
+# 📂 TAB 2: 마켓 소스 (12개 꽉 채움)
 # ==========================================
 with tab_source:
-    st.markdown("#### Market Intelligence Sources")
+    st.markdown("#### Market Intelligence Sources (Expanded)")
     c1, c2, c3 = st.columns(3)
+    
+    # IT / TECH
     with c1:
-        st.markdown("""
-        <a href="http://www.slrclub.com" target="_blank" class="source-card">
-            <div class="source-info"><span class="source-name">SLR클럽</span><span class="source-desc">카메라/렌즈</span></div><span class="source-icon">📷</span>
-        </a>
-        <a href="https://coolenjoy.net" target="_blank" class="source-card">
-            <div class="source-info"><span class="source-name">쿨엔조이</span><span class="source-desc">PC 하드웨어</span></div><span class="source-icon">💻</span>
-        </a>
-        """, unsafe_allow_html=True)
-    with c2:
+        st.markdown("<div class='capsule-title'>💻 IT / Tech</div>", unsafe_allow_html=True)
         st.markdown("""
         <a href="https://quasarzone.com" target="_blank" class="source-card">
-            <div class="source-info"><span class="source-name">퀘이사존</span><span class="source-desc">IT/게임 장터</span></div><span class="source-icon">🔥</span>
+            <div class="source-info"><span class="source-name">퀘이사존</span><span class="source-desc">IT/하드웨어 뉴스</span></div>
+        </a>
+        <a href="https://coolenjoy.net" target="_blank" class="source-card">
+            <div class="source-info"><span class="source-name">쿨엔조이</span><span class="source-desc">PC 전문 커뮤니티</span></div>
         </a>
         <a href="https://meeco.kr" target="_blank" class="source-card">
-            <div class="source-info"><span class="source-name">미코 (Meeco)</span><span class="source-desc">모바일/테크</span></div><span class="source-icon">📱</span>
+            <div class="source-info"><span class="source-name">미코 (Meeco)</span><span class="source-desc">모바일/테크 정보</span></div>
+        </a>
+        <a href="http://www.slrclub.com" target="_blank" class="source-card">
+            <div class="source-info"><span class="source-name">SLR클럽</span><span class="source-desc">카메라/렌즈 장터</span></div>
         </a>
         """, unsafe_allow_html=True)
+    
+    # FASHION
+    with c2:
+        st.markdown("<div class='capsule-title'>👟 Fashion / Life</div>", unsafe_allow_html=True)
+        st.markdown("""
+        <a href="https://eomisae.co.kr" target="_blank" class="source-card">
+            <div class="source-info"><span class="source-name">어미새</span><span class="source-desc">패션 세일 정보</span></div>
+        </a>
+        <a href="https://footsell.com" target="_blank" class="source-card">
+            <div class="source-info"><span class="source-name">풋셀</span><span class="source-desc">스니커즈 매니아</span></div>
+        </a>
+        <a href="https://cafe.naver.com/dieselmania" target="_blank" class="source-card">
+            <div class="source-info"><span class="source-name">디젤매니아</span><span class="source-desc">패션/스타일 공유</span></div>
+        </a>
+        <a href="https://cafe.naver.com/sssw" target="_blank" class="source-card">
+            <div class="source-info"><span class="source-name">나이키매니아</span><span class="source-desc">한정판 스니커즈</span></div>
+        </a>
+        """, unsafe_allow_html=True)
+
+    # GENERAL / HOBBY
     with c3:
+        st.markdown("<div class='capsule-title'>🎮 General / Hobby</div>", unsafe_allow_html=True)
         st.markdown("""
         <a href="https://cafe.naver.com/appleiphone" target="_blank" class="source-card">
-            <div class="source-info"><span class="source-name">아사모</span><span class="source-desc">애플 유저</span></div><span class="source-icon">🍎</span>
+            <div class="source-info"><span class="source-name">아사모</span><span class="source-desc">애플 유저 모임</span></div>
         </a>
         <a href="https://bbs.ruliweb.com/market" target="_blank" class="source-card">
-            <div class="source-info"><span class="source-name">루리웹</span><span class="source-desc">게임/취미 장터</span></div><span class="source-icon">🎮</span>
+            <div class="source-info"><span class="source-name">루리웹</span><span class="source-desc">게임/취미 장터</span></div>
+        </a>
+        <a href="https://www.ppomppu.co.kr" target="_blank" class="source-card">
+            <div class="source-info"><span class="source-name">뽐뿌</span><span class="source-desc">가성비/핫딜 정보</span></div>
+        </a>
+        <a href="https://www.clien.net" target="_blank" class="source-card">
+            <div class="source-info"><span class="source-name">클리앙</span><span class="source-desc">알뜰구매/중고장터</span></div>
         </a>
         """, unsafe_allow_html=True)
 
@@ -404,19 +432,33 @@ with tab_tools:
         st.markdown("<span style='font-size:0.8rem; color:#888;'>⚠️ 품목별 관세율은 달라질 수 있습니다. 정확한 세율은 관세청에서 확인하세요.</span>", unsafe_allow_html=True)
 
 # ==========================================
-# 👮‍♂️ TAB 4: 사기 조회 (Text Fixed)
+# 👮‍♂️ TAB 4: 사기 조회 (Red Header / White Body)
 # ==========================================
 with tab_safety:
-    st.markdown("#### 👮‍♂️ 사기 피해 방지 (더치트)")
+    st.markdown("#### 👮‍♂️ 사기 피해 방지 (The Cheat)")
     st.markdown("""
     <div class="scam-box">
-        <h5 style="color:#ff4b4b; margin:0; margin-bottom:15px; font-weight:800;">🚫 필독: 중고거래 사기 예방 5계명</h5>
         <ul class="scam-list">
-            <li class="scam-item"><span class="scam-strong">카카오톡 유도 100% 사기:</span> 판매자가 "카톡으로 대화하자"며 아이디를 주면 즉시 차단하세요.</li>
-            <li class="scam-item"><span class="scam-strong">가짜 안전결제 링크 주의:</span> 네이버페이 등 결제 링크를 판매자가 직접 보내주면 '가짜 사이트'입니다. 절대 <span class="scam-strong">결제하거나 송금하지 마세요.</span></li>
-            <li class="scam-item"><span class="scam-strong">더치트 2회 조회 필수:</span> 계좌번호 뿐만 아니라 '전화번호'로도 반드시 조회하세요. (대포폰 확인)</li>
-            <li class="scam-item"><span class="scam-strong">시세보다 너무 싼 가격:</span> 상태가 좋은데 가격이 터무니없이 저렴하면 미끼 상품일 확률이 높습니다.</li>
-            <li class="scam-item"><span class="scam-strong">인증샷 요구하기:</span> 물건 옆에 종이로 '오늘 날짜/구매자 닉네임'을 적어서 찍어달라고 요청하세요.</li>
+            <li class="scam-item">
+                <span class="scam-head">🚫 카카오톡 유도 100% 사기</span>
+                판매자가 "카톡으로 대화하자"며 아이디를 주면 즉시 차단하세요.
+            </li>
+            <li class="scam-item">
+                <span class="scam-head">🚫 가짜 안전결제 링크 주의</span>
+                네이버페이 등 결제 링크를 판매자가 직접 보내주면 '가짜 사이트'입니다. <span style="color:#ff4b4b; font-weight:bold;">절대 결제하거나 송금하지 마세요.</span>
+            </li>
+            <li class="scam-item">
+                <span class="scam-head">🚫 더치트 2회 조회 필수</span>
+                계좌번호 뿐만 아니라 '전화번호'로도 반드시 조회하세요. (대포폰 확인)
+            </li>
+            <li class="scam-item">
+                <span class="scam-head">🚫 시세보다 너무 싼 가격</span>
+                상태가 좋은데 가격이 터무니없이 저렴하면 미끼 상품일 확률이 높습니다.
+            </li>
+            <li class="scam-item">
+                <span class="scam-head">🚫 인증샷 요구하기</span>
+                물건 옆에 종이로 '오늘 날짜/구매자 닉네임'을 적어서 찍어달라고 요청하세요.
+            </li>
         </ul>
     </div>
     """, unsafe_allow_html=True)
