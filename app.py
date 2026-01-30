@@ -130,7 +130,7 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [4] CSS 스타일링 (버튼 색상 복구 + SLR 강제 세로 + 한글 최적화)
+# [4] CSS 스타일링 (폰트 크기 복구 & 색상 수정)
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -144,7 +144,7 @@ st.markdown("""
     .radar-title { font-size: 3rem; font-weight: 900; color: #FFFFFF; letter-spacing: -2px; margin-bottom: 0px; }
     .radar-subtitle { font-size: 1rem; color: #666; font-weight: 400; margin-top: 5px; }
 
-    /* [복구] Buttons: 브랜드 고유색 배경 적용 (다크모드용 은은한 컬러) */
+    /* [수정] Buttons: 메루카리 색상 변경 & 더치트 파란색 적용 */
     div[data-testid="stLinkButton"] > a { border-radius: 8px; font-weight: 700; transition: all 0.2s ease; text-decoration: none; border: 1px solid #333; }
     
     /* 번개장터 (Red) */
@@ -155,14 +155,23 @@ st.markdown("""
     div[data-testid="stLinkButton"] > a[href*="joongna"] { background-color: rgba(0, 230, 118, 0.15) !important; color: #69F0AE !important; border-color: #00E676 !important; }
     /* eBay (Blue) */
     div[data-testid="stLinkButton"] > a[href*="ebay"] { background-color: rgba(41, 98, 255, 0.15) !important; color: #448AFF !important; border-color: #2962FF !important; }
-    /* Mercari (Purple/Red - Unique) */
-    div[data-testid="stLinkButton"] > a[href*="mercari"] { background-color: rgba(234, 67, 53, 0.15) !important; color: #FF8A80 !important; border-color: #EA4335 !important; }
-    /* Fruits (Purple) */
+    
+    /* [수정] 메루카리 (White/Grey - 깔끔하게 변경) */
+    div[data-testid="stLinkButton"] > a[href*="mercari"] { background-color: rgba(255, 255, 255, 0.1) !important; color: #FFFFFF !important; border-color: #999 !important; }
+    
+    /* 후르츠 (Purple) */
     div[data-testid="stLinkButton"] > a[href*="fruits"] { background-color: rgba(213, 0, 249, 0.15) !important; color: #EA80FC !important; border-color: #D500F9 !important; }
+
+    /* [수정] 더치트 (Solid Police Blue) - 형광 제거 */
+    div[data-testid="stLinkButton"] > a[href*="thecheat"] { 
+        background-color: #1E3A8A !important; /* 진한 파랑 */
+        color: #ffffff !important; 
+        border: 1px solid #3B82F6 !important; 
+    }
 
     div[data-testid="stLinkButton"] > a:hover { opacity: 0.8; transform: translateY(-2px); }
 
-    /* [최종수정] SLR클럽 등 커뮤니티 링크: 강제 세로 배치 (display: block) */
+    /* 커뮤니티 링크: 강제 세로 배치 유지 */
     .community-link { 
         display: flex; 
         align-items: center; 
@@ -175,8 +184,6 @@ st.markdown("""
         border: 1px solid #222; 
     }
     .comm-icon { font-size: 1.5rem; margin-right: 15px; width: 30px; text-align: center; flex-shrink: 0; }
-    
-    /* 여기가 핵심: 텍스트 박스 내부 */
     .comm-info { width: 100%; }
     .comm-name { display: block; font-weight: bold; font-size: 0.95rem; color: #fff; margin-bottom: 2px; }
     .comm-desc { display: block; font-size: 0.75rem; color: #888; }
@@ -206,6 +213,9 @@ st.markdown("""
     .ticker-item { margin-right: 40px; font-size: 0.85rem; font-weight: 500; color: #888; }
     .ticker-val { color: #fff; font-weight: bold; margin-left: 5px; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+
+    /* [수정] 소제목 스타일 확대 (보이게) */
+    .section-title { font-size: 1.0rem; font-weight: bold; color: #bbb; margin-bottom: 8px; margin-top: 15px; border-left: 3px solid #444; padding-left: 8px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -224,12 +234,12 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [6] 사이드바 (한글화 & 고정형 레이아웃)
+# [6] 사이드바 (서랍형 & 블랙 테마)
 # ------------------------------------------------------------------
 with st.sidebar:
     st.markdown("<div style='color:#666; font-size:0.8rem; margin-bottom:10px; font-weight:bold;'>레이더 센터</div>", unsafe_allow_html=True)
     
-    # 1. 시세 교차 검증 (강제 줄바꿈 적용)
+    # 1. 시세 교차 검증
     with st.expander("👀 커뮤니티 시세비교", expanded=True):
         st.markdown("""
         <a href="http://www.slrclub.com" target="_blank" class="community-link">
@@ -250,7 +260,7 @@ with st.sidebar:
         </a>
         """, unsafe_allow_html=True)
 
-    # 2. 거래 도구 (한글화)
+    # 2. 거래 도구
     with st.expander("🧰 거래 도구함", expanded=False):
         tool_tab1, tool_tab2 = st.tabs(["📦 배송", "💱 관세"])
         
@@ -299,7 +309,7 @@ with st.sidebar:
         st.link_button("더치트 조회하기", "https://thecheat.co.kr", type="primary", use_container_width=True)
 
 # ------------------------------------------------------------------
-# [7] 메인 콘텐츠 (한글화 & 컬러 복구)
+# [7] 메인 콘텐츠
 # ------------------------------------------------------------------
 col_left, col_right = st.columns([0.6, 0.4], gap="large")
 
@@ -318,20 +328,21 @@ with col_left:
         
         st.markdown(f"<div style='margin: 20px 0; font-size: 1.2rem; font-weight: bold;'>'{safe_keyword}' 분석 결과</div>", unsafe_allow_html=True)
 
-        st.markdown("<div style='font-size:0.8rem; color:#888; margin-bottom:5px;'>국내 플랫폼</div>", unsafe_allow_html=True)
+        # [수정] 소제목 크기 키움 & 잘 보이게 처리
+        st.markdown("<div class='section-title'>🇰🇷 국내 플랫폼</div>", unsafe_allow_html=True)
         c1, c2 = st.columns(2)
         c1.link_button("⚡ 번개장터", f"https://m.bunjang.co.kr/search/products?q={encoded_kor}", use_container_width=True)
         c2.link_button("🥕 당근마켓", f"https://www.daangn.com/search/{encoded_kor}", use_container_width=True)
 
-        st.markdown("<div style='font-size:0.8rem; color:#888; margin-bottom:5px; margin-top:15px;'>서브 플랫폼</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-title'>🔍 서브 플랫폼</div>", unsafe_allow_html=True)
         c3, c4 = st.columns(2)
         c3.link_button("🟢 중고나라", f"https://web.joongna.com/search?keyword={encoded_kor}", use_container_width=True)
         c4.link_button("🟣 후르츠", f"https://fruitsfamily.com/search/{encoded_kor}", use_container_width=True)
 
-        st.markdown("<div style='font-size:0.8rem; color:#888; margin-bottom:5px; margin-top:15px;'>해외 직구 (자동 번역)</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-title'>🌎 해외 직구 (자동 번역)</div>", unsafe_allow_html=True)
         c5, c6 = st.columns(2)
         c5.link_button(f"🔵 eBay ({eng_keyword})", f"https://www.ebay.com/sch/i.html?_nkw={encoded_eng}", use_container_width=True)
-        c6.link_button(f"🔴 Mercari ({jp_keyword})", f"https://jp.mercari.com/search?keyword={encoded_jp}", use_container_width=True)
+        c6.link_button(f"⚪ Mercari ({jp_keyword})", f"https://jp.mercari.com/search?keyword={encoded_jp}", use_container_width=True)
 
     else:
         st.info("검색어를 입력하여 스캔을 시작하세요.")
