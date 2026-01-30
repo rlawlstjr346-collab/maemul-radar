@@ -132,7 +132,7 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [4] CSS 스타일링 (SLR클럽 줄바꿈 완벽 해결)
+# [4] CSS 스타일링
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -147,7 +147,7 @@ st.markdown("""
     @keyframes pulse-ring { 0% { width: 90%; opacity: 1; } 100% { width: 220%; opacity: 0; } }
     .title-text { font-size: 3rem; font-weight: 900; color: #FFFFFF !important; letter-spacing: -1px; }
 
-    /* [수정] 커뮤니티 링크: 레이아웃 깨짐 방지 강력 적용 */
+    /* [수정] 커뮤니티 링크: 가로 배치 안 함 -> 텍스트 부분 세로 정렬 */
     .community-link { 
         display: flex; 
         align-items: center; 
@@ -158,40 +158,26 @@ st.markdown("""
         text-decoration: none !important; 
         color: #eee !important; 
         border: 1px solid #333; 
-        overflow: hidden; /* 넘치는 내용 숨김 */
     }
     .community-link:hover { background-color: #33343d; border-color: #555; }
     
-    /* 아이콘 고정 (절대 줄어들지 않음) */
+    /* 아이콘 */
     .comm-icon { 
-        font-size: 1.5rem; 
+        font-size: 1.6rem; 
         margin-right: 15px; 
-        width: 30px; 
         min-width: 30px; 
         text-align: center; 
-        flex-shrink: 0; 
     }
     
-    /* 텍스트 영역 (줄바꿈 방지 및 정렬) */
+    /* 텍스트 정보 (세로 배치) */
     .comm-info { 
         display: flex; 
-        flex-direction: column; 
+        flex-direction: column; /* 여기서 위아래로 쌓음 */
         justify-content: center;
-        min-width: 0; /* Flexbox 텍스트 말줄임 필수 속성 */
+        line-height: 1.3;
     }
-    .comm-name { 
-        font-weight: bold; 
-        font-size: 0.95rem; 
-        white-space: nowrap; /* 제목 한줄 고정 */
-        margin-bottom: 3px;
-    }
-    .comm-desc { 
-        font-size: 0.75rem; 
-        color: #aaa; 
-        white-space: nowrap; /* 설명 한줄 고정 */
-        overflow: hidden; 
-        text-overflow: ellipsis; /* 넘치면 ... 처리 */
-    }
+    .comm-name { font-weight: bold; font-size: 1rem; color: #fff; }
+    .comm-desc { font-size: 0.75rem; color: #aaa; font-weight: normal; }
 
     /* 사기 조회 박스 */
     .scam-box { border: 1px solid #ff4b4b; background-color: rgba(255, 75, 75, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 8px; color: #eee; font-size: 0.9rem; }
@@ -239,10 +225,12 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [6] 사이드바
+# [6] 사이드바 (깔끔한 서랍형 정리)
 # ------------------------------------------------------------------
 with st.sidebar:
     st.header("⚙️ 레이더 센터")
+    
+    # 1. 시세 교차 검증 (커뮤니티)
     with st.expander("👀 커뮤니티 시세비교", expanded=True):
         st.markdown("""
         <a href="http://www.slrclub.com" target="_blank" class="community-link"><div class="comm-icon">📷</div><div class="comm-info"><span class="comm-name">SLR클럽</span><span class="comm-desc">카메라/렌즈 전문</span></div></a>
@@ -252,47 +240,49 @@ with st.sidebar:
         """, unsafe_allow_html=True)
 
     st.write("---")
-    with st.expander("📦 배송 조회 레이더", expanded=True):
-        track_no = st.text_input("운송장 번호", placeholder="- 없이 숫자만 입력")
-        if track_no:
-            st.link_button("🔍 택배사 자동 스캔", f"https://search.naver.com/search.naver?query=운송장번호+{track_no}", use_container_width=True)
-        else:
-            st.caption("👇 편의점 택배 바로가기")
-            c1, c2 = st.columns(2)
-            c1.link_button("GS반값", "https://www.cvsnet.co.kr/reservation-tracking/tracking/index.do", use_container_width=True)
-            c2.link_button("CU알뜰", "https://www.cupost.co.kr/postbox/delivery/local.cupost", use_container_width=True)
+
+    # 2. 거래 도구함 (배송 + 관세 통합)
+    with st.expander("🧰 거래 도구함 (배송/관세)", expanded=False):
+        tool_tab1, tool_tab2 = st.tabs(["📦 배송조회", "💱 관세계산"])
+        
+        with tool_tab1:
+            track_no = st.text_input("운송장 번호", placeholder="- 없이 숫자만")
+            if track_no:
+                st.link_button("🔍 택배사 자동 스캔", f"https://search.naver.com/search.naver?query=운송장번호+{track_no}", use_container_width=True)
+            else:
+                st.caption("편의점 택배 바로가기")
+                c1, c2 = st.columns(2)
+                c1.link_button("GS반값", "https://www.cvsnet.co.kr/reservation-tracking/tracking/index.do", use_container_width=True)
+                c2.link_button("CU알뜰", "https://www.cupost.co.kr/postbox/delivery/local.cupost", use_container_width=True)
+        
+        with tool_tab2:
+            calc_tab1, calc_tab2 = st.tabs(["🇺🇸 USD", "🇯🇵 JPY"])
+            with calc_tab1:
+                st.caption(f"환율: {usd:,.1f}원/$")
+                p_u = st.number_input("물품가격($)", 190, step=10)
+                krw_val = p_u * usd
+                st.markdown(f"**≈ {krw_val:,.0f} 원**")
+                if p_u <= 200: st.success("✅ 면세")
+                else: st.error(f"🚨 관세 대상")
+            with calc_tab2:
+                st.caption(f"환율: {jpy:,.1f}원/100¥")
+                p_j = st.number_input("물품가격(¥)", 15000, step=1000)
+                krw_val = p_j * (jpy/100)
+                usd_val = krw_val / usd
+                st.markdown(f"**≈ {krw_val:,.0f} 원**")
+                if usd_val <= 150: st.success("✅ 면세")
+                else: st.error(f"🚨 관세 대상")
 
     st.write("---")
-    with st.expander("💱 관세 안전선 계산기", expanded=True):
-        t1, t2 = st.tabs(["🇺🇸 USD", "🇯🇵 JPY"])
-        with t1:
-            st.caption(f"환율: {usd:,.1f}원/$")
-            p_u = st.number_input("가격($)", 190, step=10)
-            krw_val = p_u * usd
-            st.markdown(f"**≈ {krw_val:,.0f} 원**")
-            if p_u <= 200: st.success("✅ 면세 범위")
-            else: 
-                tax_est = krw_val * 0.1
-                st.error(f"🚨 관세 대상 (예상 약 {tax_est:,.0f}원)")
-        with t2:
-            st.caption(f"환율: {jpy:,.1f}원/100¥")
-            p_j = st.number_input("가격(¥)", 15000, step=1000)
-            krw_val = p_j * (jpy/100)
-            usd_val = krw_val / usd
-            st.markdown(f"**≈ {krw_val:,.0f} 원** ($ {usd_val:.1f})")
-            if usd_val <= 150: st.success("✅ 면세 범위")
-            else: 
-                tax_est = krw_val * 0.1
-                st.error(f"🚨 관세 대상 (예상 약 {tax_est:,.0f}원)")
-    
-    st.write("---")
-    with st.expander("🚨 사기꾼 판독 가이드", expanded=False):
+
+    # 3. 사기 판독 센터 (더치트 버튼 통합)
+    with st.expander("👮‍♂️ 사기 판독 센터", expanded=False):
         st.markdown("""
-        <div class="scam-box"><span class="scam-title">🚫 카톡 아이디 거래 유도</span>"카톡으로 대화해요" → 99.9% 사기입니다.</div>
-        <div class="scam-box"><span class="scam-title">🚫 가짜 안전결제 링크</span>http://... 로 시작하거나 도메인이 다르면 피싱!</div>
-        <div class="scam-box"><span class="scam-title">🚫 재입금/수수료 요구</span>"수수료 안 보냈으니 다시 보내라" → 먹튀 수법</div>
+        <div class="scam-box"><span class="scam-title">🚫 카톡 유도 절대금지</span>"카톡으로 대화해요" → 99.9% 사기</div>
+        <div class="scam-box"><span class="scam-title">🚫 가짜 결제창 주의</span>링크 주소(URL) 반드시 확인하세요</div>
         """, unsafe_allow_html=True)
-    st.link_button("👮‍♂️ 더치트 조회하기", "https://thecheat.co.kr", type="primary", use_container_width=True)
+        st.write("")
+        st.link_button("👮‍♂️ 더치트 이력 조회하기", "https://thecheat.co.kr", type="primary", use_container_width=True)
 
 # ------------------------------------------------------------------
 # [7] 메인 콘텐츠
@@ -344,7 +334,6 @@ with col_right:
     matched = get_trend_data_from_sheet(keyword, df_prices)
     
     if matched:
-        # [실제 데이터 모드]
         global_krw = calculate_total_import_cost(matched['global_usd'], usd)
         kr_avg = sum(matched['trend_prices'])/len(matched['trend_prices']) if matched['trend_prices'] else 0
         
@@ -379,21 +368,20 @@ with col_right:
              st.altair_chart(dist_chart, use_container_width=True)
 
     else:
-        # [공백 채우기 모드] 예시 데이터 표시
+        # 공백 채우기 모드 (빈 그래프)
         if not keyword:
             st.info("👇 좌측에 검색어를 입력하면 실제 시세가 표시됩니다. (아래는 예시)")
         else:
             st.warning(f"⚠️ '{keyword}' 데이터가 시트에 없습니다. (아래는 예시 기능)")
 
-        # 예시용 빈 그래프
         dummy_df = pd.DataFrame({'x': range(5), 'y': [10, 12, 11, 13, 12]})
         dummy_chart = alt.Chart(dummy_df).mark_line(color='#333', strokeDash=[5,5]).encode(
             x=alt.X('x', axis=None), y=alt.Y('y', axis=None, title='시세 데이터 대기중')
         ).properties(height=250, title="데이터 대기중...")
         st.altair_chart(dummy_chart, use_container_width=True)
 
-    # [수정] 퀵멘트 기능: 정중한 멘트로 교체
-    st.markdown("#### 💬 스마트 멘트 & 메모")
+    # [수정] 스마트 멘트: 정중한 표현으로 전면 교체
+    st.markdown("#### 💬 스마트 트레이더")
     tab_m1, tab_m2, tab_memo = st.tabs(["⚡️ 퀵멘트", "💳 결제", "📝 메모"])
     
     with tab_m1:
@@ -412,8 +400,11 @@ with col_right:
 
     with tab_m2:
             pay_opt = st.radio("거래 방식", ["💳 계좌 문의", "🤝 직거래"], horizontal=True, label_visibility="collapsed")
-            if pay_opt == "💳 계좌 문의": st.code("계좌결제로 하겠습니다. 계좌 부탁드립니다.", language="text")
-            else: st.code("직거래로 가능하신지 여쭤봅니다.", language="text")
+            if pay_opt == "💳 계좌 문의": 
+                st.code("계좌결제로 하겠습니다. 계좌 부탁드립니다.", language="text")
+            else: 
+                st.code("직거래로 가능하신지 여쭤봅니다.", language="text")
+                
     with tab_memo:
         st.session_state.memo_pad = st.text_area("메모", value=st.session_state.memo_pad, height=100, placeholder="가격 비교 메모...")
 
