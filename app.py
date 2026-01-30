@@ -331,11 +331,27 @@ st.markdown("""
     @keyframes blink-caret { from, to { border-color: transparent } 50% { border-color: #00FF88; } }
 
     /* 3. Search Bar */
-    div[data-baseweb="input"] { background-color: rgba(20, 20, 20, 0.7) !important; border: 1px solid #333 !important; border-radius: 12px; color: white; backdrop-filter: blur(10px); }
-    div[data-testid="stVerticalBlock"] > div:nth-child(1) div[data-baseweb="input"] {
-        height: 65px; border-radius: 12px; font-size: 1.3rem; border: 1px solid #333 !important; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: all 0.3s ease;
+    div[data-baseweb="input"] { 
+        background-color: rgba(20, 20, 20, 0.7) !important; 
+        border: 1px solid #333 !important; 
+        border-radius: 12px; 
+        color: white; 
+        backdrop-filter: blur(10px);
+        height: 65px !important; 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+        transition: all 0.3s ease;
     }
-    div[data-baseweb="input"]:focus-within { border: 1px solid #00FF88 !important; box-shadow: 0 0 0 1px #00FF88, 0 0 20px rgba(0, 255, 136, 0.3) !important; }
+    /* Input Text Style */
+    div[data-baseweb="input"] > div > input {
+        color: white !important; 
+        font-family: 'Inter', 'Pretendard', sans-serif !important;
+        font-size: 1.3rem !important;
+    }
+    div[data-baseweb="input"]:focus-within { 
+        border: 1px solid #00FF88 !important; 
+        box-shadow: 0 0 0 1px #00FF88, 0 0 20px rgba(0, 255, 136, 0.3) !important; 
+    }
+    input::placeholder { color: rgba(255, 255, 255, 0.4) !important; font-family: 'Inter', sans-serif; font-size: 1.1rem; }
 
     /* 4. Neon Glass Buttons (Direct Access) */
     div[data-testid="stLinkButton"] > a { 
@@ -466,8 +482,8 @@ st.markdown("""
         box-shadow: 0 0 25px rgba(0, 255, 136, 0.15); transform: translateX(5px);
     }
     .metric-label { font-size: 0.8rem; color: #888; font-weight: 500; margin-bottom: 5px; }
-    .metric-value { font-size: 1.6rem; font-weight: 800; color: #eee; letter-spacing: -1px; }
-    .metric-sub { font-size: 0.8rem; color: #666; margin-top: 5px; }
+    .metric-value { font-size: 1.6rem; font-weight: 800; color: #eee; letter-spacing: -1px; font-family: 'Inter', sans-serif; }
+    .metric-sub { font-size: 0.8rem; color: #666; margin-top: 5px; font-family: 'Inter', sans-serif; }
     .ticker-up { color: #ff4b4b; font-weight: 700; font-size: 0.9rem; }
     .ticker-down { color: #4b89ff; font-weight: 700; font-size: 0.9rem; }
 
@@ -498,53 +514,46 @@ usd, jpy, usd_prev, jpy_prev = get_exchange_rates()
 
 # [Billboard Data Pools]
 MASTER_TREND = [
-    "Leica M6", "Nike Jordan 1", "iPhone 15 Pro", "Rolex Submariner", "Ricoh GR3x", "Arc'teryx Beta", "Sony A7M4", "Stussy Tee", "New Balance 993", "Fujifilm X100VI",
-    "RTX 4090", "MacBook Pro M3", "Steam Deck", "HHKB Hybrid", "PlayStation 5", "Hasselblad 500CM", "Contax T3", "Mamiya 7", "Leica Q3", "Nikon Zf",
-    "Adidas Samba", "Asics Kayano", "Salomon XT-6", "Supreme Box Logo", "Stone Island", "Yohji Yamamoto", "Miu Miu Bag", "Prada Nylon", "Bottega Veneta", "Acne Studios",
-    "Dyson Airstrait", "Omega Speedmaster", "Helinox Chair", "Balmuda Toaster", "Genelec 8010", "Herman Miller", "Rimowa Classic", "Snow Peak", "Brompton P Line", "USM Haller",
-    "Galaxy S24 Ultra", "iPad Pro M4", "AirPods Max", "Nintendo Switch 2", "Keychron Q1", "Sony WH-1000XM5", "LG StanbyME", "Apple Watch Ultra", "Bose QC Ultra", "Garmin Fenix"
+    "Leica M6", "나이키 조던 1", "iPhone 15 Pro", "롤렉스 서브마리너", "Ricoh GR3x", "아크테릭스 베타", "Sony A7M4", "스투시 반팔", "New Balance 993", "후지필름 X100VI",
+    "RTX 4090", "맥북 프로 M3", "Steam Deck OLED", "해피해킹 하이브리드", "PlayStation 5", "핫셀블라드 500CM", "Contax T3", "마미야 7", "Leica Q3", "니콘 Zf",
+    "Adidas Samba", "아식스 젤카야노", "Salomon XT-6", "슈프림 박스로고", "Stone Island", "요지 야마모토", "Miu Miu Bag", "프라다 나일론", "Bottega Veneta", "아크네 스튜디오",
+    "Dyson Airstrait", "오메가 스피드마스터", "Helinox Chair", "발뮤다 토스터", "Genelec 8010", "허먼밀러 에어론", "Rimowa Classic", "스노우피크", "Brompton P Line", "USM 할러",
+    "Galaxy S24 Ultra", "아이패드 프로 M4", "AirPods Max", "닌텐도 스위치 2", "Keychron Q1", "소니 헤드폰 XM5", "LG StanbyME", "애플워치 울트라", "Bose QC Ultra", "가민 피닉스"
 ]
 
 MASTER_VIBE = [
-    "Yohji Yamamoto", "Stone Island", "Supreme Box Logo", "Miu Miu Bag", "Salomon XT-6", "Herman Miller", "Rimowa Classic", "Snow Peak", "Brompton P Line", "USM Haller",
-    "Comoli Shirt", "Visvim FBT", "Prada Nylon", "Bottega Veneta", "Acne Studios", "Dyson Airstrait", "Omega Speedmaster", "Helinox Chair", "Balmuda Toaster", "Genelec 8010",
-    "Human Made", "Kith Box Logo", "Palace Tri-Ferg", "Kapital Bone", "Needles Track", "Engineered Garments", "Auralee Denim", "JJJJound 990", "Aimé Leon Dore", "Clarks Wallabee",
-    "Birkenstock Boston", "Porter Tanker", "Freitag Jamie", "Louis Poulsen", "Fritz Hansen", "Vitra Eames", "Artek Stool", "Tekla Fabrics", "Aesop Handwash", "Le Labo Santal"
+    "Yohji Yamamoto", "스톤아일랜드", "Supreme Box Logo", "미우미우 호보백", "Salomon XT-6", "허먼밀러", "Rimowa Carrier", "스노우피크 텐트", "Brompton Bike", "USM 모듈가구",
+    "Comoli Shirt", "비즈빔 FBT", "Prada Biker Bag", "보테가 카세트백", "Acne Muffler", "다이슨 에어스트레이트", "Omega Moonwatch", "헬리녹스 체어원", "Balmuda Toaster", "제네렉 스피커",
+    "Human Made", "KITH 박스로고", "Palace Tri-Ferg", "캐피탈 본", "Needles Track Pant", "엔지니어드 가먼츠", "Auralee Denim", "자운드 990", "Aimé Leon Dore", "클락스 왈라비",
+    "Birkenstock Boston", "포터 탱커", "Freitag Jamie", "루이스폴센 조명", "Fritz Hansen", "비트라 임스", "Artek Stool", "테클라 침구", "Aesop Handwash", "르라보 상탈33"
 ]
 
 MASTER_SNEAKERS = [
-    "Jordan 1 Chicago", "Jordan 1 Mocha", "Jordan 4 Bred", "Jordan 11 Concord", "Nike Dunk Panda", "Nike SB Dunk", "Travis Scott Jordan", "Off-White Nike", "Sacai Vaporwaffle", "Kobe 6 Protro",
-    "Adidas Samba OG", "Adidas Gazelle", "Adidas Spezials", "Yeezy 350 V2", "Yeezy Slide", "Yeezy Foam Rnr", "New Balance 992", "New Balance 993", "New Balance 2002R", "New Balance 530",
-    "Asics Gel-Kayano", "Asics Gel-1130", "Salomon XT-6", "Salomon ACS Pro", "Hoka One One", "Mihara Yasuhiro", "Rick Owens Ramones", "Balenciaga Triple S", "Balenciaga Track", "Crocs Pollex"
+    "Jordan 1 Chicago", "조던 1 모카", "Jordan 4 Bred", "조던 11 콩코드", "Nike Dunk Panda", "나이키 SB 덩크", "Travis Scott Jordan", "오프화이트 나이키", "Sacai Vaporwaffle", "코비 6 프로트로",
+    "Adidas Samba OG", "아디다스 가젤", "Adidas Spezials", "이지부스트 350", "Yeezy Slide", "이지 폼러너", "New Balance 992", "뉴발란스 993", "New Balance 2002R", "뉴발란스 530",
+    "Asics Gel-Kayano 14", "아식스 젤 1130", "Salomon XT-6", "살로몬 ACS 프로", "Hoka One One", "미하라 야스히로", "Rick Owens Ramones", "발렌시아가 트리플S", "Balenciaga Track", "크록스 폴렉스"
 ]
 
 MASTER_LUXURY = [
-    "Rolex Submariner", "Rolex Daytona", "Rolex Datejust", "Rolex GMT-Master", "Audemars Piguet Royal Oak", "Patek Philippe Nautilus", "Vacheron Constantin", "Omega Speedmaster", "Cartier Tank", "Cartier Santos",
-    "Chanel Classic Flap", "Chanel Boy Bag", "Hermes Birkin 30", "Hermes Kelly 28", "Goyard Saint Louis", "Louis Vuitton Speedy", "Dior Saddle Bag", "Celine Triomphe", "Bottega Veneta Cassette", "Prada Re-Edition",
-    "Gucci Jackie", "Fendi Baguette", "Saint Laurent Loulou", "Loewe Puzzle", "Miu Miu Wander", "Chrome Hearts Ring", "Van Cleef & Arpels", "Tiffany & Co.", "Bulgari Serpenti", "Rimowa Original"
+    "Rolex Submariner", "롤렉스 데이토나", "Rolex Datejust", "롤렉스 GMT 마스터", "Audemars Piguet Royal Oak", "파텍필립 노틸러스", "Vacheron Constantin", "오메가 스피드마스터", "Cartier Tank", "까르띠에 산토스",
+    "Chanel Classic Flap", "샤넬 보이백", "Hermes Birkin 30", "에르메스 켈리 28", "Goyard Saint Louis", "루이비통 스피디", "Dior Saddle Bag", "셀린느 트리옹프", "Bottega Veneta Cassette", "프라다 호보백",
+    "Gucci Jackie", "펜디 바게트백", "Saint Laurent Loulou", "로에베 퍼즐백", "Miu Miu Wander", "크롬하츠 반지", "Van Cleef & Arpels", "티파니 앤 코", "Bulgari Serpenti", "리모와 오리지널"
 ]
 
 MASTER_TECH = [
-    "RTX 4090", "MacBook Pro M3", "Steam Deck", "HHKB Hybrid", "PlayStation 5", "Keychron Q1", "LG StanbyME", "Apple Watch Ultra", "iPad Pro",
-    "Nintendo Switch 2", "Galaxy S24", "Garmin Fenix", "iPhone 16 Pro", "Mac Studio", "Studio Display", "Logi MX Master", "NuPhy Air75",
-    "Wooting 60HE", "Finalmouse", "Razer Viper", "Fuji GFX100", "Sony A7C2", "Canon R6 Mark II", "Nikon Z8", "DJI Osmo Pocket 3",
-    "GoPro Hero 12", "Insta360 Ace Pro", "Drone DJI Mini 4", "Synology NAS", "Unifi Dream Machine", "Raspberry Pi 5", "Arduino Uno", "Flipper Zero", "Analogue Pocket", "Playdate"
+    "RTX 4090", "맥북 프로 M3", "Steam Deck OLED", "해피해킹 하이브리드", "PlayStation 5", "키크론 Q1 프로", "LG StanbyME", "애플워치 울트라 2", "iPad Pro M4",
+    "Nintendo Switch 2", "갤럭시 S24 울트라", "Garmin Fenix 7", "아이폰 16 Pro", "Mac Studio", "Studio Display", "로지텍 MX Master 3S", "NuPhy Air75",
+    "Wooting 60HE", "파이널마우스", "Razer Viper V3", "후지필름 GFX100", "Sony A7C II", "Canon R6 Mark II", "니콘 Z8", "DJI Osmo Pocket 3",
+    "GoPro Hero 12", "인스타360 에이스프로", "DJI Mini 4 Pro", "시놀로지 NAS", "Unifi Dream Machine", "라즈베리 파이 5", "Arduino Uno", "Flipper Zero", "아날로그 포켓", "Playdate"
 ]
 
 MASTER_LIVING = [
-    "Herman Miller", "Rimowa Classic", "Snow Peak", "Brompton P Line", "USM Haller", "Dyson Airstrait", "Balmuda Toaster", "Helinox Chair", "Fritz Hansen", "Louis Poulsen",
-    "Fujifilm Instax", "Super73", "Nespresso Vertuo", "Fellow Ode", "Acaia Pearl", "Hario Switch", "Comandante C40",
-    "Moccamaster", "Breville 870", "La Marzocco", "Mazzer Mini", "Weber Key", "Kinto Tumbler", "Stanley Cup", "Yeti Cooler", "Nordisk Tent", "Hilleberg",
-    "Helinox Cot", "Brompton T Line", "Moulton", "Birdy", "Strida", "Gubi Multi-Lite", "Anglepoise Lamp", "Dyson V15", "Roborock S8", "LG Styler"
+    "Herman Miller Aeron", "리모와 클래식", "Snow Peak Tent", "브롬톤 P라인", "USM Haller", "다이슨 에어스트레이트", "Balmuda Toaster", "헬리녹스 체어원", "Fritz Hansen Seven", "루이스폴센 PH5",
+    "Fujifilm Instax Mini", "슈퍼73 전기자전거", "Nespresso Vertuo", "펠로우 오드 그라인더", "Acaia Pearl Scale", "하리오 스위치", "Comandante C40",
+    "Moccamaster", "브레빌 870", "La Marzocco Linea", "메저 미니", "Weber Key Grinder", "킨토 텀블러", "Stanley Quencher", "Yeti Cooler", "노르디스크 텐트", "Hilleberg",
+    "Helinox Cot", "브롬톤 T라인", "Moulton Bike", "버디 자전거", "Strida", "Gubi Multi-Lite", "앵글포이즈 램프", "Dyson V15", "로보락 S8 Pro", "LG Styler"
 ]
 
-# Random Sampling for Billboard (30 items each to keep it fresh but light)
-POOL_TREND = random.sample(MASTER_TREND, 15)
-POOL_KICKS = random.sample(MASTER_SNEAKERS, 15)
-POOL_LUX = random.sample(MASTER_LUXURY, 15)
-POOL_TECH = random.sample(MASTER_TECH, 15)
-POOL_VIBE = random.sample(MASTER_VIBE, 15)
-POOL_LIVING = random.sample(MASTER_LIVING, 15)
 # [State Persistence] 빌보드 데이터가 상호작용할 때마다 바뀌지 않도록 세션에 저장
 if 'billboard_data' not in st.session_state:
     st.session_state.billboard_data = {
@@ -555,6 +564,13 @@ if 'billboard_data' not in st.session_state:
         'VIBE': random.sample(MASTER_VIBE, 15),
         'LIVING': random.sample(MASTER_LIVING, 15)
     }
+
+POOL_TREND = st.session_state.billboard_data['TREND']
+POOL_KICKS = st.session_state.billboard_data['KICKS']
+POOL_LUX = st.session_state.billboard_data['LUX']
+POOL_TECH = st.session_state.billboard_data['TECH']
+POOL_VIBE = st.session_state.billboard_data['VIBE']
+POOL_LIVING = st.session_state.billboard_data['LIVING']
 
 def make_bill_html(items):
     # [Seamless Loop Logic] 10개 보여주고, 처음 2개를 뒤에 붙여서 자연스럽게 이어지게 함
@@ -577,32 +593,26 @@ st.markdown(f"""
             <div class="bill-col c-trend">
                 <div class="bill-head">🔥 TRENDING</div>
                 <div class="bill-win"><div class="bill-content">{make_bill_html(POOL_TREND)}</div></div>
-                <div class="bill-win"><div class="bill-content">{make_bill_html(st.session_state.billboard_data['TREND'])}</div></div>
             </div>
             <div class="bill-col c-kicks">
                 <div class="bill-head">👟 SNEAKERS</div>
                 <div class="bill-win"><div class="bill-content">{make_bill_html(POOL_KICKS)}</div></div>
-                <div class="bill-win"><div class="bill-content">{make_bill_html(st.session_state.billboard_data['KICKS'])}</div></div>
             </div>
             <div class="bill-col c-lux">
                 <div class="bill-head">💎 LUXURY</div>
                 <div class="bill-win"><div class="bill-content">{make_bill_html(POOL_LUX)}</div></div>
-                <div class="bill-win"><div class="bill-content">{make_bill_html(st.session_state.billboard_data['LUX'])}</div></div>
             </div>
             <div class="bill-col c-tech">
                 <div class="bill-head">💻 TECH</div>
                 <div class="bill-win"><div class="bill-content">{make_bill_html(POOL_TECH)}</div></div>
-                <div class="bill-win"><div class="bill-content">{make_bill_html(st.session_state.billboard_data['TECH'])}</div></div>
             </div>
             <div class="bill-col c-vibe">
                 <div class="bill-head">🌊 VIBE</div>
                 <div class="bill-win"><div class="bill-content">{make_bill_html(POOL_VIBE)}</div></div>
-                <div class="bill-win"><div class="bill-content">{make_bill_html(st.session_state.billboard_data['VIBE'])}</div></div>
             </div>
             <div class="bill-col c-living">
                 <div class="bill-head">🏠 LIVING</div>
                 <div class="bill-win"><div class="bill-content">{make_bill_html(POOL_LIVING)}</div></div>
-                <div class="bill-win"><div class="bill-content">{make_bill_html(st.session_state.billboard_data['LIVING'])}</div></div>
             </div>
         </div>
     </div>
@@ -636,7 +646,7 @@ with tab_home:
             st.markdown(f"<div style='margin-top:20px; font-size:1.3rem; font-weight:700; color:#eee;'>'{html.escape(keyword)}' 분석 결과</div>", unsafe_allow_html=True)
 
             # [Fruits Name Fixed]
-            st.markdown("<div class='capsule-title' style='border-left: 3px solid #FF6F00;'>🇰🇷 국내 마켓 <span class='capsule-sub'>Direct Access</span></div>", unsafe_allow_html=True)
+            st.markdown("<div class='capsule-title'>🇰🇷 국내 마켓</div>", unsafe_allow_html=True)
             d1, d2 = st.columns(2)
             d1.link_button("⚡ 번개장터", f"https://m.bunjang.co.kr/search/products?q={encoded_kor}", use_container_width=True)
             d2.link_button("🥕 당근마켓", f"https://www.daangn.com/search/{encoded_kor}", use_container_width=True)
@@ -644,7 +654,7 @@ with tab_home:
             d3.link_button("🟢 중고나라", f"https://web.joongna.com/search?keyword={encoded_kor}", use_container_width=True)
             d4.link_button("🟣 Fruits", f"https://fruitsfamily.com/search/{encoded_kor}", use_container_width=True)
 
-            st.markdown("<div class='capsule-title' style='border-left: 3px solid #0055ff;'>🌎 해외 직구 <span class='capsule-sub'>Global Shipping</span></div>", unsafe_allow_html=True)
+            st.markdown("<div class='capsule-title'>🌎 해외 직구</div>", unsafe_allow_html=True)
             g1, g2 = st.columns(2)
             g1.link_button(f"🔵 eBay ({eng_keyword})", f"https://www.ebay.com/sch/i.html?_nkw={encoded_eng}", use_container_width=True)
             g2.link_button(f"⚪ Mercari ({jp_keyword})", f"https://jp.mercari.com/search?keyword={encoded_jp}", use_container_width=True)
@@ -697,24 +707,27 @@ with tab_home:
                 dist_chart = alt.Chart(dist_df).mark_bar(color='#333').encode(x=alt.X('가격:Q', bin=alt.Bin(maxbins=15)), y=alt.Y('count()', axis=alt.Axis(tickMinStep=1, format='d'))).properties(height=250)
                 st.altair_chart(dist_chart, use_container_width=True)
         else:
-            dummy_df = pd.DataFrame({'x': range(5), 'y': [10, 12, 11, 13, 12]})
-            dummy_chart = alt.Chart(dummy_df).mark_line(color='#222', strokeDash=[5,5]).encode(x=alt.X('x', axis=None), y=alt.Y('y', axis=None)).properties(height=250, title="데이터 대기중")
+            # [Visual Upgrade] Smooth Waveform for 'Waiting' State
+            dummy_data = pd.DataFrame({'x': range(20), 'y': [20, 22, 25, 30, 28, 25, 22, 20, 18, 15, 18, 22, 26, 32, 35, 30, 25, 20, 18, 20]})
+            dummy_chart = alt.Chart(dummy_data).mark_area(
+                interpolate='basis', # Smooth Curve
+                line={'color':'#333'},
+                color=alt.Gradient(
+                    gradient='linear',
+                    stops=[alt.GradientStop(color='#333', offset=0), alt.GradientStop(color='rgba(0,0,0,0)', offset=1)],
+                    x1=1, x2=1, y1=1, y2=0
+                )
+            ).encode(x=alt.X('x', axis=None), y=alt.Y('y', axis=None)).properties(height=250, title="Waiting for Signal...")
             st.altair_chart(dummy_chart, use_container_width=True)
 
-        st.markdown("#### ⚡ 스마트 트레이더")
-        tab_m1, tab_m2, tab_memo = st.tabs(["💬 멘트", "💳 결제", "📝 메모"])
-        with tab_m1:
-            quick_opt = st.radio("유형", ["👋 구매 인사", "💸 가격 제안"], label_visibility="collapsed")
-            if "인사" in quick_opt: st.code("안녕하세요! 게시글 보고 연락드립니다. 구매 가능할까요?", language="text")
-            else:
-                nego_price = st.text_input("희망 가격", placeholder="숫자만 입력")
-                fmt_price = f"{int(nego_price):,}" if nego_price else "[   ]"
-                st.code(f"안녕하세요. 혹시 실례지만 {fmt_price}원에 가격조정 가능할지 여쭤보고 싶습니다. 가능하시다면 바로 구매가능합니다.", language="text")
-        with tab_m2:
-            pay_opt = st.radio("방식", ["계좌", "직거래"], horizontal=True, label_visibility="collapsed")
-            if pay_opt == "계좌": st.code("계좌결제로 하겠습니다. 계좌 부탁드립니다.", language="text")
-            else: st.code("직거래로 가능하신지 여쭤봅니다.", language="text")
-        with tab_memo: st.session_state.memo_pad = st.text_area("메모장", value=st.session_state.memo_pad, height=100)
+        # [New Section] Filling the void with 'Detected Signals'
+        st.markdown("#### 📡 실시간 감지 (Live Signals)")
+        st.markdown("<div style='margin-bottom:10px; font-size:0.8rem; color:#666;'>현재 시장에서 포착된 주요 키워드입니다.</div>", unsafe_allow_html=True)
+        
+        # Display random signals as tags
+        signals = st.session_state.billboard_data['TREND'][:12] # Top 12 items
+        tags_html = "".join([f"<span style='display:inline-block; background:rgba(255,255,255,0.05); border:1px solid #333; border-radius:20px; padding:6px 14px; margin:4px; font-size:0.85rem; color:#aaa; font-family:Pretendard;'>{item}</span>" for item in signals])
+        st.markdown(f"<div>{tags_html}</div>", unsafe_allow_html=True)
 
 # ==========================================
 # 📂 TAB 2: 마켓 소스 (Pro Dashboard Style)
@@ -881,23 +894,3 @@ ticker_content = f"""
 </div>
 """
 st.markdown(ticker_content, unsafe_allow_html=True)
-
-# ------------------------------------------------------------------
-# [9] 사이드바 (포트폴리오 설명용)
-# ------------------------------------------------------------------
-with st.sidebar:
-    st.markdown("## 📡 RADAR System")
-    st.markdown("<div style='font-size: 0.8rem; color: #888; margin-bottom: 20px;'>Global Price Intelligence Dashboard</div>", unsafe_allow_html=True)
-    
-    st.info("""
-    **ℹ️ Project Overview**
-    
-    이 대시보드는 **한정판 리셀 시장**의 국가별 시세 불균형(Arbitrage)을 포착하기 위해 개발되었습니다.
-    
-    - **Data:** Google Sheets (Backend)
-    - **Logic:** Real-time FX & Duty Calc
-    - **Tech:** Python, Streamlit
-    """)
-    
-    st.markdown("---")
-    st.caption("Designed for KREAM Portfolio")
