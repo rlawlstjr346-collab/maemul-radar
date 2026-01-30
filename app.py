@@ -6,6 +6,7 @@ import random
 import pandas as pd
 import altair as alt
 from datetime import datetime, timedelta
+import html
 
 # ------------------------------------------------------------------
 # [1] 앱 기본 설정
@@ -32,7 +33,7 @@ def load_price_data():
         return pd.DataFrame()
 
 # ------------------------------------------------------------------
-# [3] 로직 (방탄 파싱 + 글로벌 계산)
+# [3] 로직 (환율, 번역, 계산)
 # ------------------------------------------------------------------
 @st.cache_data(ttl=3600)
 def get_exchange_rates():
@@ -44,7 +45,7 @@ def get_exchange_rates():
         jpy = (data['rates']['KRW'] / data['rates']['JPY']) * 100
         return usd, jpy
     except:
-        return 1400.0, 930.0
+        return 1450.0, 950.0
 
 def get_translated_keyword(text, target_lang='en'):
     if not re.search('[가-힣]', text): return text
@@ -124,7 +125,7 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [4] 스타일링 (애니메이션, 버튼 컬러, 다크 모드)
+# [4] CSS 스타일링
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -132,53 +133,56 @@ st.markdown("""
     [data-testid="stSidebar"] { background-color: #17191E; border-right: 1px solid #333; }
     div[data-baseweb="input"] { background-color: #262730; border: 2px solid #00ff88 !important; border-radius: 8px; }
     
-    /* 레이더 펄스 애니메이션 복구 */
+    /* 레이더 펄스 애니메이션 */
     .radar-wrapper { position: relative; display: inline-block; margin-right: 10px; vertical-align: middle; }
     .radar-emoji { position: relative; z-index: 2; font-size: 3rem; }
     .pulse-ring { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; border-radius: 50%; border: 2px solid rgba(0, 255, 136, 0.7); opacity: 0; animation: pulse-ring 2s infinite; }
     @keyframes pulse-ring { 0% { width: 90%; opacity: 1; } 100% { width: 220%; opacity: 0; } }
     .title-text { font-size: 3rem; font-weight: 900; color: #FFFFFF !important; letter-spacing: -1px; }
 
-    /* 바로가기 버튼 컬러 복구 */
+    /* 버튼 스타일 */
     div[data-testid="stLinkButton"] > a { border-radius: 10px; font-weight: 700; transition: all 0.3s ease; text-decoration: none; }
     div[data-testid="stLinkButton"] > a[href*="bunjang"] { border: 1px solid #FF3E3E !important; color: #FF3E3E !important; background-color: rgba(255, 62, 62, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="daangn"] { border: 1px solid #FF8A3D !important; color: #FF8A3D !important; background-color: rgba(255, 138, 61, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="ebay"] { border: 1px solid #2962FF !important; color: #2962FF !important; background-color: rgba(41, 98, 255, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="thecheat"] { border: 2px solid #ff4b4b !important; color: #ffffff !important; background-color: #ff4b4b !important; }
 
-    /* 티커 애니메이션 */
-    .ticker-container { width: 100%; background-color: #15181E; border-bottom: 2px solid #333; margin-bottom: 20px; overflow: hidden; white-space: nowrap; }
-    .ticker-move { display: inline-block; padding-left: 100%; animation: ticker 100s linear infinite; }
+    /* 하단 고정 티커 */
+    .ticker-wrap {
+        position: fixed; bottom: 0; left: 0; width: 100%; overflow: hidden; height: 40px; background-color: #15181E; border-top: 1px solid #333; z-index: 999;
+        display: flex; align-items: center;
+    }
+    .ticker { display: inline-block; white-space: nowrap; padding-left: 100%; animation: ticker 40s linear infinite; }
+    .ticker-item { margin-right: 40px; font-size: 0.95rem; font-weight: bold; color: #ddd; }
+    .ticker-highlight { color: #00ff88; margin-right: 5px; }
+    .ticker-alert { color: #ff4b4b; margin-right: 5px; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-    /* Metric Card (KREAM Style) */
+    /* KREAM Style Metric Card */
     .metric-card { background-color: #1E1E1E; border: 1px solid #333; border-radius: 12px; padding: 20px; text-align: center; }
     .metric-value { font-size: 1.5rem; font-weight: 800; color: #fff; }
     .metric-sub { font-size: 0.8rem; color: #00ff88; margin-top: 5px; }
     .metric-sub-bad { font-size: 0.8rem; color: #ff4b4b; margin-top: 5px; }
     
     .community-link { display: flex; align-items: center; padding: 10px; margin-bottom: 8px; background-color: #262730; border-radius: 8px; text-decoration: none !important; color: #eee !important; border: 1px solid #333; }
+    .legal-footer { font-size: 0.75rem; color: #555; text-align: center; margin-bottom: 50px; } /* 티커 공간 확보 */
 </style>
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [5] 메인 레이아웃 (애니메이션 타이틀 + 티커)
+# [5] 메인 헤더
 # ------------------------------------------------------------------
-market_items = ["아이폰 17 Pro", "RTX 5090", "갤럭시 S25", "PS5 Pro", "에어팟 맥스 2", "닌텐도 스위치 2", "지슈라 2", "라이카 Q3"]
-ticker_str = " | ".join([f"🔥 Hot: {item}" for item in market_items])
-
-st.markdown(f"""
-<div style="text-align:center; margin-bottom:20px;">
-    <div class="radar-wrapper"><span class="radar-emoji">📡</span><div class="pulse-ring"></div></div>
-    <span class="title-text">매물레이더 Pro</span>
-</div>
-<div class="ticker-container"><div class="ticker-move">{ticker_str}</div></div>
-""", unsafe_allow_html=True)
-
 usd_rate, jpy_rate = get_exchange_rates()
 
+st.markdown("""
+    <div style="text-align:center; margin-bottom:20px;">
+        <div class="radar-wrapper"><span class="radar-emoji">📡</span><div class="pulse-ring"></div></div>
+        <span class="title-text">매물레이더 Pro</span>
+    </div>
+""", unsafe_allow_html=True)
+
 # ------------------------------------------------------------------
-# [6] 사이드바 (커뮤니티 + 배송조회 복구)
+# [6] 사이드바
 # ------------------------------------------------------------------
 with st.sidebar:
     st.header("⚙️ 레이더 센터")
@@ -194,8 +198,18 @@ with st.sidebar:
         if track_no: st.link_button("🔍 택배사 자동 스캔", f"https://search.naver.com/search.naver?query=운송장번호+{track_no}", use_container_width=True)
 
     st.write("---")
-    st.info(f"💱 실시간 환율\n- USD: {usd_rate:,.1f}원\n- JPY: {jpy_rate:,.1f}원")
-    st.link_button("🚨 사기피해 조회 (더치트)", "https://thecheat.co.kr", type="primary", use_container_width=True)
+    
+    # [수정완료] 사기꾼 판독 가이드 -> 아코디언(Expander)으로 변경
+    with st.expander("🚨 사기꾼 판독 가이드 (필독)", expanded=False):
+        st.markdown("""
+        **1. 카톡 아이디 거래 유도** ❌ "카톡으로 대화해요" → 99.9% 사기입니다. 앱 내 채팅만 이용하세요.
+        
+        **2. 가짜 안전결제 링크** ❌ `http://...` 로 시작하거나 공식 도메인이 아니면 피싱 사이트입니다.
+        
+        **3. 재입금 요구** ❌ "수수료 안 보내서 다시 보내라" → 전형적인 먹튀 수법입니다.
+        """)
+    
+    st.link_button("👮‍♂️ 더치트 조회하기", "https://thecheat.co.kr", type="primary", use_container_width=True)
 
 # ------------------------------------------------------------------
 # [7] 메인 콘텐츠
@@ -230,7 +244,9 @@ with col_sub:
         with m2:
             diff_text = f"직구 {kr_avg - global_krw:,.1f}만 이득" if (kr_avg - global_krw) > 0 else "국내 구매 추천"
             sub_class = "metric-sub" if (kr_avg - global_krw) > 0 else "metric-sub-bad"
-            if global_krw <= 0: diff_text = "해외 데이터 없음"
+            if global_krw <= 0: 
+                diff_text = "해외 데이터 없음"
+                sub_class = "metric-sub"
             st.markdown(f"<div class='metric-card'><div>🌎 직구 실구매</div><div class='metric-value'>{global_krw:,.1f}만</div><div class='{sub_class}'>{diff_text}</div></div>", unsafe_allow_html=True)
 
         st.write("") 
@@ -250,7 +266,7 @@ with col_sub:
             dist_chart = alt.Chart(dist_df).mark_bar(color='#0A84FF').encode(x=alt.X('가격:Q', bin=alt.Bin(maxbins=12)), y='count()').properties(height=250)
             st.altair_chart(dist_chart, use_container_width=True)
 
-        # 3. [복구 완료] 스마트 멘트 & 메모장
+        # 3. 스마트 멘트 & 메모장
         st.markdown("#### 💬 스마트 메모")
         tab_m1, tab_m2, tab_memo = st.tabs(["⚡️ 퀵멘트", "💳 결제", "📝 메모"])
         with tab_m1: st.code("네고 가능한가요? 바로 쿨거래 하겠습니다.", language="text")
@@ -260,4 +276,23 @@ with col_sub:
     elif keyword:
         st.warning("📡 데이터 분석 중... (시트에 없는 모델입니다)")
 
-st.markdown('<div style="text-align:center; color:#444; margin-top:60px;">© 2026 매물레이더 Pro | Global Price Intelligence</div>', unsafe_allow_html=True)
+st.markdown('<div class="legal-footer">© 2026 매물레이더 Pro | Global Price Intelligence</div>', unsafe_allow_html=True)
+
+# ------------------------------------------------------------------
+# [8] 하단 고정 티커 (실시간 금융 정보)
+# ------------------------------------------------------------------
+us_limit = usd_rate * 200
+jp_limit = usd_rate * 150 # 일본/기타국가 $150 기준
+
+ticker_content = f"""
+<div class="ticker-wrap">
+    <div class="ticker">
+        <span class="ticker-item"><span class="ticker-highlight">🇺🇸 USD:</span>{usd_rate:,.0f}원</span>
+        <span class="ticker-item"><span class="ticker-highlight">🇯🇵 JPY:</span>{jpy_rate:,.0f}원</span>
+        <span class="ticker-item"><span class="ticker-alert">🚨 미국 무관세:</span>{us_limit:,.0f}원($200)까지</span>
+        <span class="ticker-item"><span class="ticker-alert">🚨 일본/해외 무관세:</span>{jp_limit:,.0f}원($150)까지</span>
+        <span class="ticker-item" style="color:#aaa;">💡 관세청 고시환율에 따라 변동될 수 있습니다.</span>
+    </div>
+</div>
+"""
+st.markdown(ticker_content, unsafe_allow_html=True)
