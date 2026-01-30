@@ -8,17 +8,17 @@ from datetime import datetime, timedelta
 import html
 
 # ------------------------------------------------------------------
-# [1] 앱 기본 설정 (RADAR V10.0: Top Nav & Wide Layout)
+# [1] 앱 기본 설정 (RADAR V10.1: Authentic Data Visualization)
 # ------------------------------------------------------------------
 st.set_page_config(
     page_title="RADAR",
     page_icon="📡",
     layout="wide",
-    initial_sidebar_state="collapsed" # 사이드바 숨김
+    initial_sidebar_state="collapsed"
 )
 
 # ------------------------------------------------------------------
-# [2] 데이터 로드 (기능 100% 유지)
+# [2] 데이터 로드
 # ------------------------------------------------------------------
 sheet_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQS8AftSUmG9Cr7MfczpotB5hhl1DgjH4hRCgXH5R8j5hykRiEf0M9rEyEq3uj312a5RuI4zMdjI5Jr/pub?output=csv"
 
@@ -32,7 +32,7 @@ def load_price_data():
         return pd.DataFrame()
 
 # ------------------------------------------------------------------
-# [3] 로직 (금융, 번역, 계산 등 100% 유지)
+# [3] 로직 (금융/계산)
 # ------------------------------------------------------------------
 @st.cache_data(ttl=3600)
 def get_exchange_rates():
@@ -114,40 +114,30 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [4] CSS 스타일링 (Scanning Beam + Typewriter + 2x2 Grid)
+# [4] CSS 스타일링
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
     /* Global Theme */
     .stApp { background-color: #0E1117; color: #EEEEEE; font-family: 'Inter', 'Pretendard', sans-serif; }
     
-    /* 1. Header & Scanning Beam Animation */
-    .header-container { display: flex; align-items: center; margin-bottom: 20px; position: relative; overflow: hidden; }
-    .radar-title { font-size: 2.8rem; font-weight: 900; color: #FFF; letter-spacing: -2px; font-style: italic; margin-right: 15px; }
+    /* 1. Header & Scanning Beam */
+    .header-container { display: flex; align-items: center; margin-bottom: 20px; position: relative; overflow: hidden; padding-left: 10px; }
+    .radar-icon { font-size: 2.2rem; margin-right: 10px; z-index: 2; }
+    .radar-title { font-size: 2.5rem; font-weight: 900; color: #FFF; letter-spacing: -1px; font-style: italic; z-index: 2; }
     
-    /* 스캐닝 빔 효과 */
     .scan-line {
-        height: 2px;
-        width: 100px;
-        background: linear-gradient(90deg, transparent, #00FF88, transparent);
-        position: absolute;
-        top: 55%;
-        left: -100px;
-        animation: scan 3s cubic-bezier(0.4, 0.0, 0.2, 1) infinite;
-        opacity: 0.8;
+        height: 2px; width: 100px; background: linear-gradient(90deg, transparent, #00FF88, transparent);
+        position: absolute; top: 55%; left: -100px;
+        animation: scan 3s cubic-bezier(0.4, 0.0, 0.2, 1) infinite; opacity: 0.8;
     }
-    @keyframes scan { 0% { left: 120px; opacity: 0; } 50% { opacity: 1; } 100% { left: 400px; opacity: 0; } }
+    @keyframes scan { 0% { left: 10px; opacity: 0; } 50% { opacity: 1; } 100% { left: 350px; opacity: 0; } }
 
-    /* 2. Typewriter Effect Text */
+    /* 2. Typewriter Effect */
     .typewriter-text {
-        font-family: 'Courier New', monospace;
-        font-size: 0.85rem;
-        color: #00FF88;
-        margin-bottom: 5px;
-        display: inline-block;
-        overflow: hidden;
-        border-right: .15em solid #00FF88;
-        white-space: nowrap;
+        font-family: 'Courier New', monospace; font-size: 0.85rem; color: #00FF88;
+        margin-bottom: 5px; display: inline-block; overflow: hidden;
+        border-right: .15em solid #00FF88; white-space: nowrap;
         animation: typing 3.5s steps(40, end), blink-caret .75s step-end infinite;
     }
     @keyframes typing { from { width: 0 } to { width: 100% } }
@@ -160,46 +150,29 @@ st.markdown("""
     }
     div[data-baseweb="input"]:focus-within { border: 1px solid #5E6AD2 !important; box-shadow: 0 0 0 1px #5E6AD2, 0 0 15px rgba(94, 106, 210, 0.3) !important; }
 
-    /* 4. Bento Grid Buttons (2x2 Layout) & Hover Fill */
+    /* 4. Bento Grid Buttons (2x2 Layout) */
     div[data-testid="stLinkButton"] > a { 
         background-color: #161618 !important; border-radius: 12px; font-weight: 600; transition: all 0.2s; 
-        text-decoration: none; border: 2px solid transparent; height: 100px; /* 높이 키움 */
+        text-decoration: none; border: 2px solid transparent; height: 100px;
         display: flex; flex-direction: column; align-items: center; justify-content: center; 
         font-size: 1rem; color: #ccc !important; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     }
-    /* Colors */
-    a[href*="bunjang"] { border-color: #FF3E3E88 !important; color: #FF6B6B !important; }
     a[href*="bunjang"]:hover { background-color: #FF3E3E !important; border-color: #FF3E3E !important; color: #FFF !important; }
-    
-    a[href*="daangn"] { border-color: #FF8A3D88 !important; color: #FF9F60 !important; }
     a[href*="daangn"]:hover { background-color: #FF8A3D !important; border-color: #FF8A3D !important; color: #FFF !important; }
-    
-    a[href*="joongna"] { border-color: #00E67688 !important; color: #69F0AE !important; }
     a[href*="joongna"]:hover { background-color: #00E676 !important; border-color: #00E676 !important; color: #FFF !important; }
-    
-    a[href*="fruits"] { border-color: #D500F988 !important; color: #EA80FC !important; }
     a[href*="fruits"]:hover { background-color: #D500F9 !important; border-color: #D500F9 !important; color: #FFF !important; }
-    
-    a[href*="ebay"] { border-color: #2962FF88 !important; color: #448AFF !important; }
     a[href*="ebay"]:hover { background-color: #2962FF !important; border-color: #2962FF !important; color: #FFF !important; }
-    
-    a[href*="mercari"] { border-color: #AAAAAA88 !important; color: #E0E0E0 !important; }
     a[href*="mercari"]:hover { background-color: #FFFFFF !important; border-color: #FFFFFF !important; color: #000 !important; }
 
-    /* 5. Market Source Cards (Box Style) */
+    /* 5. Source Cards (Box Style) */
     .source-card {
         background-color: #1A1A1A; border: 1px solid #333; border-radius: 12px; padding: 20px; 
         display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; transition: 0.2s; text-decoration: none;
     }
     .source-card:hover { border-color: #666; background-color: #252525; transform: translateX(5px); }
-    .source-info { display: flex; flex-direction: column; }
     .source-name { font-weight: 700; color: #eee; font-size: 1.1rem; }
     .source-desc { font-size: 0.8rem; color: #888; margin-top: 4px; }
     .source-icon { font-size: 2rem; margin-right: 15px; }
-
-    /* 6. Tabs Styling */
-    button[data-baseweb="tab"] { font-size: 1rem; font-weight: 600; color: #888; }
-    button[data-baseweb="tab"][aria-selected="true"] { color: #fff; background-color: transparent; border-bottom: 2px solid #fff; }
 
     /* Ticker */
     .ticker-wrap { position: fixed; bottom: 0; left: 0; width: 100%; height: 32px; background-color: #0E1117; border-top: 1px solid #1C1C1E; z-index: 999; display: flex; align-items: center; }
@@ -210,40 +183,39 @@ st.markdown("""
     .ticker-down { color: #4b89ff; background: rgba(75, 137, 255, 0.1); padding: 2px 4px; border-radius: 4px; font-size: 0.75rem; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
     
-    .legal-footer { font-size: 0.7rem; color: #333; margin-top: 80px; text-align: center; margin-bottom: 50px; }
-    
     .scam-box { border: 1px solid #333; border-left: 3px solid #ff4b4b; background-color: #1A0505; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+    .legal-footer { font-size: 0.7rem; color: #333; margin-top: 80px; text-align: center; margin-bottom: 50px; }
 </style>
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [5] 메인 헤더 (Scanning Beam)
+# [5] 메인 헤더 (Icon Restored + Scanning Beam)
 # ------------------------------------------------------------------
 now_time = st.session_state.ticker_data['time']
 usd, jpy, usd_prev, jpy_prev = get_exchange_rates()
 
 st.markdown("""
     <div class="header-container">
+        <span class="radar-icon">📡</span>
         <span class="radar-title">RADAR</span>
         <div class="scan-line"></div>
     </div>
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [6] 메인 네비게이션 (Top Tabs)
+# [6] 메인 네비게이션
 # ------------------------------------------------------------------
 tab_home, tab_source, tab_tools, tab_safety = st.tabs(["🏠 시세 분석", "📂 마켓 소스", "🧰 도구", "👮‍♂️ 사기 조회"])
 
 # ==========================================
-# 🏠 TAB 1: 홈 (시세 분석)
+# 🏠 TAB 1: 홈 (분석)
 # ==========================================
 with tab_home:
     col_left, col_right = st.columns([0.6, 0.4], gap="large")
 
     with col_left:
-        # Typewriter Effect
-        st.markdown('<div class="typewriter-text">System Ready... Waiting for input_</div>', unsafe_allow_html=True)
-        keyword = st.text_input("검색", placeholder="상품명 입력 (예: 아이폰 15)", label_visibility="collapsed")
+        st.markdown('<div class="typewriter-text">System Ready... Accessing Sheet Data_</div>', unsafe_allow_html=True)
+        keyword = st.text_input("검색", placeholder="모델명 입력 (예: 아이폰 15)", label_visibility="collapsed")
 
         if keyword:
             eng_keyword = get_translated_keyword(keyword, 'en')
@@ -254,42 +226,40 @@ with tab_home:
             
             st.markdown(f"<div style='margin-top:20px; font-size:1.3rem; font-weight:700; color:#eee;'>'{html.escape(keyword)}' 분석 결과</div>", unsafe_allow_html=True)
 
-            # [수정] 2x2 Grid for Domestic Market
+            # [수정] 2x2 Grid (풀네임 적용)
             st.markdown("<div class='capsule-title'>🇰🇷 국내 마켓</div>", unsafe_allow_html=True)
-            
-            d_row1_1, d_row1_2 = st.columns(2)
-            with d_row1_1: st.link_button("⚡ 번개장터", f"https://m.bunjang.co.kr/search/products?q={encoded_kor}", use_container_width=True)
-            with d_row1_2: st.link_button("🥕 당근마켓", f"https://www.daangn.com/search/{encoded_kor}", use_container_width=True)
-            
-            d_row2_1, d_row2_2 = st.columns(2)
-            with d_row2_1: st.link_button("🟢 중고나라", f"https://web.joongna.com/search?keyword={encoded_kor}", use_container_width=True)
-            with d_row2_2: st.link_button("🟣 후르츠패밀리", f"https://fruitsfamily.com/search/{encoded_kor}", use_container_width=True)
+            d1, d2 = st.columns(2)
+            d1.link_button("⚡ 번개장터", f"https://m.bunjang.co.kr/search/products?q={encoded_kor}", use_container_width=True)
+            d2.link_button("🥕 당근마켓", f"https://www.daangn.com/search/{encoded_kor}", use_container_width=True)
+            d3, d4 = st.columns(2)
+            d3.link_button("🟢 중고나라", f"https://web.joongna.com/search?keyword={encoded_kor}", use_container_width=True)
+            d4.link_button("🟣 후르츠패밀리", f"https://fruitsfamily.com/search/{encoded_kor}", use_container_width=True)
 
-            # Global Market
             st.markdown("<div class='capsule-title'>🌎 해외 직구</div>", unsafe_allow_html=True)
-            g_col1, g_col2 = st.columns(2)
-            g_col1.link_button(f"🔵 eBay ({eng_keyword})", f"https://www.ebay.com/sch/i.html?_nkw={encoded_eng}", use_container_width=True)
-            g_col2.link_button(f"⚪ Mercari ({jp_keyword})", f"https://jp.mercari.com/search?keyword={encoded_jp}", use_container_width=True)
-
+            g1, g2 = st.columns(2)
+            g1.link_button(f"🔵 eBay ({eng_keyword})", f"https://www.ebay.com/sch/i.html?_nkw={encoded_eng}", use_container_width=True)
+            g2.link_button(f"⚪ Mercari ({jp_keyword})", f"https://jp.mercari.com/search?keyword={encoded_jp}", use_container_width=True)
         else:
-            st.info("상단 검색창에 모델명을 입력하여 분석을 시작하세요.")
+            st.info("상단 검색창에 모델명을 입력하세요.")
 
     with col_right:
-        st.markdown("#### 📉 시세 데이터")
+        # [수정] 정직한 제목 (Data Summary)
+        st.markdown("#### 📊 데이터 요약 (Sheet)")
         df_prices = load_price_data()
         matched = get_trend_data_from_sheet(keyword, df_prices)
         
         if matched:
             global_krw = calculate_total_import_cost(matched['global_usd'], usd)
+            # 시트 데이터의 '평균'을 보여줌 (정직한 로직)
             kr_avg = sum(matched['trend_prices'])/len(matched['trend_prices']) if matched['trend_prices'] else 0
             
             m1, m2 = st.columns(2)
-            with m1: st.markdown(f"<div class='metric-card'><div class='metric-label'>🇰🇷 국내 중고 시세</div><div class='metric-value'>{kr_avg:,.1f}만</div></div>", unsafe_allow_html=True)
+            with m1: st.markdown(f"<div class='metric-card'><div class='metric-label'>📉 시트 평균가</div><div class='metric-value'>{kr_avg:,.1f}만</div></div>", unsafe_allow_html=True)
             with m2:
                 diff_text = f"직구 {kr_avg - global_krw:,.1f}만 이득" if (kr_avg - global_krw) > 0 else "국내 구매 유리"
                 sub_class = "ticker-up" if (kr_avg - global_krw) > 0 else "ticker-down"
-                if global_krw <= 0: diff_text = "정보 없음"; sub_class = "metric-sub"
-                st.markdown(f"<div class='metric-card'><div class='metric-label'>🌎 직구 예상 비용</div><div class='metric-value'>{global_krw:,.1f}만</div><div class='{sub_class}'>{diff_text}</div></div>", unsafe_allow_html=True)
+                if global_krw <= 0: diff_text = "데이터 없음"; sub_class = "metric-sub"
+                st.markdown(f"<div class='metric-card'><div class='metric-label'>🌎 직구 추산가</div><div class='metric-value'>{global_krw:,.1f}만</div><div class='{sub_class}'>{diff_text}</div></div>", unsafe_allow_html=True)
             
             st.write("")
             tab_trend, tab_dist = st.tabs(["📈 시세 추이", "📊 매물 분포"])
@@ -326,7 +296,7 @@ with tab_home:
         with tab_memo: st.session_state.memo_pad = st.text_area("메모장", value=st.session_state.memo_pad, height=100)
 
 # ==========================================
-# 📂 TAB 2: 마켓 소스 (커뮤니티) - 카드형 디자인
+# 📂 TAB 2: 마켓 소스
 # ==========================================
 with tab_source:
     st.markdown("#### Market Intelligence Sources")
@@ -334,30 +304,30 @@ with tab_source:
     with c1:
         st.markdown("""
         <a href="http://www.slrclub.com" target="_blank" class="source-card">
-            <div class="source-info"><span class="source-name">SLR클럽</span><span class="source-desc">국내 최대 카메라/렌즈 커뮤니티</span></div><span class="source-icon">📷</span>
+            <div class="source-info"><span class="source-name">SLR클럽</span><span class="source-desc">카메라/렌즈 전문 커뮤니티</span></div><span class="source-icon">📷</span>
         </a>
         <a href="https://coolenjoy.net" target="_blank" class="source-card">
-            <div class="source-info"><span class="source-name">쿨엔조이</span><span class="source-desc">PC 하드웨어 전문 정보</span></div><span class="source-icon">💻</span>
+            <div class="source-info"><span class="source-name">쿨엔조이</span><span class="source-desc">PC 하드웨어 정보</span></div><span class="source-icon">💻</span>
         </a>
         """, unsafe_allow_html=True)
     with c2:
         st.markdown("""
         <a href="https://quasarzone.com" target="_blank" class="source-card">
-            <div class="source-info"><span class="source-name">퀘이사존</span><span class="source-desc">하드웨어/게임 뉴스 및 장터</span></div><span class="source-icon">🔥</span>
+            <div class="source-info"><span class="source-name">퀘이사존</span><span class="source-desc">하드웨어 뉴스 및 장터</span></div><span class="source-icon">🔥</span>
         </a>
         <a href="https://cafe.naver.com/appleiphone" target="_blank" class="source-card">
-            <div class="source-info"><span class="source-name">아사모</span><span class="source-desc">네이버 대표 애플 사용자 모임</span></div><span class="source-icon">🍎</span>
+            <div class="source-info"><span class="source-name">아사모</span><span class="source-desc">애플 사용자 모임</span></div><span class="source-icon">🍎</span>
         </a>
         """, unsafe_allow_html=True)
 
 # ==========================================
-# 🧰 TAB 3: 도구 (배송/관세)
+# 🧰 TAB 3: 도구
 # ==========================================
 with tab_tools:
     t1, t2 = st.columns(2)
     with t1:
         st.markdown("#### 📦 배송 조회")
-        track_no = st.text_input("운송장 번호 입력", placeholder="숫자만 입력")
+        track_no = st.text_input("운송장 번호 입력", placeholder="- 제외하고 숫자만 입력")
         if track_no:
             st.link_button("네이버 택배 조회", f"https://search.naver.com/search.naver?query=운송장번호+{track_no}", use_container_width=True)
         else:
@@ -366,7 +336,7 @@ with tab_tools:
             
     with t2:
         st.markdown("#### 💱 관세 계산기")
-        currency_mode = st.radio("통화 선택", ["🇺🇸 USD (미국)", "🇯🇵 JPY (일본)"], horizontal=True)
+        currency_mode = st.radio("통화 선택", ["🇺🇸 USD", "🇯🇵 JPY"], horizontal=True)
         if "USD" in currency_mode:
             st.caption(f"적용 환율: {usd:,.1f}원")
             p_u = st.number_input("물품 가격 ($)", 190, step=10)
@@ -378,7 +348,6 @@ with tab_tools:
                 vat = (krw_val + duty) * 0.1
                 total_tax = duty + vat
                 st.error(f"🚨 과세 대상 (약 {total_tax:,.0f}원 부과 예상)")
-                st.caption("관세 8% + 부가세 10% 적용 기준")
         else:
             st.caption(f"적용 환율: {jpy:,.1f}원")
             p_j = st.number_input("물품 가격 (¥)", 15000, step=1000)
@@ -390,20 +359,18 @@ with tab_tools:
                 vat = (krw_val + duty) * 0.1
                 total_tax = duty + vat
                 st.error(f"🚨 과세 대상 (약 {total_tax:,.0f}원 부과 예상)")
-                st.caption("관세 8% + 부가세 10% 적용 기준")
 
 # ==========================================
-# 👮‍♂️ TAB 4: 사기 조회
+# 👮‍♂️ TAB 4: 사기 조회 (원본 복구)
 # ==========================================
 with tab_safety:
     st.markdown("#### 👮‍♂️ 사기 피해 방지 (더치트)")
     st.markdown("""
     <div class="scam-box">
-        <h5 style="color:#ff4b4b; margin:0;">🚫 필독: 사기 예방 수칙</h5>
-        <br>
-        <span class="scam-text">1. <b>카카오톡 아이디</b>로 대화를 유도하면 99.9% 사기입니다.</span>
-        <span class="scam-text">2. <b>안전결제(네이버페이 등)</b> 링크를 판매자가 보내주면 절대 클릭하지 마세요. (가짜 사이트)</span>
-        <span class="scam-text">3. 반드시 더치트에서 <b>계좌번호와 전화번호</b>를 모두 조회하세요.</span>
+        <h5 style="color:#ff4b4b; margin:0; margin-bottom:10px;">🚫 필독: 사기 예방 수칙</h5>
+        <span class="scam-text">1. <b>카카오톡 아이디</b>로 친구 추가 및 대화를 유도하면 99.9% 사기입니다.</span>
+        <span class="scam-text">2. <b>안전결제(네이버페이 등)</b> 링크를 판매자가 직접 보내주면 절대 클릭하지 마세요. (가짜 사이트)</span>
+        <span class="scam-text">3. 거래 전 반드시 더치트에서 <b>계좌번호와 전화번호</b>를 모두 조회하세요.</span>
     </div>
     """, unsafe_allow_html=True)
     st.link_button("더치트 무료 조회 바로가기", "https://thecheat.co.kr", type="primary", use_container_width=True)
@@ -411,7 +378,7 @@ with tab_safety:
 st.markdown('<div class="legal-footer">© 2026 RADAR | Global Price Intelligence</div>', unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [8] 하단 고정 티커 (Online Green, Full Text)
+# [8] 하단 고정 티커 (Online Green, Scam Text Restored)
 # ------------------------------------------------------------------
 diff_usd = usd - usd_prev
 diff_jpy = jpy - jpy_prev
