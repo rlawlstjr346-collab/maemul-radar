@@ -20,7 +20,7 @@ st.set_page_config(
 )
 
 # ------------------------------------------------------------------
-# [2] 데이터 관리 (캐시 적용)
+# [2] 데이터 로드
 # ------------------------------------------------------------------
 sheet_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQS8AftSUmG9Cr7MfczpotB5hhl1DgjH4hRCgXH5R8j5hykRiEf0M9rEyEq3uj312a5RuI4zMdjI5Jr/pub?output=csv"
 
@@ -34,7 +34,7 @@ def load_price_data():
         return pd.DataFrame()
 
 # ------------------------------------------------------------------
-# [3] 유틸리티 (오늘 만든 방탄 로직 + 글로벌 엔진 적용)
+# [3] 로직 (환율, 번역, 계산, 데이터 파싱)
 # ------------------------------------------------------------------
 @st.cache_data(ttl=3600)
 def get_exchange_rates():
@@ -59,7 +59,6 @@ def get_translated_keyword(text, target_lang='en'):
     return text
 
 def calculate_total_import_cost(usd_price, rate):
-    """관/부가세 포함 실구매가 시뮬레이션"""
     if usd_price <= 0: return 0
     krw_base = usd_price * rate
     shipping = 30000 
@@ -70,7 +69,6 @@ def calculate_total_import_cost(usd_price, rate):
     return (krw_base + shipping) / 10000
 
 def get_trend_data_from_sheet(user_query, df):
-    """[복구완료] 어제 코드 기능 + 오늘 방탄 로직 결합"""
     if df.empty or not user_query: return None
     user_clean = user_query.lower().replace(" ", "").strip()
     date_cols = ["12월 4주", "1월 1주", "1월 2주", "1월 3주", "1월 4주"]
@@ -84,7 +82,6 @@ def get_trend_data_from_sheet(user_query, df):
             if sheet_keyword in user_clean or user_clean in sheet_keyword:
                 trend_prices = []
                 valid_dates = []
-                # 방탄 숫자 추출 로직 적용
                 for col in date_cols:
                     if col in df.columns:
                         v_raw = str(row.get(col, '0')).strip()
@@ -97,7 +94,6 @@ def get_trend_data_from_sheet(user_query, df):
                                     valid_dates.append(col)
                             except: pass
                 
-                # 분포도 데이터
                 raw_str = str(row.get('시세 (5주치)', '')).strip()
                 raw_prices = []
                 if raw_str and raw_str.lower() != 'nan':
@@ -110,7 +106,6 @@ def get_trend_data_from_sheet(user_query, df):
                             except: continue
                 if not raw_prices: raw_prices = trend_prices
 
-                # 해외 시세
                 g_raw = str(row.get('해외평균(USD)', '0')).strip()
                 g_clean = re.sub(r'[^0-9.]', '', g_raw)
                 global_usd = float(g_clean) if g_clean else 0.0
@@ -137,30 +132,34 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [4] CSS 스타일링 (어제 디자인 복구 + 신규 UI 추가)
+# [4] CSS 스타일링 (SLR클럽 수정 / 사기조회 박스 추가)
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
     .stApp { background-color: #0E1117; color: #FAFAFA; font-family: 'Pretendard', sans-serif; }
     [data-testid="stSidebar"] { background-color: #17191E; border-right: 1px solid #333; }
-    div[data-baseweb="input"] { background-color: #262730; border: 2px solid #00ff88 !important; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 255, 136, 0.15); }
+    div[data-baseweb="input"] { background-color: #262730; border: 2px solid #00ff88 !important; border-radius: 8px; }
     
-    /* 레이더 펄스 애니메이션 (복구) */
+    /* 레이더 펄스 */
     .radar-wrapper { position: relative; display: inline-block; margin-right: 10px; vertical-align: middle; }
     .radar-emoji { position: relative; z-index: 2; font-size: 3rem; }
     .pulse-ring { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.7); opacity: 0; animation: pulse-ring 2s infinite; }
     @keyframes pulse-ring { 0% { width: 90%; opacity: 1; } 100% { width: 220%; opacity: 0; } }
     .title-text { font-size: 3rem; font-weight: 900; color: #FFFFFF !important; letter-spacing: -1px; }
 
-    /* 커뮤니티 링크 스타일 (복구) */
+    /* 커뮤니티 링크 (SLR클럽 깨짐 방지: min-width 적용) */
     .community-link { display: flex; align-items: center; padding: 10px; margin-bottom: 8px; background-color: #262730; border-radius: 8px; text-decoration: none !important; color: #eee !important; border: 1px solid #333; }
     .community-link:hover { background-color: #33343d; border-color: #555; }
-    .comm-icon { font-size: 1.2rem; margin-right: 12px; min-width: 25px; text-align: center; }
+    .comm-icon { font-size: 1.2rem; margin-right: 12px; min-width: 35px; text-align: center; } /* min-width 추가 */
     .comm-info { display: flex; flex-direction: column; }
     .comm-name { font-weight: bold; font-size: 0.95rem; }
     .comm-desc { font-size: 0.75rem; color: #aaa; margin-top: 2px; }
 
-    /* 신규 기능: 하단 고정 티커 */
+    /* 사기 조회 박스 스타일 */
+    .scam-box { border: 1px solid #ff4b4b; background-color: rgba(255, 75, 75, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 8px; color: #eee; font-size: 0.9rem; }
+    .scam-title { color: #ff4b4b; font-weight: bold; margin-bottom: 4px; display: block; }
+
+    /* 티커 & 카드 */
     .ticker-wrap { position: fixed; bottom: 0; left: 0; width: 100%; overflow: hidden; height: 40px; background-color: #15181E; border-top: 1px solid #333; z-index: 999; display: flex; align-items: center; }
     .ticker { display: inline-block; white-space: nowrap; padding-left: 100%; animation: ticker 40s linear infinite; }
     .ticker-item { margin-right: 40px; font-size: 0.95rem; font-weight: bold; color: #ddd; }
@@ -168,13 +167,12 @@ st.markdown("""
     .ticker-alert { color: #ff4b4b; margin-right: 5px; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-    /* 신규 기능: KREAM Metric Card */
     .metric-card { background-color: #1E1E1E; border: 1px solid #333; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 10px; }
     .metric-value { font-size: 1.5rem; font-weight: 800; color: #fff; }
     .metric-sub { font-size: 0.8rem; color: #00ff88; margin-top: 5px; }
     .metric-sub-bad { font-size: 0.8rem; color: #ff4b4b; margin-top: 5px; }
 
-    /* 버튼 스타일 복구 */
+    /* 버튼 스타일 */
     div[data-testid="stLinkButton"] > a { border-radius: 10px; font-weight: 700; transition: all 0.3s ease; text-decoration: none; }
     div[data-testid="stLinkButton"] > a[href*="bunjang"] { border: 1px solid #FF3E3E !important; color: #FF3E3E !important; background-color: rgba(255, 62, 62, 0.1); }
     div[data-testid="stLinkButton"] > a[href*="daangn"] { border: 1px solid #FF8A3D !important; color: #FF8A3D !important; background-color: rgba(255, 138, 61, 0.1); }
@@ -203,7 +201,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [6] 사이드바 (어제 기능 100% 복구 + 팝업 적용)
+# [6] 사이드바 (커뮤니티 + 배송 + 관세 + 사기조회)
 # ------------------------------------------------------------------
 with st.sidebar:
     st.header("⚙️ 레이더 센터")
@@ -216,7 +214,6 @@ with st.sidebar:
         """, unsafe_allow_html=True)
 
     st.write("---")
-    # [복구] 배송 조회 및 편의점 링크
     with st.expander("📦 배송 조회 레이더", expanded=True):
         track_no = st.text_input("운송장 번호", placeholder="- 없이 숫자만 입력")
         if track_no:
@@ -228,7 +225,6 @@ with st.sidebar:
             c2.link_button("CU알뜰", "https://www.cupost.co.kr/postbox/delivery/local.cupost", use_container_width=True)
 
     st.write("---")
-    # [복구] 관세 계산기 탭
     with st.expander("💱 관세 안전선 계산기", expanded=True):
         t1, t2 = st.tabs(["🇺🇸 USD", "🇯🇵 JPY"])
         with t1:
@@ -252,13 +248,13 @@ with st.sidebar:
                 st.error(f"🚨 관세 대상 (예상 약 {tax_est:,.0f}원)")
     
     st.write("---")
-    # [신규] 피드백 반영: 사기 조회 설명 팝업화
+    # [수정 완료] 사기 조회 가이드 박스형 디자인 적용
     with st.expander("🚨 사기꾼 판독 가이드", expanded=False):
-         st.markdown("""
-        **1. 카톡 아이디 거래 유도** ❌ "카톡으로 대화해요" → 99.9% 사기입니다. 앱 내 채팅만 이용하세요.
-        **2. 가짜 안전결제 링크** ❌ `http://...` 로 시작하거나 공식 도메인이 아니면 피싱 사이트입니다.
-        **3. 재입금 요구** ❌ "수수료 안 보내서 다시 보내라" → 전형적인 먹튀 수법입니다.
-        """)
+        st.markdown("""
+        <div class="scam-box"><span class="scam-title">🚫 카톡 아이디 거래 유도</span>"카톡으로 대화해요" → 99.9% 사기입니다.</div>
+        <div class="scam-box"><span class="scam-title">🚫 가짜 안전결제 링크</span>http://... 로 시작하거나 도메인이 다르면 피싱!</div>
+        <div class="scam-box"><span class="scam-title">🚫 재입금/수수료 요구</span>"수수료 안 보냈으니 다시 보내라" → 먹튀 수법</div>
+        """, unsafe_allow_html=True)
     st.link_button("👮‍♂️ 더치트 조회하기", "https://thecheat.co.kr", type="primary", use_container_width=True)
 
 # ------------------------------------------------------------------
@@ -274,7 +270,6 @@ with col_left:
         eng_keyword = get_translated_keyword(keyword, 'en')
         jp_keyword = get_translated_keyword(keyword, 'ja')
         
-        # 안전한 HTML 이스케이프
         safe_keyword = html.escape(keyword)
         encoded_kor = urllib.parse.quote(keyword)
         encoded_eng = urllib.parse.quote(eng_keyword)
@@ -312,7 +307,6 @@ with col_right:
     matched = get_trend_data_from_sheet(keyword, df_prices)
     
     if matched:
-        # [신규] KREAM Style Metric Cards (국내 vs 직구)
         global_krw = calculate_total_import_cost(matched['global_usd'], usd)
         kr_avg = sum(matched['trend_prices'])/len(matched['trend_prices']) if matched['trend_prices'] else 0
         
@@ -329,7 +323,7 @@ with col_right:
         
         st.write("")
 
-        # [복구] 시세 흐름 & 분포 그래프
+        # [수정] 차트 소수점 제거 & 강제 정수 표시
         tab_trend, tab_dist = st.tabs(["📈 시세 흐름", "📊 가격 분포도"])
         with tab_trend:
             chart_df = pd.DataFrame({"날짜": matched["dates"], "국내": matched["trend_prices"], "해외직구": [global_krw] * len(matched["dates"])})
@@ -341,17 +335,35 @@ with col_right:
         
         with tab_dist:
              dist_df = pd.DataFrame({"가격": matched["raw_prices"]})
-             dist_chart = alt.Chart(dist_df).mark_bar(color='#0A84FF').encode(x=alt.X('가격:Q', bin=alt.Bin(maxbins=15)), y='count()').properties(height=250)
+             dist_chart = alt.Chart(dist_df).mark_bar(color='#0A84FF').encode(
+                 x=alt.X('가격:Q', bin=alt.Bin(maxbins=15)), 
+                 # Y축 정수 강제 설정 (tickMinStep=1)
+                 y=alt.Y('count()', axis=alt.Axis(tickMinStep=1, format='d'))
+             ).properties(height=250)
              st.altair_chart(dist_chart, use_container_width=True)
 
-        # [복구] 스마트 멘트 & 메모장 (어제 로직 그대로)
+        # [수정 완료] 스마트 멘트 (가격 제안 기능 추가)
         st.markdown("#### 💬 스마트 멘트 & 메모")
         tab_m1, tab_m2, tab_memo = st.tabs(["⚡️ 퀵멘트", "💳 결제", "📝 메모"])
         
         with tab_m1:
             quick_opt = st.radio("빠른 선택", ["👋 구매 문의", "💸 가격 제안"], label_visibility="collapsed")
-            if quick_opt == "👋 구매 문의": st.code("안녕하세요! 게시글 보고 연락드립니다. 구매 가능할까요?", language="text")
-            else: st.code("혹시 가격 조정이 가능할까요? 가능하다면 바로 결제하겠습니다!", language="text")
+            if quick_opt == "👋 구매 문의": 
+                st.code("안녕하세요! 게시글 보고 연락드립니다. 구매 가능할까요?", language="text")
+            else:
+                # 가격 입력 기능 추가
+                nego_price = st.text_input("희망 가격 (숫자만 입력)", placeholder="예: 30000")
+                if nego_price:
+                    # 천단위 콤마 찍기
+                    try:
+                         fmt_price = f"{int(nego_price):,}"
+                    except:
+                         fmt_price = nego_price
+                    st.code(f"안녕하세요. 혹시 실례지만 {fmt_price}원에 가격조정 가능할지 여쭤보고 싶습니다. 가능하시다면 바로 구매가능합니다.", language="text")
+                else:
+                    st.caption("☝️ 위 칸에 가격을 입력하면 멘트가 완성됩니다.")
+                    st.code("안녕하세요. 혹시 실례지만 [   ]원에 가격조정 가능할지 여쭤보고 싶습니다. 가능하시다면 바로 구매가능합니다.", language="text")
+
         with tab_m2:
              pay_opt = st.radio("거래 방식", ["💳 계좌 문의", "🤝 직거래"], horizontal=True, label_visibility="collapsed")
              if pay_opt == "💳 계좌 문의": st.code("계좌번호 알려주시면 바로 이체하겠습니다.", language="text")
@@ -365,7 +377,7 @@ with col_right:
 st.markdown('<div class="legal-footer">© 2026 매물레이더 Pro | Global Price Intelligence</div>', unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [8] 하단 고정 티커 (신규 기능 - 실시간 금융 보드)
+# [8] 하단 고정 티커
 # ------------------------------------------------------------------
 us_limit = usd * 200
 jp_limit = usd * 150 
