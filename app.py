@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 import html
 
 # ------------------------------------------------------------------
-# [1] 앱 기본 설정 (RADAR V9.0: Linear Glass & StockX Style)
+# [1] 앱 기본 설정 (RADAR V9.2: Final Fixed Version)
 # ------------------------------------------------------------------
 st.set_page_config(
     page_title="RADAR",
@@ -18,7 +18,7 @@ st.set_page_config(
 )
 
 # ------------------------------------------------------------------
-# [2] 데이터 로드 (기능 유지)
+# [2] 데이터 로드
 # ------------------------------------------------------------------
 sheet_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQS8AftSUmG9Cr7MfczpotB5hhl1DgjH4hRCgXH5R8j5hykRiEf0M9rEyEq3uj312a5RuI4zMdjI5Jr/pub?output=csv"
 
@@ -32,7 +32,7 @@ def load_price_data():
         return pd.DataFrame()
 
 # ------------------------------------------------------------------
-# [3] 로직 (금융 로직 티커 포함 / 기능 유지)
+# [3] 로직 (금융 로직 티커 포함 / 기능 100% 유지)
 # ------------------------------------------------------------------
 @st.cache_data(ttl=3600)
 def get_exchange_rates():
@@ -43,7 +43,6 @@ def get_exchange_rates():
         usd = data['rates']['KRW']
         jpy = (data['rates']['KRW'] / data['rates']['JPY']) * 100
         
-        # 전일 종가 시뮬레이션 (등락폭 표시용)
         usd_prev = usd * 0.996 
         jpy_prev = jpy * 1.002 
         
@@ -135,17 +134,17 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [4] CSS 스타일링 (Linear Theme & StockX Layout)
+# [4] CSS 스타일링 (Linear Theme & Interactive Buttons)
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
     /* 1. Global Linear Theme (Deep Dark) */
     .stApp { background-color: #0E1117; color: #EEEEEE; font-family: 'Inter', 'Pretendard', sans-serif; }
     
-    /* 2. Sidebar: Invisible Style (No Borders, Just Hierarchy) */
+    /* 2. Sidebar: Invisible Style */
     [data-testid="stSidebar"] { 
-        background-color: #0E1117; /* 메인과 동일색상 = 경계 없음 */
-        border-right: 1px solid #1C1C1E; /* 아주 미세한 경계 */
+        background-color: #0E1117; 
+        border-right: 1px solid #1C1C1E; 
     }
     
     .sidebar-header {
@@ -160,32 +159,27 @@ st.markdown("""
     }
 
     /* 3. Hero Search Bar (Linear Command Palette Style) */
-    /* Input Container Styling */
     div[data-baseweb="input"] { 
-        background-color: rgba(20, 20, 20, 0.7) !important; /* 반투명 */
+        background-color: rgba(20, 20, 20, 0.7) !important; 
         border: 1px solid #333 !important; 
         border-radius: 12px; 
         color: white; 
-        backdrop-filter: blur(10px); /* 유리 효과 */
+        backdrop-filter: blur(10px); 
     }
-    
-    /* 메인 검색창 확대 및 Glow 효과 */
     div[data-testid="stVerticalBlock"] > div:nth-child(1) div[data-baseweb="input"] {
         height: 56px;
         border-radius: 12px;
         font-size: 1.1rem;
         border: 1px solid #333 !important;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5); /* 그림자 */
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
         transition: all 0.3s ease;
     }
-    
-    /* Focus 시 Linear 특유의 보라색 Glow */
     div[data-baseweb="input"]:focus-within { 
         border: 1px solid #5E6AD2 !important; 
         box-shadow: 0 0 0 1px #5E6AD2, 0 0 15px rgba(94, 106, 210, 0.3) !important;
     }
 
-    /* 4. Capsule Badge Title (StockX Style) */
+    /* 4. Capsule Badge Title */
     .capsule-title {
         display: inline-block;
         color: #999;
@@ -196,15 +190,15 @@ st.markdown("""
         letter-spacing: 0.5px;
     }
 
-    /* 5. Bento Grid Buttons (Linear Card Style) */
+    /* 5. Bento Grid Buttons (Border -> Fill Interaction) */
     div[data-testid="stLinkButton"] > a { 
-        background-color: #161618 !important; /* Linear Card Bg */
+        background-color: #161618 !important; 
         border-radius: 12px; 
         font-weight: 500; 
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); 
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
         text-decoration: none; 
-        border: 1px solid #2C2C2E; 
-        height: 90px; /* 정사각형 느낌 */
+        border: 2px solid transparent; 
+        height: 90px; 
         display: flex; 
         flex-direction: column;
         align-items: center; 
@@ -214,51 +208,67 @@ st.markdown("""
         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
     
-    /* Hover Effects: Glow based on Brand Color */
-    /* 번개장터 (Red Glow) */
+    /* 번개장터 (Red) */
+    div[data-testid="stLinkButton"] > a[href*="bunjang"] { border-color: #FF3E3E88 !important; color: #FF6B6B !important; }
     div[data-testid="stLinkButton"] > a[href*="bunjang"]:hover { 
-        border-color: #FF3E3E; 
-        box-shadow: 0 0 15px rgba(255, 62, 62, 0.2); 
-        color: #fff !important; 
+        background-color: #FF3E3E !important; 
+        border-color: #FF3E3E !important;
+        color: #FFFFFF !important; 
+        box-shadow: 0 0 20px rgba(255, 62, 62, 0.4); 
         transform: translateY(-2px);
     }
-    /* 당근마켓 (Orange Glow) */
+
+    /* 당근마켓 (Orange) */
+    div[data-testid="stLinkButton"] > a[href*="daangn"] { border-color: #FF8A3D88 !important; color: #FF9F60 !important; }
     div[data-testid="stLinkButton"] > a[href*="daangn"]:hover { 
-        border-color: #FF8A3D; 
-        box-shadow: 0 0 15px rgba(255, 138, 61, 0.2); 
-        color: #fff !important; 
+        background-color: #FF8A3D !important;
+        border-color: #FF8A3D !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 0 20px rgba(255, 138, 61, 0.4);
         transform: translateY(-2px);
     }
-    /* 중고나라 (Green Glow) */
+
+    /* 중고나라 (Green) */
+    div[data-testid="stLinkButton"] > a[href*="joongna"] { border-color: #00E67688 !important; color: #69F0AE !important; }
     div[data-testid="stLinkButton"] > a[href*="joongna"]:hover { 
-        border-color: #00E676; 
-        box-shadow: 0 0 15px rgba(0, 230, 118, 0.2); 
-        color: #fff !important; 
+        background-color: #00E676 !important;
+        border-color: #00E676 !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 0 20px rgba(0, 230, 118, 0.4);
         transform: translateY(-2px);
     }
-    /* Fruits (Purple Glow) */
+
+    /* Fruits (Purple) */
+    div[data-testid="stLinkButton"] > a[href*="fruits"] { border-color: #D500F988 !important; color: #EA80FC !important; }
     div[data-testid="stLinkButton"] > a[href*="fruits"]:hover { 
-        border-color: #D500F9; 
-        box-shadow: 0 0 15px rgba(213, 0, 249, 0.2); 
-        color: #fff !important; 
+        background-color: #D500F9 !important;
+        border-color: #D500F9 !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 0 20px rgba(213, 0, 249, 0.4);
         transform: translateY(-2px);
     }
-    /* eBay (Blue Glow) */
+
+    /* eBay (Blue) */
+    div[data-testid="stLinkButton"] > a[href*="ebay"] { border-color: #2962FF88 !important; color: #448AFF !important; }
     div[data-testid="stLinkButton"] > a[href*="ebay"]:hover { 
-        border-color: #2962FF; 
-        box-shadow: 0 0 15px rgba(41, 98, 255, 0.2); 
-        color: #fff !important; 
+        background-color: #2962FF !important;
+        border-color: #2962FF !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 0 20px rgba(41, 98, 255, 0.4);
         transform: translateY(-2px);
     }
-    /* Mercari (White Glow) */
+
+    /* Mercari (White) */
+    div[data-testid="stLinkButton"] > a[href*="mercari"] { border-color: #AAAAAA88 !important; color: #E0E0E0 !important; }
     div[data-testid="stLinkButton"] > a[href*="mercari"]:hover { 
-        border-color: #FFFFFF; 
-        box-shadow: 0 0 15px rgba(255, 255, 255, 0.2); 
-        color: #fff !important; 
+        background-color: #FFFFFF !important;
+        border-color: #FFFFFF !important;
+        color: #000000 !important;
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
         transform: translateY(-2px);
     }
     
-    /* 6. Community Links (Minimal List) */
+    /* 6. Market Source Links (Original Colors Restored) */
     .community-link { 
         display: flex; 
         align-items: center; 
@@ -275,59 +285,67 @@ st.markdown("""
         color: #fff !important; 
         border: 1px solid #333;
     }
-    .comm-icon { margin-right: 12px; width: 20px; text-align: center; font-size: 1.1rem; filter: grayscale(100%); }
-    .community-link:hover .comm-icon { filter: grayscale(0%); }
+    .comm-icon { margin-right: 12px; width: 20px; text-align: center; font-size: 1.1rem; }
     .comm-name { font-weight: 500; font-size: 0.9rem; }
     
-    /* SLR클럽 텍스트 세로 정렬 유지 */
-    .comm-info { display: flex; flex-direction: column; }
-    .comm-desc { font-size: 0.7rem; color: #555; margin-top: 2px; }
+    /* 7. Scam Warning Box */
+    .scam-box {
+        border: 1px solid #333;
+        border-left: 3px solid #ff4b4b;
+        background-color: #1A0505;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 5px;
+    }
+    .scam-text { font-size: 0.8rem; color: #ccc; margin-bottom: 5px; display: block; }
+    .scam-strong { color: #ff4b4b; font-weight: 700; }
 
-    /* 7. Tools Expander (Transparent) */
-    div[data-testid="stExpander"] { border: 1px solid #1C1C1E !important; background-color: #111 !important; border-radius: 8px; }
-    div[data-testid="stExpander"] summary { padding-left: 10px !important; color: #bbb !important; font-weight: 500; }
-    div[data-testid="stExpander"] summary:hover { color: #fff !important; background-color: #1C1C1E; border-radius: 8px; }
+    /* 8. Radar Animation & Header */
+    .radar-wrapper { position: relative; display: inline-block; margin-right: 10px; vertical-align: middle; }
+    .radar-emoji { position: relative; z-index: 2; font-size: 2.5rem; }
+    .pulse-ring { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.2); opacity: 0; animation: pulse-ring 2s infinite; }
+    @keyframes pulse-ring { 0% { width: 90%; opacity: 1; } 100% { width: 220%; opacity: 0; } }
+    
+    .radar-title { font-size: 2.5rem; font-weight: 800; color: #FFF; letter-spacing: -1.5px; }
+    .radar-subtitle { font-size: 0.85rem; color: #666; font-weight: 500; margin-top: 5px; letter-spacing: 0.5px; }
 
-    /* 8. Ticker (StockX Style - High Contrast) */
+    /* Ticker */
     .ticker-wrap { position: fixed; bottom: 0; left: 0; width: 100%; height: 32px; background-color: #0E1117; border-top: 1px solid #1C1C1E; z-index: 999; display: flex; align-items: center; }
     .ticker { display: inline-block; white-space: nowrap; padding-left: 100%; animation: ticker 40s linear infinite; }
     .ticker-item { margin-right: 40px; font-size: 0.8rem; color: #888; font-family: 'Inter', sans-serif; font-weight: 500; }
     .ticker-val { color: #eee; font-weight: 700; margin-left: 5px; }
-    .ticker-up { color: #00C853; background: rgba(0, 200, 83, 0.1); padding: 2px 4px; border-radius: 4px; font-size: 0.75rem; } /* StockX Green */
-    .ticker-down { color: #FF3D00; background: rgba(255, 61, 0, 0.1); padding: 2px 4px; border-radius: 4px; font-size: 0.75rem; } /* StockX Red */
+    .ticker-up { color: #00C853; background: rgba(0, 200, 83, 0.1); padding: 2px 4px; border-radius: 4px; font-size: 0.75rem; } 
+    .ticker-down { color: #FF3D00; background: rgba(255, 61, 0, 0.1); padding: 2px 4px; border-radius: 4px; font-size: 0.75rem; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
-
+    
     .legal-footer { font-size: 0.7rem; color: #333; margin-top: 80px; text-align: center; margin-bottom: 50px; }
-
-    /* Header */
-    .radar-title { font-size: 2.5rem; font-weight: 800; color: #FFF; letter-spacing: -1.5px; }
-    .radar-subtitle { font-size: 0.85rem; color: #666; font-weight: 500; margin-top: 5px; letter-spacing: 0.5px; }
 </style>
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [5] 메인 헤더
+# [5] 메인 헤더 (애니메이션 복구)
 # ------------------------------------------------------------------
 now_time = st.session_state.ticker_data['time']
 usd, jpy, usd_prev, jpy_prev = get_exchange_rates()
 
 st.markdown("""
     <div style="text-align:center; margin-bottom:40px; margin-top: 20px;">
-        <div class="radar-title">RADAR</div>
+        <div class="radar-wrapper"><span class="radar-emoji">📡</span><div class="pulse-ring"></div></div>
+        <span class="radar-title">RADAR</span>
         <div class="radar-subtitle">Global Arbitrage Intelligence</div>
     </div>
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [6] 사이드바 (Invisible Minimal List)
+# [6] 사이드바 (MARKET SOURCES & Safety Box Restoration)
 # ------------------------------------------------------------------
 with st.sidebar:
-    # 1. Monitoring Section
-    st.markdown("<div class='sidebar-header'>MONITORING</div>", unsafe_allow_html=True)
+    # 1. Market Sources (Colors Restored)
+    st.markdown("<div class='sidebar-header'>MARKET SOURCES</div>", unsafe_allow_html=True)
     st.markdown("""
         <a href="http://www.slrclub.com" target="_blank" class="community-link">
             <span class="comm-icon">📷</span>
-            <div class="comm-info"><span class="comm-name">SLR클럽</span><span class="comm-desc">카메라 전문</span></div>
+            <div class="comm-info"><span class="comm-name">SLR클럽</span></div>
         </a>
         <a href="https://coolenjoy.net" target="_blank" class="community-link"><span class="comm-icon">💻</span><span class="comm-name">쿨엔조이</span></a>
         <a href="https://quasarzone.com" target="_blank" class="community-link"><span class="comm-icon">🔥</span><span class="comm-name">퀘이사존</span></a>
@@ -354,28 +372,46 @@ with st.sidebar:
             krw_val = p_u * usd
             st.markdown(f"**≈ {krw_val:,.0f} 원**")
             if p_u <= 200: st.success("면세 (Safe)")
-            else: st.error("과세 대상")
+            else: 
+                # [복구] 상세 관세 계산 로직
+                duty = krw_val * 0.08 # 관세 8%
+                vat = (krw_val + duty) * 0.1 # 부가세 10%
+                total_tax = duty + vat
+                st.error("🚨 과세 대상")
+                st.caption(f"예상 세금: 약 {total_tax:,.0f}원\n(관세 8% + 부가세 10%)")
         else:
             st.caption(f"환율: {jpy:,.1f}원")
             p_j = st.number_input("가격 (¥)", 15000, step=1000)
             krw_val = p_j * (jpy/100)
             st.markdown(f"**≈ {krw_val:,.0f} 원**")
             if (krw_val/usd) <= 150: st.success("면세 (Safe)")
-            else: st.error("과세 대상")
+            else: 
+                duty = krw_val * 0.08
+                vat = (krw_val + duty) * 0.1
+                total_tax = duty + vat
+                st.error("🚨 과세 대상")
+                st.caption(f"예상 세금: 약 {total_tax:,.0f}원\n(관세 8% + 부가세 10%)")
 
-    # 3. Safety Section
+    # 3. Safety Section (Restore Warning Box + Button Inside)
     st.markdown("<div class='sidebar-header'>SAFETY</div>", unsafe_allow_html=True)
-    st.link_button("👮‍♂️ 더치트 조회", "https://thecheat.co.kr", type="primary", use_container_width=True)
+    st.markdown("""
+    <div class="scam-box">
+        <span class="scam-text"><span class="scam-strong">🚫 카톡 유도 금지</span> : 99% 사기</span>
+        <span class="scam-text"><span class="scam-strong">🚫 가짜 결제창</span> : URL 확인 필수</span>
+    </div>
+    """, unsafe_allow_html=True)
+    # 버튼을 박스 바로 아래에 배치하여 '이 박스에 대한 도구'임을 명시
+    st.link_button("👮‍♂️ 더치트 조회 (사기꾼 검색)", "https://thecheat.co.kr", type="primary", use_container_width=True)
 
 
 # ------------------------------------------------------------------
-# [7] 메인 콘텐츠 (Linear Search & Bento Grid)
+# [7] 메인 콘텐츠 (Linear Search & Bento Grid with Color Fill)
 # ------------------------------------------------------------------
 col_left, col_right = st.columns([0.6, 0.4], gap="large")
 
 with col_left:
     st.caption(f"Last Update: {now_time}")
-    # [수정] Linear Style Hero Search
+    # Hero Search Bar
     keyword = st.text_input("검색", placeholder="Search products...", label_visibility="collapsed")
 
     if keyword:
@@ -393,7 +429,7 @@ with col_left:
         c1, c2, c3, c4 = st.columns(4)
         c1.link_button("⚡ 번개", f"https://m.bunjang.co.kr/search/products?q={encoded_kor}", use_container_width=True)
         c2.link_button("🥕 당근", f"https://www.daangn.com/search/{encoded_kor}", use_container_width=True)
-        c3.link_button("🟢 중나", f"https://web.joongna.com/search?keyword={encoded_kor}", use_container_width=True)
+        c3.link_button("🟢 중고나라", f"https://web.joongna.com/search?keyword={encoded_kor}", use_container_width=True)
         c4.link_button("🟣 Fruits", f"https://fruitsfamily.com/search/{encoded_kor}", use_container_width=True)
 
         # 2층: Global (2열)
@@ -484,7 +520,6 @@ st.markdown('<div class="legal-footer">© 2026 RADAR | Global Price Intelligence
 diff_usd = usd - usd_prev
 diff_jpy = jpy - jpy_prev
 
-# StockX Style Arrow Logic
 sign_usd = "▲" if diff_usd >= 0 else "▼"
 class_usd = "ticker-up" if diff_usd >= 0 else "ticker-down"
 usd_text = f"{usd:,.0f} <span class='{class_usd}'>{sign_usd} {abs(diff_usd):.1f}</span>"
