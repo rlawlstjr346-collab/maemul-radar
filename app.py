@@ -3,14 +3,12 @@ import urllib.parse
 import requests
 import re
 import random
-import time
 import pandas as pd
 import altair as alt
 from datetime import datetime, timedelta
-import html
 
 # ------------------------------------------------------------------
-# [1] 앱 기본 설정 (원본 유지)
+# [1] 앱 기본 설정
 # ------------------------------------------------------------------
 st.set_page_config(
     page_title="매물레이더 Pro",
@@ -20,7 +18,7 @@ st.set_page_config(
 )
 
 # ------------------------------------------------------------------
-# [2] 데이터 관리 (원본 링크 유지)
+# [2] 데이터 로드 (캐시 적용)
 # ------------------------------------------------------------------
 sheet_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQS8AftSUmG9Cr7MfczpotB5hhl1DgjH4hRCgXH5R8j5hykRiEf0M9rEyEq3uj312a5RuI4zMdjI5Jr/pub?output=csv"
 
@@ -34,7 +32,7 @@ def load_price_data():
         return pd.DataFrame()
 
 # ------------------------------------------------------------------
-# [3] 유틸리티 함수 (원본 보존 + 쉼표 데이터 정밀 수술)
+# [3] 핵심 로직 (방탄 파싱 & 글로벌 계산)
 # ------------------------------------------------------------------
 @st.cache_data(ttl=3600)
 def get_exchange_rates():
@@ -42,9 +40,11 @@ def get_exchange_rates():
         url = "https://api.exchangerate-api.com/v4/latest/USD"
         response = requests.get(url, timeout=3)
         data = response.json()
-        return data['rates']['KRW'], (data['rates']['KRW'] / data['rates']['JPY']) * 100
+        usd = data['rates']['KRW']
+        jpy = (data['rates']['KRW'] / data['rates']['JPY']) * 100
+        return usd, jpy
     except:
-        return 1450.0, 950.0
+        return 1400.0, 930.0 # 기본값
 
 def get_translated_keyword(text, target_lang='en'):
     if not re.search('[가-힣]', text): return text
@@ -52,200 +52,231 @@ def get_translated_keyword(text, target_lang='en'):
         url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl={target_lang}&dt=t&q={urllib.parse.quote(text)}"
         response = requests.get(url, timeout=2)
         if response.status_code == 200:
-            result = response.json()[0][0][0]
-            if result and result.strip(): return result
+            return response.json()[0][0][0]
     except: pass
     return text
 
+def calculate_total_import_cost(usd_price, rate):
+    """관/부가세 포함 실구매가 시뮬레이션 (만원 단위)"""
+    if usd_price <= 0: return 0
+    krw_base = usd_price * rate
+    shipping = 30000 
+    if usd_price > 200: 
+        duty = krw_base * 0.08
+        vat = (krw_base + duty) * 0.1
+        return (krw_base + duty + vat + shipping) / 10000
+    return (krw_base + shipping) / 10000
+
 def get_trend_data_from_sheet(user_query, df):
+    """[핵심] 어떤 더러운 데이터도 숫자로 정제해내는 로직"""
     if df.empty or not user_query: return None
     user_clean = user_query.lower().replace(" ", "").strip()
-    best_match = None
-    min_len_diff = float('inf')
-    
     date_cols = ["12월 4주", "1월 1주", "1월 2주", "1월 3주", "1월 4주"]
     
-    for index, row in df.iterrows():
+    for _, row in df.iterrows():
         try:
-            k_val = row.get('키워드') if '키워드' in df.columns else row.get('keyword')
+            k_val = row.get('키워드', row.get('keyword', ''))
             if pd.isna(k_val): continue
             sheet_keyword = str(k_val).lower().replace(" ", "").strip()
             
             if sheet_keyword in user_clean or user_clean in sheet_keyword:
-                diff = abs(len(sheet_keyword) - len(user_clean))
-                if diff < min_len_diff:
-                    min_len_diff = diff
-                    n_val = row.get('모델명 (상세스펙/상태)')
-                    
-                    # 1. 시세 흐름용 데이터
-                    trend_prices = []
-                    valid_dates = []
-                    for col in date_cols:
-                        if col in df.columns:
+                # 1. 주차별 트렌드 데이터 정제
+                trend_prices = []
+                valid_dates = []
+                for col in date_cols:
+                    if col in df.columns:
+                        v_raw = str(row.get(col, '0')).strip()
+                        v_clean = re.sub(r'[^0-9.]', '', v_raw)
+                        if v_clean:
                             try:
-                                v_raw = str(row.get(col, '0')).replace(',', '').strip()
-                                val = float(v_raw)
-                                if val > 1:
-                                    trend_prices.append(val)
+                                v_val = float(v_clean)
+                                if v_val > 0: 
+                                    trend_prices.append(v_val)
                                     valid_dates.append(col)
                             except: pass
-                    
-                    # 2. [V2.0 수술부위] 쉼표 데이터 쪼개기 로직 (에러 방어형)
-                    raw_str = str(row.get('시세 (5주치)', '')).replace('"', '').strip()
-                    raw_prices = []
-                    if raw_str and raw_str != 'nan':
-                        try:
-                            # 쉼표로 분리 후 숫자로 변환
-                            temp_list = [float(p.strip()) for p in raw_str.split(',') if p.strip()]
-                            raw_prices = [p for p in temp_list if p > 1] 
-                        except: pass
-                    
-                    if not raw_prices: 
-                        raw_prices = trend_prices
+                
+                # 2. 분포도용 원본 데이터 정제
+                raw_str = str(row.get('시세 (5주치)', '')).strip()
+                raw_prices = []
+                if raw_str and raw_str.lower() != 'nan':
+                    for p in raw_str.split(','):
+                        clean_p = re.sub(r'[^0-9.]', '', p)
+                        if clean_p:
+                            try:
+                                val = float(clean_p)
+                                if val > 0: raw_prices.append(val)
+                            except: continue
+                if not raw_prices: raw_prices = trend_prices
 
-                    best_match = { 
-                        "name": n_val, 
-                        "dates": valid_dates, 
-                        "trend_prices": trend_prices,
-                        "raw_prices": raw_prices
-                    }
-                    if diff == 0: return best_match
+                # 3. 해외 시세 정제
+                g_raw = str(row.get('해외평균(USD)', '0')).strip()
+                g_clean = re.sub(r'[^0-9.]', '', g_raw)
+                global_usd = float(g_clean) if g_clean else 0.0
+
+                if not trend_prices: continue
+
+                return {
+                    "name": row.get('모델명 (상세스펙/상태)', '상품명 미상'),
+                    "dates": valid_dates,
+                    "trend_prices": trend_prices,
+                    "raw_prices": raw_prices,
+                    "global_usd": global_usd
+                }
         except: continue
-    return best_match
-
-def generate_new_data():
-    now = datetime.now() + timedelta(hours=9)
-    return {'time': now.strftime("%Y-%m-%d %H:%M:%S")}
-
-if 'ticker_data' not in st.session_state:
-    st.session_state.ticker_data = generate_new_data()
-if 'memo_pad' not in st.session_state:
-    st.session_state.memo_pad = ""
+    return None
 
 # ------------------------------------------------------------------
-# [4] CSS 스타일링 (원본 100% 유지)
+# [4] UI 스타일링 (다크 KREAM 스타일)
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
+    /* 다크 모드 기본 설정 */
     .stApp { background-color: #0E1117; color: #FAFAFA; font-family: 'Pretendard', sans-serif; }
     [data-testid="stSidebar"] { background-color: #17191E; border-right: 1px solid #333; }
-    div[data-baseweb="input"] { background-color: #262730; border: 2px solid #00ff88 !important; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 255, 136, 0.15); transition: all 0.3s ease; }
-    div[data-baseweb="input"]:focus-within { box-shadow: 0 0 15px rgba(0, 255, 136, 0.5); }
-    .stTextInput input, .stTextArea textarea, .stNumberInput input { color: #FAFAFA; font-weight: bold; }
-    div[data-testid="stLinkButton"] > a { border-radius: 10px; font-weight: 700; transition: all 0.3s ease; text-decoration: none; }
-    div[data-testid="stLinkButton"] > a[href*="bunjang"] { border: 1px solid #FF3E3E !important; color: #FF3E3E !important; background-color: rgba(255, 62, 62, 0.1); }
-    div[data-testid="stLinkButton"] > a[href*="daangn"] { border: 1px solid #FF8A3D !important; color: #FF8A3D !important; background-color: rgba(255, 138, 61, 0.1); }
-    div[data-testid="stLinkButton"] > a[href*="joongna"] { border: 1px solid #00E676 !important; color: #00E676 !important; background-color: rgba(0, 230, 118, 0.1); }
-    div[data-testid="stLinkButton"] > a[href*="ebay"] { border: 1px solid #2962FF !important; color: #2962FF !important; background-color: rgba(41, 98, 255, 0.1); }
-    div[data-testid="stLinkButton"] > a[href*="thecheat"] { border: 2px solid #ff4b4b !important; color: #ffffff !important; background-color: #ff4b4b !important; }
-    .radar-wrapper { position: relative; display: inline-block; margin-right: 10px; vertical-align: middle; }
-    .radar-emoji { position: relative; z-index: 2; font-size: 3rem; }
-    .pulse-ring { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.7); opacity: 0; animation: pulse-ring 2s infinite; }
-    @keyframes pulse-ring { 0% { width: 90%; opacity: 1; } 100% { width: 220%; opacity: 0; } }
-    .title-text { font-size: 3rem; font-weight: 900; color: #FFFFFF !important; letter-spacing: -1px; }
-    .community-link { display: flex; align-items: center; padding: 10px; margin-bottom: 8px; background-color: #262730; border-radius: 8px; text-decoration: none !important; color: #eee !important; border: 1px solid #333; }
-    .community-link:hover { background-color: #33343d; border-color: #555; }
-    .comm-icon { font-size: 1.2rem; margin-right: 12px; min-width: 25px; text-align: center; }
-    .comm-info { display: flex; flex-direction: column; }
-    .comm-name { font-weight: bold; font-size: 0.95rem; }
-    .comm-desc { font-size: 0.75rem; color: #aaa; margin-top: 2px; }
-    .signal-banner { background: linear-gradient(90deg, #0A84FF 0%, #0055FF 100%); color: white !important; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; font-weight: bold; font-size: 1rem; display: flex; align-items: center; }
-    .radar-dot-strong { display: inline-block; width: 12px; height: 12px; background-color: white; border-radius: 50%; margin-right: 12px; animation: pulse-strong 1.5s infinite; }
-    @keyframes pulse-strong { 0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); } 50% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); } }
-    .ticker-container { width: 100%; background-color: #15181E; border-bottom: 2px solid #333; margin-bottom: 20px; display: flex; flex-direction: column; }
-    .ticker-line { width: 100%; overflow: hidden; white-space: nowrap; padding: 8px 0; border-bottom: 1px solid #222; }
-    .ticker-move-1 { display: inline-block; padding-left: 100%; animation: ticker 200s linear infinite; }
-    .ticker-move-2 { display: inline-block; padding-left: 100%; animation: ticker 250s linear infinite; }
-    .ticker-line span { margin-right: 40px; font-size: 0.9rem; }
+    
+    /* 인풋 박스 */
+    div[data-baseweb="input"] { background-color: #262730; border: 1px solid #444 !important; border-radius: 8px; }
+    
+    /* KREAM 스타일 카드 디자인 (Metric Card) */
+    .metric-card {
+        background-color: #1E1E1E;
+        border: 1px solid #333;
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+    .metric-title { font-size: 0.9rem; color: #aaa; margin-bottom: 5px; }
+    .metric-value { font-size: 1.5rem; font-weight: 800; color: #fff; }
+    .metric-sub { font-size: 0.8rem; color: #00ff88; margin-top: 5px; }
+    .metric-sub-bad { font-size: 0.8rem; color: #ff4b4b; margin-top: 5px; }
+
+    /* 티커 애니메이션 */
+    .ticker-container { width: 100%; background-color: #15181E; border-bottom: 1px solid #333; margin-bottom: 20px; overflow: hidden; white-space: nowrap; }
+    .ticker-move { display: inline-block; padding-left: 100%; animation: ticker 120s linear infinite; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
-    .legal-footer { font-size: 0.75rem; color: #777; margin-top: 60px; padding: 30px 10px; border-top: 1px solid #333; text-align: center; line-height: 1.6; }
+    
+    /* 기타 스타일 */
+    .community-link { display: flex; align-items: center; padding: 10px; margin-bottom: 5px; background-color: #262730; border-radius: 8px; text-decoration: none !important; color: #eee !important; border: 1px solid #333; }
+    .title-text { font-size: 2.5rem; font-weight: 900; color: #FFFFFF; }
 </style>
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [5] 상단 티커
+# [5] 상단 티커 및 레이아웃
 # ------------------------------------------------------------------
-market_pool = ["아이폰 17 Pro", "RTX 5090", "갤럭시 S25", "PS5 Pro", "에어팟 맥스 2", "닌텐도 스위치 2", "후지필름 X100VI", "아이패드 M4", "스투시", "아크테릭스"]
-radar_pool = ["리코 GR3", "치이카와", "뉴진스 굿즈", "젠틀몬스터", "요시다포터", "살로몬", "코닥 작티", "산리오", "다마고치", "티니핑"]
-market_str = "".join([f"<span><span class='rank-num'>{i+1}.</span><span class='item-text'>{item}</span></span>" for i, item in enumerate(random.sample(market_pool, 10))])
-radar_str = "".join([f"<span><span class='rank-num'>{i+1}.</span><span class='item-text'>{item}</span></span>" for i, item in enumerate(random.sample(radar_pool, 10))])
-now_time = st.session_state.ticker_data['time']
+market_items = ["아이폰 17 Pro", "RTX 5090", "갤럭시 S25", "PS5 Pro", "에어팟 맥스 2", "닌텐도 스위치 2", "지슈라 2", "라이카 Q3"]
+ticker_str = " | ".join([f"🔥 Hot: {item}" for item in market_items])
+st.markdown(f'<div class="ticker-container"><div class="ticker-move">{ticker_str}</div></div>', unsafe_allow_html=True)
 
-st.markdown(f"""
-<div class="ticker-container">
-    <div class="ticker-line"><div class="ticker-move-1"><span class="label-market" style="color:#ff4b4b;font-weight:900;">🔥 Market Hot:</span> {market_str}</div></div>
-    <div class="ticker-line" style="border-bottom:none;"><div class="ticker-move-2"><span class="label-radar" style="color:#00ff88;font-weight:900;">📡 Radar Top:</span> {radar_str}</div></div>
-</div>
-""", unsafe_allow_html=True)
+usd_rate, jpy_rate = get_exchange_rates()
 
-# ------------------------------------------------------------------
-# [6] 사이드바 (모든 기능 보존)
-# ------------------------------------------------------------------
 with st.sidebar:
     st.header("⚙️ 레이더 센터")
     with st.expander("👀 커뮤니티 시세비교", expanded=True):
-        st.markdown("""
-        <a href="http://www.slrclub.com" target="_blank" class="community-link"><div class="comm-icon">📷</div><div class="comm-info"><span class="comm-name">SLR클럽</span><span class="comm-desc">카메라/렌즈 전문</span></div></a>
-        <a href="https://coolenjoy.net" target="_blank" class="community-link"><div class="comm-icon">💻</div><div class="comm-info"><span class="comm-name">쿨엔조이</span><span class="comm-desc">PC 하드웨어/부품</span></div></a>
-        <a href="https://quasarzone.com" target="_blank" class="community-link"><div class="comm-icon">🔥</div><div class="comm-info"><span class="comm-name">퀘이사존</span><span class="comm-desc">게이밍 기어/PC</span></div></a>
-        <a href="https://cafe.naver.com/appleiphone" target="_blank" class="community-link"><div class="comm-icon">🍎</div><div class="comm-info"><span class="comm-name">아사모</span><span class="comm-desc">아이폰/애플 기기</span></div></a>
-        """, unsafe_allow_html=True)
-
-    st.write("---")
-    with st.expander("📦 배송 조회 레이더", expanded=True):
-        track_no = st.text_input("운송장 번호", placeholder="- 없이 숫자만 입력")
-        if track_no: st.link_button("🔍 택배사 자동 스캔", f"https://search.naver.com/search.naver?query=운송장번호+{track_no}", use_container_width=True)
+        st.markdown('<a href="http://www.slrclub.com" target="_blank" class="community-link">📷 SLR클럽</a>', unsafe_allow_html=True)
+        st.markdown('<a href="https://coolenjoy.net" target="_blank" class="community-link">💻 쿨엔조이</a>', unsafe_allow_html=True)
+        st.markdown('<a href="https://quasarzone.com" target="_blank" class="community-link">🔥 퀘이사존</a>', unsafe_allow_html=True)
+        st.markdown('<a href="https://cafe.naver.com/appleiphone" target="_blank" class="community-link">🍎 아사모</a>', unsafe_allow_html=True)
     
     st.write("---")
-    usd, jpy = get_exchange_rates()
-    with st.expander("💱 관세 계산기", expanded=True):
-        p_u = st.number_input("가격($)", 190)
-        st.write(f"≈ {p_u * usd:,.0f} 원")
-        if p_u <= 200: st.success("✅ 면세 범위")
-        else: st.error("🚨 관세 대상")
+    with st.expander("📦 배송 조회", expanded=True):
+        track_no = st.text_input("운송장 번호", placeholder="- 없이 숫자만")
+        if track_no: st.link_button("🔍 택배사 자동 스캔", f"https://search.naver.com/search.naver?query=운송장번호+{track_no}", use_container_width=True)
 
     st.write("---")
+    st.info(f"💱 실시간 환율\n- USD: {usd_rate:,.1f}원\n- JPY: {jpy_rate:,.1f}원")
     st.link_button("🚨 사기피해 조회 (더치트)", "https://thecheat.co.kr", type="primary", use_container_width=True)
 
 # ------------------------------------------------------------------
-# [7] 메인 화면 (디자인 보존)
+# [6] 메인 화면
 # ------------------------------------------------------------------
-st.markdown('<div style="text-align:center; margin-bottom:20px;"><div class="radar-wrapper"><span class="radar-emoji">📡</span><div class="pulse-ring"></div></div><span class="title-text">매물레이더</span></div>', unsafe_allow_html=True)
+st.markdown('<div style="text-align:center; margin-bottom:30px;"><span class="title-text">📡 매물레이더 Pro</span></div>', unsafe_allow_html=True)
 
-col_left, col_right = st.columns([0.6, 0.4], gap="large")
+col_main, col_sub = st.columns([0.6, 0.4], gap="large")
 
-with col_left:
-    st.caption(f"System Live | Last Scan: {now_time}")
-    keyword = st.text_input("검색어 입력", placeholder="🔍 상품명을 입력하세요", label_visibility="collapsed")
+with col_main:
+    keyword = st.text_input("검색어 입력", placeholder="🔍 상품명을 입력하세요 (예: 지슈라 2, 아이폰 15)", label_visibility="collapsed")
     if keyword:
         eng_keyword = get_translated_keyword(keyword, 'en')
-        st.markdown(f'<div class="signal-banner"><span class="radar-dot-strong"></span><span>\'{keyword}\' 포착! (En: {eng_keyword})</span></div>', unsafe_allow_html=True)
-        c1, c2 = st.columns(2)
-        c1.link_button("⚡ 번개장터", f"https://m.bunjang.co.kr/search/products?q={urllib.parse.quote(keyword)}", use_container_width=True)
-        c2.link_button("🥕 당근마켓", f"https://www.daangn.com/search/{urllib.parse.quote(keyword)}", use_container_width=True)
+        st.caption(f"검색어: {keyword} (Global: {eng_keyword})")
+        
+        btn_cols = st.columns(3)
+        btn_cols[0].link_button("⚡ 번개장터", f"https://m.bunjang.co.kr/search/products?q={keyword}", use_container_width=True)
+        btn_cols[1].link_button("🥕 당근마켓", f"https://www.daangn.com/search/{keyword}", use_container_width=True)
+        btn_cols[2].link_button("📦 eBay(직구)", f"https://www.ebay.com/sch/i.html?_nkw={eng_keyword}", use_container_width=True)
 
-with col_right:
-    st.markdown("#### 📉 52주 시세 트렌드")
-    df_prices = load_price_data()
-    matched = get_trend_data_from_sheet(keyword, df_prices)
+with col_sub:
+    df_raw = load_price_data()
+    matched = get_trend_data_from_sheet(keyword, df_raw)
+    
     if matched:
-        st.caption(f"✅ '{matched['name']}' 분석 중")
-        t1, t2 = st.tabs(["📈 시세 흐름", "📊 가격 분포도"])
-        with t1:
-            st.line_chart(pd.DataFrame({"날짜": matched["dates"], "가격": matched["trend_prices"]}), x="날짜", y="가격", color="#00ff88")
-        with t2:
-            df_dist = pd.DataFrame({"가격": matched["raw_prices"]})
-            chart = alt.Chart(df_dist).mark_bar(color='#0A84FF', stroke="#111").encode(
-                x=alt.X('가격:Q', bin=alt.Bin(maxbins=15), title='가격(만원)'),
+        st.markdown(f"#### 📉 {matched['name']} 분석")
+        
+        # [KREAM Style] 핵심 지표 카드형 UI
+        global_krw = calculate_total_import_cost(matched['global_usd'], usd_rate)
+        kr_avg = sum(matched['trend_prices'][-2:]) / 2 if len(matched['trend_prices']) >= 2 else matched['trend_prices'][-1]
+        
+        m1, m2 = st.columns(2)
+        with m1:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-title">🇰🇷 국내 중고 평균</div>
+                <div class="metric-value">{kr_avg:,.1f}만</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with m2:
+            diff_text = "데이터 없음"
+            sub_class = "metric-sub"
+            if global_krw > 0:
+                diff = kr_avg - global_krw
+                if diff > 0: 
+                    diff_text = f"직구가 {diff:,.1f}만 이득"
+                    sub_class = "metric-sub"
+                else: 
+                    diff_text = f"국내가 {abs(diff):,.1f}만 이득"
+                    sub_class = "metric-sub-bad"
+            
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-title">🌎 직구 실구매가</div>
+                <div class="metric-value">{global_krw:,.1f}만</div>
+                <div class="{sub_class}">{diff_text}</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        st.write("") # 간격
+
+        # 그래프 영역
+        t_flow, t_dist = st.tabs(["📈 통합 시세", "📊 매물 분포"])
+        
+        with t_flow:
+            chart_df = pd.DataFrame({
+                "주차": matched["dates"],
+                "국내": matched["trend_prices"],
+                "해외직구": [global_krw] * len(matched["dates"])
+            })
+            
+            base = alt.Chart(chart_df).encode(x=alt.X('주차:N', sort=None))
+            line_kr = base.mark_line(color='#00ff88', size=3).encode(y=alt.Y('국내:Q', title='가격(만원)'))
+            
+            charts = line_kr
+            if global_krw > 0:
+                line_gb = base.mark_line(color='#ff4b4b', strokeDash=[5,5]).encode(y='해외직구:Q')
+                charts = line_kr + line_gb
+                
+            st.altair_chart(charts.properties(height=250), use_container_width=True)
+            st.caption("🟢 실선: 국내 시세 | 🔴 점선: 해외 직구(관세포함)")
+
+        with t_dist:
+            dist_df = pd.DataFrame({"가격": matched["raw_prices"]})
+            dist_chart = alt.Chart(dist_df).mark_bar(color='#0A84FF').encode(
+                x=alt.X('가격:Q', bin=alt.Bin(maxbins=12), title='가격(만원)'),
                 y=alt.Y('count()', title='매물수')
-            ).properties(height=250).configure_view(strokeWidth=0)
-            st.altair_chart(chart, use_container_width=True)
-            st.success(f"📍 평균 거래가: {df_dist['가격'].mean():,.1f}만원")
+            ).properties(height=250)
+            st.altair_chart(dist_chart, use_container_width=True)
 
-    st.markdown("#### 💬 스마트 멘트 & 메모")
-    tab_m1, tab_m2, tab_memo = st.tabs(["⚡️ 퀵멘트", "💳 결제", "📝 메모"])
-    with tab_m1: st.code("구매 가능할까요?", language="text")
-    with tab_m2: st.code("계좌번호 알려주시면 바로 이체하겠습니다.", language="text")
-    with tab_memo: st.session_state.memo_pad = st.text_area("메모장", value=st.session_state.memo_pad, height=100)
-
-st.markdown('<div class="legal-footer">본 서비스는 정보 제공 목적으로만 운영되며, 거래의 책임은 각 판매자에게 있습니다.</div>', unsafe_allow_html=True)
+    elif keyword:
+        st.warning("📡 검색된 모델의 상세 데이터가 시트에 없습니다.")
+        
+st.markdown('<div style="text-align:center; color:#444; margin-top:60px; font-size:0.8rem;">© 2026 매물레이더 Pro | Global Price Intelligence</div>', unsafe_allow_html=True)
