@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 import html
 
 # ------------------------------------------------------------------
-# [1] 앱 기본 설정 (RADAR V13.0: Smart Curation & Ghost Button)
+# [1] 앱 기본 설정 (RADAR V13.1: Link Fix & Smart Logic)
 # ------------------------------------------------------------------
 st.set_page_config(
     page_title="RADAR",
@@ -32,23 +32,26 @@ def load_price_data():
         return pd.DataFrame()
 
 # ------------------------------------------------------------------
-# [3] 로직 (스마트 큐레이션 + 금융)
+# [3] 로직 (스마트 큐레이션 - 예외처리 강화)
 # ------------------------------------------------------------------
 def get_related_communities(keyword):
-    """키워드에 따라 추천 커뮤니티 리스트 반환 (Smart Curation)"""
+    """
+    키워드 매칭 시에만 리스트 반환.
+    매칭되는 카테고리가 없으면 (None, None) 반환하여 UI를 숨김.
+    """
     k = keyword.lower().replace(" ", "")
     
-    # 1. 카메라/사진 (사장님 요청 리스트 반영)
-    if any(x in k for x in ['카메라', 'camera', '렌즈', '라이카', 'leica', '소니', 'sony', '캐논', '니콘', '필름', 'film', '롤라이', 'rollei', '후지']):
+    # 1. 카메라/사진 (링크 수정 완료)
+    if any(x in k for x in ['카메라', 'camera', '렌즈', '라이카', 'leica', '소니', 'sony', '캐논', '니콘', '필름', 'film', '롤라이', 'rollei', '후지', 'dslr', '미러리스']):
         return "📷 포토그래퍼 추천 커뮤니티", [
             ("SLR클럽", "http://www.slrclub.com", "국내 최대 카메라 커뮤니티"),
             ("라이카 클럽", "https://cafe.naver.com/leicaclub", "Leica 전문 사용자 모임"),
-            ("필름카메라 동호회", "https://cafe.naver.com/filmaclub", "빈티지 필름 감성"),
+            ("필름카메라 클럽", "https://cafe.naver.com/filmcamera", "국내 1위 필름카메라 카페"),
             ("DOF LOOK", "https://cafe.naver.com/doflook", "전문 촬영 장비 정보")
         ]
     
     # 2. 패션/신발
-    elif any(x in k for x in ['나이키', 'nike', '조던', '아디다스', '신발', '옷', '패션', '슈프림', '스투시', '명품']):
+    elif any(x in k for x in ['나이키', 'nike', '조던', '아디다스', '신발', '옷', '패션', '슈프림', '스투시', '명품', '구찌', '루이비통', '시계', '롤렉스']):
         return "👟 패션/스니커즈 매니아 성지", [
             ("나이키매니아", "https://cafe.naver.com/sssw", "스니커즈 거래 1대장"),
             ("크림 (KREAM)", "https://kream.co.kr", "시세 비교 필수"),
@@ -56,14 +59,18 @@ def get_related_communities(keyword):
             ("디젤매니아", "https://cafe.naver.com/dieselmania", "남성 패션/라이프")
         ]
     
-    # 3. 기본 (IT/테크)
-    else:
+    # 3. IT/테크 (PC, 모바일, 게임 관련 키워드일 때만 노출)
+    elif any(x in k for x in ['컴퓨터', 'pc', '그래픽', 'rtx', 'amd', 'cpu', '아이폰', 'iphone', '맥북', 'mac', '갤럭시', '아이패드', '애플', '삼성', '모니터', '키보드', '마우스']):
         return "💻 IT/테크 얼리어답터 추천", [
             ("퀘이사존", "https://quasarzone.com", "PC/하드웨어 뉴스"),
             ("쿨엔조이", "https://coolenjoy.net", "PC 하드웨어 매니아"),
             ("미코 (Meeco)", "https://meeco.kr", "모바일/음향 기기"),
             ("클리앙", "https://www.clien.net", "IT/알뜰구매 정보")
         ]
+        
+    # 4. 매칭 안됨 (변기통 등) -> 숨김 처리
+    else:
+        return None, None
 
 @st.cache_data(ttl=3600)
 def get_exchange_rates():
@@ -311,19 +318,20 @@ with tab_home:
             g1.link_button(f"🔵 eBay ({eng_keyword})", f"https://www.ebay.com/sch/i.html?_nkw={encoded_eng}", use_container_width=True)
             g2.link_button(f"⚪ Mercari ({jp_keyword})", f"https://jp.mercari.com/search?keyword={encoded_jp}", use_container_width=True)
             
-            # [SMART CURATION - NEW!]
+            # [SMART CURATION - CONDITIONALLY RENDERED]
             curation_title, curation_list = get_related_communities(keyword)
-            st.markdown(f"<div style='margin-top:30px; margin-bottom:10px; color:#00FF88; font-weight:700;'>💡 {curation_title}</div>", unsafe_allow_html=True)
             
-            cur_cols = st.columns(2)
-            for idx, (name, url, desc) in enumerate(curation_list):
-                col = cur_cols[idx % 2]
-                col.markdown(f"""
-                <a href="{url}" target="_blank" class="source-card">
-                    <div class="source-info"><span class="source-name">{name}</span><span class="source-desc">{desc}</span></div>
-                    <span style="font-size:1.2rem;">🔗</span>
-                </a>
-                """, unsafe_allow_html=True)
+            if curation_list: # 리스트가 있을 때만 렌더링 (변기통 방지)
+                st.markdown(f"<div style='margin-top:30px; margin-bottom:10px; color:#00FF88; font-weight:700;'>💡 {curation_title}</div>", unsafe_allow_html=True)
+                cur_cols = st.columns(2)
+                for idx, (name, url, desc) in enumerate(curation_list):
+                    col = cur_cols[idx % 2]
+                    col.markdown(f"""
+                    <a href="{url}" target="_blank" class="source-card">
+                        <div class="source-info"><span class="source-name">{name}</span><span class="source-desc">{desc}</span></div>
+                        <span style="font-size:1.2rem;">🔗</span>
+                    </a>
+                    """, unsafe_allow_html=True)
 
         else:
             st.info("상단 검색창에 모델명을 입력하세요.")
@@ -396,7 +404,7 @@ with tab_source:
             <a href="https://meeco.kr" target="_blank" class="source-card"><div class="source-info"><span class="source-name">미코</span><span class="source-desc">모바일</span></div></a>
             <a href="https://www.clien.net" target="_blank" class="source-card"><div class="source-info"><span class="source-name">클리앙</span><span class="source-desc">알뜰구매</span></div></a>
             <a href="http://www.slrclub.com" target="_blank" class="source-card"><div class="source-info"><span class="source-name">SLR클럽</span><span class="source-desc">카메라</span></div></a>
-            <a href="https://cafe.naver.com/filmaclub" target="_blank" class="source-card"><div class="source-info"><span class="source-name">필름카메라</span><span class="source-desc">동호회</span></div></a>
+            <a href="https://cafe.naver.com/filmcamera" target="_blank" class="source-card"><div class="source-info"><span class="source-name">필름카메라 클럽</span><span class="source-desc">빈티지 장비</span></div></a>
             <a href="https://cafe.naver.com/leicaclub" target="_blank" class="source-card"><div class="source-info"><span class="source-name">라이카클럽</span><span class="source-desc">LEICA</span></div></a>
             <a href="https://cafe.naver.com/doflook" target="_blank" class="source-card"><div class="source-info"><span class="source-name">DOF LOOK</span><span class="source-desc">촬영장비</span></div></a>
         </div>
