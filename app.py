@@ -32,7 +32,7 @@ def load_price_data():
         return pd.DataFrame()
 
 # ------------------------------------------------------------------
-# [3] 로직 (환율, 번역, 계산)
+# [3] 로직
 # ------------------------------------------------------------------
 @st.cache_data(ttl=3600)
 def get_exchange_rates():
@@ -130,7 +130,7 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [4] CSS 스타일링 (KREAM Style + SLR Fix)
+# [4] CSS 스타일링 (버튼 색상 복구 + SLR 강제 세로 + 한글 최적화)
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -144,19 +144,25 @@ st.markdown("""
     .radar-title { font-size: 3rem; font-weight: 900; color: #FFFFFF; letter-spacing: -2px; margin-bottom: 0px; }
     .radar-subtitle { font-size: 1rem; color: #666; font-weight: 400; margin-top: 5px; }
 
-    /* Buttons (Black & White with Brand Color Points) */
-    div[data-testid="stLinkButton"] > a { 
-        background-color: #1A1A1A !important; 
-        border: 1px solid #333 !important; 
-        border-radius: 8px; 
-        color: #E0E0E0 !important; 
-        font-weight: 600; 
-        transition: all 0.2s ease;
-        text-align: center;
-    }
-    div[data-testid="stLinkButton"] > a:hover { border-color: #fff !important; color: #fff !important; }
+    /* [복구] Buttons: 브랜드 고유색 배경 적용 (다크모드용 은은한 컬러) */
+    div[data-testid="stLinkButton"] > a { border-radius: 8px; font-weight: 700; transition: all 0.2s ease; text-decoration: none; border: 1px solid #333; }
+    
+    /* 번개장터 (Red) */
+    div[data-testid="stLinkButton"] > a[href*="bunjang"] { background-color: rgba(255, 62, 62, 0.15) !important; color: #FF6B6B !important; border-color: #FF3E3E !important; }
+    /* 당근마켓 (Orange) */
+    div[data-testid="stLinkButton"] > a[href*="daangn"] { background-color: rgba(255, 138, 61, 0.15) !important; color: #FF9F60 !important; border-color: #FF8A3D !important; }
+    /* 중고나라 (Green) */
+    div[data-testid="stLinkButton"] > a[href*="joongna"] { background-color: rgba(0, 230, 118, 0.15) !important; color: #69F0AE !important; border-color: #00E676 !important; }
+    /* eBay (Blue) */
+    div[data-testid="stLinkButton"] > a[href*="ebay"] { background-color: rgba(41, 98, 255, 0.15) !important; color: #448AFF !important; border-color: #2962FF !important; }
+    /* Mercari (Purple/Red - Unique) */
+    div[data-testid="stLinkButton"] > a[href*="mercari"] { background-color: rgba(234, 67, 53, 0.15) !important; color: #FF8A80 !important; border-color: #EA4335 !important; }
+    /* Fruits (Purple) */
+    div[data-testid="stLinkButton"] > a[href*="fruits"] { background-color: rgba(213, 0, 249, 0.15) !important; color: #EA80FC !important; border-color: #D500F9 !important; }
 
-    /* Community Link (SLR Fix: Flex Column) */
+    div[data-testid="stLinkButton"] > a:hover { opacity: 0.8; transform: translateY(-2px); }
+
+    /* [최종수정] SLR클럽 등 커뮤니티 링크: 강제 세로 배치 (display: block) */
     .community-link { 
         display: flex; 
         align-items: center; 
@@ -168,18 +174,31 @@ st.markdown("""
         color: #ddd !important; 
         border: 1px solid #222; 
     }
-    .community-link:hover { background-color: #222; border-color: #444; }
+    .comm-icon { font-size: 1.5rem; margin-right: 15px; width: 30px; text-align: center; flex-shrink: 0; }
     
-    .comm-icon { font-size: 1.5rem; margin-right: 15px; width: 30px; text-align: center; }
-    
-    /* 텍스트 세로 배치 강제 (줄바꿈 해결) */
-    .comm-info { display: flex; flex-direction: column; justify-content: center; }
-    .comm-name { font-weight: bold; font-size: 0.95rem; color: #fff; margin-bottom: 2px; }
-    .comm-desc { font-size: 0.75rem; color: #666; }
+    /* 여기가 핵심: 텍스트 박스 내부 */
+    .comm-info { width: 100%; }
+    .comm-name { display: block; font-weight: bold; font-size: 0.95rem; color: #fff; margin-bottom: 2px; }
+    .comm-desc { display: block; font-size: 0.75rem; color: #888; }
 
-    /* Scam Box (Minimal Red) */
+    /* Scam Box */
     .scam-box { border-left: 3px solid #ff4b4b; background-color: #1A0505; padding: 12px; margin-bottom: 8px; color: #ccc; font-size: 0.85rem; }
     .scam-title { color: #ff4b4b; font-weight: bold; display: block; margin-bottom: 3px; }
+
+    /* Metric Card */
+    .metric-card { background-color: #1A1A1A; border: 1px solid #333; border-radius: 0px; padding: 20px; text-align: center; margin-bottom: 10px; }
+    .metric-label { font-size: 0.8rem; color: #666; font-weight: bold; }
+    .metric-value { font-size: 1.6rem; font-weight: 800; color: #fff; margin: 5px 0; }
+    .metric-sub { font-size: 0.8rem; color: #00ff88; }
+    .metric-sub-bad { font-size: 0.8rem; color: #ff4b4b; }
+    
+    .legal-footer { font-size: 0.7rem; color: #444; margin-top: 80px; text-align: center; margin-bottom: 50px; }
+
+    /* 레이더 펄스 */
+    .radar-wrapper { position: relative; display: inline-block; margin-right: 10px; vertical-align: middle; }
+    .radar-emoji { position: relative; z-index: 2; font-size: 3rem; }
+    .pulse-ring { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.2); opacity: 0; animation: pulse-ring 2s infinite; }
+    @keyframes pulse-ring { 0% { width: 90%; opacity: 1; } 100% { width: 220%; opacity: 0; } }
 
     /* Ticker */
     .ticker-wrap { position: fixed; bottom: 0; left: 0; width: 100%; height: 36px; background-color: #000; border-top: 1px solid #222; z-index: 999; display: flex; align-items: center; }
@@ -187,48 +206,52 @@ st.markdown("""
     .ticker-item { margin-right: 40px; font-size: 0.85rem; font-weight: 500; color: #888; }
     .ticker-val { color: #fff; font-weight: bold; margin-left: 5px; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
-
-    /* Metric Card (Minimal) */
-    .metric-card { background-color: #1A1A1A; border: 1px solid #333; border-radius: 0px; padding: 20px; text-align: center; margin-bottom: 10px; }
-    .metric-label { font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-    .metric-value { font-size: 1.6rem; font-weight: 800; color: #fff; margin: 5px 0; }
-    .metric-sub { font-size: 0.8rem; color: #00ff88; }
-    .metric-sub-bad { font-size: 0.8rem; color: #ff4b4b; }
-    
-    .legal-footer { font-size: 0.7rem; color: #444; margin-top: 80px; text-align: center; margin-bottom: 50px; }
 </style>
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [5] 메인 헤더 (RADAR 로고)
+# [5] 메인 헤더
 # ------------------------------------------------------------------
 now_time = st.session_state.ticker_data['time']
 usd, jpy = get_exchange_rates()
 
 st.markdown("""
     <div style="text-align:center; margin-bottom:40px; margin-top: 20px;">
+        <div class="radar-wrapper"><span class="radar-emoji">📡</span><div class="pulse-ring"></div></div>
         <div class="radar-title">RADAR</div>
-        <div class="radar-subtitle">MARKET PRICE INTELLIGENCE</div>
+        <div class="radar-subtitle">글로벌 시세 차익 분석 솔루션</div>
     </div>
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [6] 사이드바 (서랍형 & 블랙 테마)
+# [6] 사이드바 (한글화 & 고정형 레이아웃)
 # ------------------------------------------------------------------
 with st.sidebar:
-    st.markdown("<div style='color:#666; font-size:0.8rem; margin-bottom:10px; font-weight:bold;'>CONTROL CENTER</div>", unsafe_allow_html=True)
+    st.markdown("<div style='color:#666; font-size:0.8rem; margin-bottom:10px; font-weight:bold;'>레이더 센터</div>", unsafe_allow_html=True)
     
-    # 1. 시세 교차 검증
-    with st.expander("COMMUNITY", expanded=True):
+    # 1. 시세 교차 검증 (강제 줄바꿈 적용)
+    with st.expander("👀 커뮤니티 시세비교", expanded=True):
         st.markdown("""
-        <a href="http://www.slrclub.com" target="_blank" class="community-link"><div class="comm-icon">📷</div><div class="comm-info"><span class="comm-name">SLR클럽</span><span class="comm-desc">카메라 전문</span></div></a>
-        <a href="https://coolenjoy.net" target="_blank" class="community-link"><div class="comm-icon">💻</div><div class="comm-info"><span class="comm-name">쿨엔조이</span><span class="comm-desc">PC 하드웨어</span></div></a>
-        <a href="https://quasarzone.com" target="_blank" class="community-link"><div class="comm-icon">🔥</div><div class="comm-info"><span class="comm-name">퀘이사존</span><span class="comm-desc">게이밍 기어</span></div></a>
-        <a href="https://cafe.naver.com/appleiphone" target="_blank" class="community-link"><div class="comm-icon">🍎</div><div class="comm-info"><span class="comm-name">아사모</span><span class="comm-desc">애플 기기</span></div></a>
+        <a href="http://www.slrclub.com" target="_blank" class="community-link">
+            <div class="comm-icon">📷</div>
+            <div class="comm-info"><span class="comm-name">SLR클럽</span><span class="comm-desc">카메라 전문</span></div>
+        </a>
+        <a href="https://coolenjoy.net" target="_blank" class="community-link">
+            <div class="comm-icon">💻</div>
+            <div class="comm-info"><span class="comm-name">쿨엔조이</span><span class="comm-desc">PC 하드웨어</span></div>
+        </a>
+        <a href="https://quasarzone.com" target="_blank" class="community-link">
+            <div class="comm-icon">🔥</div>
+            <div class="comm-info"><span class="comm-name">퀘이사존</span><span class="comm-desc">게이밍 기어</span></div>
+        </a>
+        <a href="https://cafe.naver.com/appleiphone" target="_blank" class="community-link">
+            <div class="comm-icon">🍎</div>
+            <div class="comm-info"><span class="comm-name">아사모</span><span class="comm-desc">애플 기기</span></div>
+        </a>
         """, unsafe_allow_html=True)
 
-    # 2. 거래 도구 (배송/관세 통합)
-    with st.expander("UTILITIES", expanded=False):
+    # 2. 거래 도구 (한글화)
+    with st.expander("🧰 거래 도구함", expanded=False):
         tool_tab1, tool_tab2 = st.tabs(["📦 배송", "💱 관세"])
         
         with tool_tab1:
@@ -240,51 +263,49 @@ with st.sidebar:
                 c1.link_button("GS반값", "https://www.cvsnet.co.kr/reservation-tracking/tracking/index.do", use_container_width=True)
                 c2.link_button("CU알뜰", "https://www.cupost.co.kr/postbox/delivery/local.cupost", use_container_width=True)
         
-        # [복구] 예상 관세액 계산 기능
         with tool_tab2:
-            calc_tab1, calc_tab2 = st.tabs(["USD", "JPY"])
+            calc_tab1, calc_tab2 = st.tabs(["미국 (USD)", "일본 (JPY)"])
             with calc_tab1:
-                st.caption(f"환율: {usd:,.1f}원")
-                p_u = st.number_input("가격($)", 190, step=10)
+                st.caption(f"기준 환율: {usd:,.1f}원")
+                p_u = st.number_input("물품가격 ($)", 190, step=10)
                 krw_val = p_u * usd
                 st.markdown(f"**≈ {krw_val:,.0f} 원**")
                 if p_u <= 200: 
-                    st.success("✅ 면세")
+                    st.success("✅ 안전 (면세 범위)")
                 else: 
-                    # 관세 계산 로직 노출
-                    duty_est = krw_val * 0.18 # 대략 18% (관세8+부가10)
+                    duty_est = krw_val * 0.188 
                     st.error(f"🚨 과세 대상")
-                    st.caption(f"예상 세금: 약 {duty_est:,.0f}원") # 기능 복구됨
+                    st.caption(f"예상 세금: 약 {duty_est:,.0f}원\n(관세 8% + 부가세 10% 기준)")
 
             with calc_tab2:
-                st.caption(f"환율: {jpy:,.1f}원")
-                p_j = st.number_input("가격(¥)", 15000, step=1000)
+                st.caption(f"기준 환율: {jpy:,.1f}원 (100엔당)")
+                p_j = st.number_input("물품가격 (¥)", 15000, step=1000)
                 krw_val = p_j * (jpy/100)
                 usd_val = krw_val / usd
                 st.markdown(f"**≈ {krw_val:,.0f} 원**")
                 if usd_val <= 150: 
-                    st.success("✅ 면세")
+                    st.success("✅ 안전 (면세 범위)")
                 else: 
-                    duty_est = krw_val * 0.18
+                    duty_est = krw_val * 0.188
                     st.error(f"🚨 과세 대상")
-                    st.caption(f"예상 세금: 약 {duty_est:,.0f}원")
+                    st.caption(f"예상 세금: 약 {duty_est:,.0f}원\n(관세 8% + 부가세 10% 기준)")
 
     # 3. 사기 판독
-    with st.expander("FRAUD CHECK", expanded=False):
+    with st.expander("👮‍♂️ 사기 판독 센터", expanded=False):
         st.markdown("""
         <div class="scam-box"><span class="scam-title">🚫 카톡 유도</span>ID 추가 유도는 99% 사기</div>
         <div class="scam-box"><span class="scam-title">🚫 가짜 결제창</span>URL 도메인 확인 필수</div>
         """, unsafe_allow_html=True)
-        st.link_button("더치트 조회", "https://thecheat.co.kr", type="primary", use_container_width=True)
+        st.link_button("더치트 조회하기", "https://thecheat.co.kr", type="primary", use_container_width=True)
 
 # ------------------------------------------------------------------
-# [7] 메인 콘텐츠
+# [7] 메인 콘텐츠 (한글화 & 컬러 복구)
 # ------------------------------------------------------------------
 col_left, col_right = st.columns([0.6, 0.4], gap="large")
 
 with col_left:
-    st.caption(f"LAST SCAN: {now_time}")
-    keyword = st.text_input("SEARCH", placeholder="상품명 입력 (예: 아이폰 15)", label_visibility="collapsed")
+    st.caption(f"최근 스캔 시간: {now_time}")
+    keyword = st.text_input("검색", placeholder="상품명 입력 (예: 아이폰 15)", label_visibility="collapsed")
 
     if keyword:
         eng_keyword = get_translated_keyword(keyword, 'en')
@@ -295,29 +316,28 @@ with col_left:
         encoded_eng = urllib.parse.quote(eng_keyword)
         encoded_jp = urllib.parse.quote(jp_keyword)
         
-        st.markdown(f"<div style='margin: 20px 0; font-size: 1.2rem; font-weight: bold;'>'{safe_keyword}' ANALYSIS</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='margin: 20px 0; font-size: 1.2rem; font-weight: bold;'>'{safe_keyword}' 분석 결과</div>", unsafe_allow_html=True)
 
-        st.markdown("<div style='font-size:0.8rem; color:#888; margin-bottom:5px;'>KOREA MARKET</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:0.8rem; color:#888; margin-bottom:5px;'>국내 플랫폼</div>", unsafe_allow_html=True)
         c1, c2 = st.columns(2)
-        # 버튼에 브랜드 색상 포인트 (🔴, 🟠 등 이모지로 대체하여 심플하게)
-        c1.link_button("🔴 번개장터", f"https://m.bunjang.co.kr/search/products?q={encoded_kor}", use_container_width=True)
-        c2.link_button("🟠 당근마켓", f"https://www.daangn.com/search/{encoded_kor}", use_container_width=True)
+        c1.link_button("⚡ 번개장터", f"https://m.bunjang.co.kr/search/products?q={encoded_kor}", use_container_width=True)
+        c2.link_button("🥕 당근마켓", f"https://www.daangn.com/search/{encoded_kor}", use_container_width=True)
 
-        st.markdown("<div style='font-size:0.8rem; color:#888; margin-bottom:5px; margin-top:15px;'>KOREA MINOR</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:0.8rem; color:#888; margin-bottom:5px; margin-top:15px;'>서브 플랫폼</div>", unsafe_allow_html=True)
         c3, c4 = st.columns(2)
         c3.link_button("🟢 중고나라", f"https://web.joongna.com/search?keyword={encoded_kor}", use_container_width=True)
         c4.link_button("🟣 후르츠", f"https://fruitsfamily.com/search/{encoded_kor}", use_container_width=True)
 
-        st.markdown("<div style='font-size:0.8rem; color:#888; margin-bottom:5px; margin-top:15px;'>GLOBAL (AUTO TRANS)</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:0.8rem; color:#888; margin-bottom:5px; margin-top:15px;'>해외 직구 (자동 번역)</div>", unsafe_allow_html=True)
         c5, c6 = st.columns(2)
         c5.link_button(f"🔵 eBay ({eng_keyword})", f"https://www.ebay.com/sch/i.html?_nkw={encoded_eng}", use_container_width=True)
         c6.link_button(f"🔴 Mercari ({jp_keyword})", f"https://jp.mercari.com/search?keyword={encoded_jp}", use_container_width=True)
 
     else:
-        st.info("Start by entering a keyword.")
+        st.info("검색어를 입력하여 스캔을 시작하세요.")
 
 with col_right:
-    st.markdown("#### PRICE TREND (52W)")
+    st.markdown("#### 52주 시세 트렌드")
     df_prices = load_price_data()
     matched = get_trend_data_from_sheet(keyword, df_prices)
     
@@ -327,48 +347,47 @@ with col_right:
         
         m1, m2 = st.columns(2)
         with m1:
-             st.markdown(f"<div class='metric-card'><div class='metric-label'>KOREA AVG</div><div class='metric-value'>{kr_avg:,.1f}만</div></div>", unsafe_allow_html=True)
+             st.markdown(f"<div class='metric-card'><div class='metric-label'>국내 중고 평균</div><div class='metric-value'>{kr_avg:,.1f}만</div></div>", unsafe_allow_html=True)
         with m2:
             diff_text = f"직구 {kr_avg - global_krw:,.1f}만 이득" if (kr_avg - global_krw) > 0 else "국내 구매 유리"
             sub_class = "metric-sub" if (kr_avg - global_krw) > 0 else "metric-sub-bad"
             if global_krw <= 0: 
-                diff_text = "N/A"
+                diff_text = "정보 없음"
                 sub_class = "metric-sub"
-            st.markdown(f"<div class='metric-card'><div class='metric-label'>GLOBAL AVG</div><div class='metric-value'>{global_krw:,.1f}만</div><div class='{sub_class}'>{diff_text}</div></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='metric-card'><div class='metric-label'>해외 직구 (관세포함)</div><div class='metric-value'>{global_krw:,.1f}만</div><div class='{sub_class}'>{diff_text}</div></div>", unsafe_allow_html=True)
         
         st.write("")
 
-        tab_trend, tab_dist = st.tabs(["TREND", "DEPTH"])
+        tab_trend, tab_dist = st.tabs(["시세 흐름", "가격 분포"])
         with tab_trend:
             chart_df = pd.DataFrame({"날짜": matched["dates"], "국내": matched["trend_prices"], "해외직구": [global_krw] * len(matched["dates"])})
             base = alt.Chart(chart_df).encode(x=alt.X('날짜:N', sort=None))
-            charts = base.mark_line(color='#ffffff', size=2).encode(y=alt.Y('국내:Q', title=None)) # 화이트 라인
+            charts = base.mark_line(color='#ffffff', size=2).encode(y=alt.Y('국내:Q', title=None))
             if global_krw > 0:
-                charts += base.mark_line(color='#444', strokeDash=[5,5]).encode(y='해외직구:Q')
+                charts += base.mark_line(color='#666', strokeDash=[5,5]).encode(y='해외직구:Q')
             st.altair_chart(charts.properties(height=250), use_container_width=True)
         
         with tab_dist:
              dist_df = pd.DataFrame({"가격": matched["raw_prices"]})
-             dist_chart = alt.Chart(dist_df).mark_bar(color='#333').encode(
+             dist_chart = alt.Chart(dist_df).mark_bar(color='#444').encode(
                  x=alt.X('가격:Q', bin=alt.Bin(maxbins=15)), 
                  y=alt.Y('count()', axis=alt.Axis(tickMinStep=1, format='d'))
              ).properties(height=250)
              st.altair_chart(dist_chart, use_container_width=True)
 
     else:
-        # 빈 그래프 (스타일 유지)
         dummy_df = pd.DataFrame({'x': range(5), 'y': [10, 12, 11, 13, 12]})
-        dummy_chart = alt.Chart(dummy_df).mark_line(color='#222', strokeDash=[5,5]).encode(
+        dummy_chart = alt.Chart(dummy_df).mark_line(color='#333', strokeDash=[5,5]).encode(
             x=alt.X('x', axis=None), y=alt.Y('y', axis=None)
-        ).properties(height=250, title="NO DATA")
+        ).properties(height=250, title="데이터 대기중")
         st.altair_chart(dummy_chart, use_container_width=True)
 
-    # 스마트 트레이더 (정중한 버전 유지)
-    st.markdown("#### SMART TRADER")
+    # 스마트 트레이더
+    st.markdown("#### 스마트 트레이더")
     tab_m1, tab_m2, tab_memo = st.tabs(["💬 멘트", "💳 결제", "📝 메모"])
     
     with tab_m1:
-        quick_opt = st.radio("TYPE", ["문의", "네고"], label_visibility="collapsed")
+        quick_opt = st.radio("유형", ["문의", "네고"], label_visibility="collapsed")
         if quick_opt == "문의": 
             st.code("안녕하세요! 게시글 보고 연락드립니다. 구매 가능할까요?", language="text")
         else:
@@ -381,28 +400,28 @@ with col_right:
                 st.code("안녕하세요. 혹시 실례지만 [   ]원에 가격조정 가능할지 여쭤보고 싶습니다. 가능하시다면 바로 구매가능합니다.", language="text")
 
     with tab_m2:
-            pay_opt = st.radio("METHOD", ["계좌", "직거래"], horizontal=True, label_visibility="collapsed")
+            pay_opt = st.radio("방식", ["계좌", "직거래"], horizontal=True, label_visibility="collapsed")
             if pay_opt == "계좌": st.code("계좌결제로 하겠습니다. 계좌 부탁드립니다.", language="text")
             else: st.code("직거래로 가능하신지 여쭤봅니다.", language="text")
                 
     with tab_memo:
-        st.session_state.memo_pad = st.text_area("MEMO", value=st.session_state.memo_pad, height=100)
+        st.session_state.memo_pad = st.text_area("메모장", value=st.session_state.memo_pad, height=100)
 
 st.markdown('<div class="legal-footer">© 2026 RADAR | Global Arbitrage Solution</div>', unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [8] 하단 고정 티커 (금융 스타일)
+# [8] 하단 고정 티커
 # ------------------------------------------------------------------
 us_limit = usd * 200
 jp_limit = usd * 150 
 ticker_content = f"""
 <div class="ticker-wrap">
     <div class="ticker">
-        <span class="ticker-item">USD/KRW <span class="ticker-val">{usd:,.0f}</span></span>
-        <span class="ticker-item">JPY/KRW <span class="ticker-val">{jpy:,.0f}</span></span>
-        <span class="ticker-item">US TAX FREE <span class="ticker-val">{us_limit:,.0f}</span></span>
-        <span class="ticker-item">JP TAX FREE <span class="ticker-val">{jp_limit:,.0f}</span></span>
-        <span class="ticker-item">STATUS <span class="ticker-val" style="color:#00ff88">LIVE</span></span>
+        <span class="ticker-item">달러(USD) <span class="ticker-val">{usd:,.0f}원</span></span>
+        <span class="ticker-item">엔화(JPY) <span class="ticker-val">{jpy:,.0f}원</span></span>
+        <span class="ticker-item">미국 면세한도 <span class="ticker-val">${us_limit:,.0f}</span></span>
+        <span class="ticker-item">일본 면세한도 <span class="ticker-val">{jp_limit:,.0f}원</span></span>
+        <span class="ticker-item">시스템 <span class="ticker-val" style="color:#00ff88">정상 가동</span></span>
     </div>
 </div>
 """
