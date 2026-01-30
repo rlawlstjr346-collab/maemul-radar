@@ -132,7 +132,7 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [4] CSS 스타일링 (SLR클럽 줄바꿈 해결 + 공백 채우기)
+# [4] CSS 스타일링 (SLR클럽 줄바꿈 완벽 해결)
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -147,13 +147,51 @@ st.markdown("""
     @keyframes pulse-ring { 0% { width: 90%; opacity: 1; } 100% { width: 220%; opacity: 0; } }
     .title-text { font-size: 3rem; font-weight: 900; color: #FFFFFF !important; letter-spacing: -1px; }
 
-    /* [수정] 커뮤니티 링크: 줄바꿈 금지(white-space: nowrap) 적용 */
-    .community-link { display: flex; align-items: center; padding: 10px; margin-bottom: 8px; background-color: #262730; border-radius: 8px; text-decoration: none !important; color: #eee !important; border: 1px solid #333; }
+    /* [수정] 커뮤니티 링크: 레이아웃 깨짐 방지 강력 적용 */
+    .community-link { 
+        display: flex; 
+        align-items: center; 
+        padding: 12px; 
+        margin-bottom: 8px; 
+        background-color: #262730; 
+        border-radius: 8px; 
+        text-decoration: none !important; 
+        color: #eee !important; 
+        border: 1px solid #333; 
+        overflow: hidden; /* 넘치는 내용 숨김 */
+    }
     .community-link:hover { background-color: #33343d; border-color: #555; }
-    .comm-icon { font-size: 1.2rem; margin-right: 12px; min-width: 35px; text-align: center; } 
-    .comm-info { display: flex; flex-direction: column; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* 줄바꿈 방지 핵심 코드 */
-    .comm-name { font-weight: bold; font-size: 0.95rem; }
-    .comm-desc { font-size: 0.75rem; color: #aaa; margin-top: 2px; }
+    
+    /* 아이콘 고정 (절대 줄어들지 않음) */
+    .comm-icon { 
+        font-size: 1.5rem; 
+        margin-right: 15px; 
+        width: 30px; 
+        min-width: 30px; 
+        text-align: center; 
+        flex-shrink: 0; 
+    }
+    
+    /* 텍스트 영역 (줄바꿈 방지 및 정렬) */
+    .comm-info { 
+        display: flex; 
+        flex-direction: column; 
+        justify-content: center;
+        min-width: 0; /* Flexbox 텍스트 말줄임 필수 속성 */
+    }
+    .comm-name { 
+        font-weight: bold; 
+        font-size: 0.95rem; 
+        white-space: nowrap; /* 제목 한줄 고정 */
+        margin-bottom: 3px;
+    }
+    .comm-desc { 
+        font-size: 0.75rem; 
+        color: #aaa; 
+        white-space: nowrap; /* 설명 한줄 고정 */
+        overflow: hidden; 
+        text-overflow: ellipsis; /* 넘치면 ... 처리 */
+    }
 
     /* 사기 조회 박스 */
     .scam-box { border: 1px solid #ff4b4b; background-color: rgba(255, 75, 75, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 8px; color: #eee; font-size: 0.9rem; }
@@ -201,7 +239,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-# [6] 사이드바 (기능 100% 유지)
+# [6] 사이드바
 # ------------------------------------------------------------------
 with st.sidebar:
     st.header("⚙️ 레이더 센터")
@@ -300,7 +338,6 @@ with col_left:
     else:
         st.info("👆 상품명을 입력하면 3단계 심층 스캔을 시작합니다.")
 
-# [수정] 우측 패널 (검색 전/후 모두 표시)
 with col_right:
     st.markdown("#### 📉 52주 시세 트렌드")
     df_prices = load_price_data()
@@ -348,14 +385,14 @@ with col_right:
         else:
             st.warning(f"⚠️ '{keyword}' 데이터가 시트에 없습니다. (아래는 예시 기능)")
 
-        # 예시용 빈 그래프 (꽉 찬 느낌 주기)
+        # 예시용 빈 그래프
         dummy_df = pd.DataFrame({'x': range(5), 'y': [10, 12, 11, 13, 12]})
         dummy_chart = alt.Chart(dummy_df).mark_line(color='#333', strokeDash=[5,5]).encode(
             x=alt.X('x', axis=None), y=alt.Y('y', axis=None, title='시세 데이터 대기중')
         ).properties(height=250, title="데이터 대기중...")
         st.altair_chart(dummy_chart, use_container_width=True)
 
-    # [수정] 퀵멘트 기능: 검색 전에도 항상 표시 (공간 채우기)
+    # [수정] 퀵멘트 기능: 정중한 멘트로 교체
     st.markdown("#### 💬 스마트 멘트 & 메모")
     tab_m1, tab_m2, tab_memo = st.tabs(["⚡️ 퀵멘트", "💳 결제", "📝 메모"])
     
@@ -375,8 +412,8 @@ with col_right:
 
     with tab_m2:
             pay_opt = st.radio("거래 방식", ["💳 계좌 문의", "🤝 직거래"], horizontal=True, label_visibility="collapsed")
-            if pay_opt == "💳 계좌 문의": st.code("계좌번호 알려주시면 바로 이체하겠습니다.", language="text")
-            else: st.code("혹시 직거래 가능하신가요? 장소는 조율 가능합니다.", language="text")
+            if pay_opt == "💳 계좌 문의": st.code("계좌결제로 하겠습니다. 계좌 부탁드립니다.", language="text")
+            else: st.code("직거래로 가능하신지 여쭤봅니다.", language="text")
     with tab_memo:
         st.session_state.memo_pad = st.text_area("메모", value=st.session_state.memo_pad, height=100, placeholder="가격 비교 메모...")
 
