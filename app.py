@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 import html
 
 # ------------------------------------------------------------------
-# [1] 앱 기본 설정 (RADAR V13.1: Link Fix & Smart Logic)
+# [1] 앱 기본 설정 (RADAR V13.2: Fruits Fix & Color Coded Sources)
 # ------------------------------------------------------------------
 st.set_page_config(
     page_title="RADAR",
@@ -32,16 +32,13 @@ def load_price_data():
         return pd.DataFrame()
 
 # ------------------------------------------------------------------
-# [3] 로직 (스마트 큐레이션 - 예외처리 강화)
+# [3] 로직 (스마트 큐레이션 + 금융)
 # ------------------------------------------------------------------
 def get_related_communities(keyword):
-    """
-    키워드 매칭 시에만 리스트 반환.
-    매칭되는 카테고리가 없으면 (None, None) 반환하여 UI를 숨김.
-    """
+    """키워드 매칭 시에만 리스트 반환 (Smart Curation)"""
     k = keyword.lower().replace(" ", "")
     
-    # 1. 카메라/사진 (링크 수정 완료)
+    # 1. 카메라/사진
     if any(x in k for x in ['카메라', 'camera', '렌즈', '라이카', 'leica', '소니', 'sony', '캐논', '니콘', '필름', 'film', '롤라이', 'rollei', '후지', 'dslr', '미러리스']):
         return "📷 포토그래퍼 추천 커뮤니티", [
             ("SLR클럽", "http://www.slrclub.com", "국내 최대 카메라 커뮤니티"),
@@ -59,7 +56,7 @@ def get_related_communities(keyword):
             ("디젤매니아", "https://cafe.naver.com/dieselmania", "남성 패션/라이프")
         ]
     
-    # 3. IT/테크 (PC, 모바일, 게임 관련 키워드일 때만 노출)
+    # 3. IT/테크
     elif any(x in k for x in ['컴퓨터', 'pc', '그래픽', 'rtx', 'amd', 'cpu', '아이폰', 'iphone', '맥북', 'mac', '갤럭시', '아이패드', '애플', '삼성', '모니터', '키보드', '마우스']):
         return "💻 IT/테크 얼리어답터 추천", [
             ("퀘이사존", "https://quasarzone.com", "PC/하드웨어 뉴스"),
@@ -68,7 +65,6 @@ def get_related_communities(keyword):
             ("클리앙", "https://www.clien.net", "IT/알뜰구매 정보")
         ]
         
-    # 4. 매칭 안됨 (변기통 등) -> 숨김 처리
     else:
         return None, None
 
@@ -152,7 +148,7 @@ if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
 
 # ------------------------------------------------------------------
-# [4] CSS 스타일링
+# [4] CSS 스타일링 (Color Coded Sources)
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -187,7 +183,7 @@ st.markdown("""
     }
     div[data-baseweb="input"]:focus-within { border: 1px solid #5E6AD2 !important; box-shadow: 0 0 0 1px #5E6AD2, 0 0 15px rgba(94, 106, 210, 0.3) !important; }
 
-    /* 4. Neon Glass Buttons (Border -> Fill) */
+    /* 4. Neon Glass Buttons */
     div[data-testid="stLinkButton"] > a { 
         background-color: rgba(255, 255, 255, 0.03) !important; 
         backdrop-filter: blur(5px);
@@ -237,14 +233,22 @@ st.markdown("""
         box-shadow: 0 0 15px rgba(0, 180, 219, 0.5);
     }
 
-    /* 5. Source Cards */
+    /* 5. Source Cards (Color Coded & Vertical List) */
     .source-card {
-        background-color: #1A1A1A; border: 1px solid #333; border-radius: 12px; padding: 15px; 
-        display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; transition: 0.2s; text-decoration: none;
+        background-color: #1A1A1A; border: 1px solid #333; border-radius: 8px; padding: 12px 15px; 
+        display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; transition: 0.2s; text-decoration: none;
     }
-    .source-card:hover { border-color: #666; background-color: #252525; transform: translateX(3px); }
-    .source-name { font-weight: 700; color: #eee; font-size: 1rem; }
-    .source-desc { font-size: 0.75rem; color: #888; margin-top: 2px; }
+    .source-card:hover { background-color: #252525; transform: translateX(3px); }
+    
+    /* Color Coding Classes */
+    .source-tech { border-left: 4px solid #00E5FF !important; } /* Cyan */
+    .source-cam { border-left: 4px solid #FF9100 !important; } /* Orange */
+    .source-fashion { border-left: 4px solid #D500F9 !important; } /* Purple */
+    .source-life { border-left: 4px solid #00E676 !important; } /* Green */
+    
+    .source-name { font-weight: 700; color: #eee; font-size: 0.95rem; }
+    .source-desc { font-size: 0.75rem; color: #888; }
+    .category-header { font-size: 0.9rem; font-weight: 600; color: #aaa; margin-top: 15px; margin-bottom: 8px; letter-spacing: 1px; text-transform: uppercase; }
 
     /* Ticker */
     .ticker-wrap { position: fixed; bottom: 0; left: 0; width: 100%; height: 32px; background-color: #0E1117; border-top: 1px solid #1C1C1E; z-index: 999; display: flex; align-items: center; }
@@ -255,7 +259,7 @@ st.markdown("""
     .ticker-down { color: #4b89ff; background: rgba(75, 137, 255, 0.1); padding: 2px 4px; border-radius: 4px; font-size: 0.75rem; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
     
-    /* Scam Box Styling */
+    /* Scam Box */
     .scam-box { border: 1px solid #333; border-left: 4px solid #ff4b4b; background-color: #1A0505; padding: 25px; border-radius: 12px; margin-bottom: 20px; }
     .scam-list { margin-top: 10px; padding-left: 0; list-style-type: none; }
     .scam-item { color: #ddd; margin-bottom: 15px; line-height: 1.5; font-size: 1rem; border-bottom: 1px solid #333; padding-bottom: 10px; }
@@ -286,7 +290,7 @@ st.markdown("""
 tab_home, tab_source, tab_tools, tab_safety = st.tabs(["🏠 시세 분석", "📂 마켓 소스", "🧰 도구", "👮‍♂️ 사기 조회"])
 
 # ==========================================
-# 🏠 TAB 1: 홈 (분석 & 스마트 큐레이션)
+# 🏠 TAB 1: 홈 (Fruits 수정 완료)
 # ==========================================
 with tab_home:
     col_left, col_right = st.columns([0.6, 0.4], gap="large")
@@ -304,30 +308,29 @@ with tab_home:
             
             st.markdown(f"<div style='margin-top:20px; font-size:1.3rem; font-weight:700; color:#eee;'>'{html.escape(keyword)}' 분석 결과</div>", unsafe_allow_html=True)
 
-            # [NEON GLASS TILES]
+            # [Fruits Name Fixed]
             st.markdown("<div class='capsule-title'>🇰🇷 국내 마켓 (Direct Access)</div>", unsafe_allow_html=True)
             d1, d2 = st.columns(2)
             d1.link_button("⚡ 번개장터", f"https://m.bunjang.co.kr/search/products?q={encoded_kor}", use_container_width=True)
             d2.link_button("🥕 당근마켓", f"https://www.daangn.com/search/{encoded_kor}", use_container_width=True)
             d3, d4 = st.columns(2)
             d3.link_button("🟢 중고나라", f"https://web.joongna.com/search?keyword={encoded_kor}", use_container_width=True)
-            d4.link_button("🟣 후르츠패밀리", f"https://fruitsfamily.com/search/{encoded_kor}", use_container_width=True)
+            d4.link_button("🟣 Fruits", f"https://fruitsfamily.com/search/{encoded_kor}", use_container_width=True)
 
             st.markdown("<div class='capsule-title'>🌎 해외 직구</div>", unsafe_allow_html=True)
             g1, g2 = st.columns(2)
             g1.link_button(f"🔵 eBay ({eng_keyword})", f"https://www.ebay.com/sch/i.html?_nkw={encoded_eng}", use_container_width=True)
             g2.link_button(f"⚪ Mercari ({jp_keyword})", f"https://jp.mercari.com/search?keyword={encoded_jp}", use_container_width=True)
             
-            # [SMART CURATION - CONDITIONALLY RENDERED]
+            # [SMART CURATION]
             curation_title, curation_list = get_related_communities(keyword)
-            
-            if curation_list: # 리스트가 있을 때만 렌더링 (변기통 방지)
+            if curation_list:
                 st.markdown(f"<div style='margin-top:30px; margin-bottom:10px; color:#00FF88; font-weight:700;'>💡 {curation_title}</div>", unsafe_allow_html=True)
                 cur_cols = st.columns(2)
                 for idx, (name, url, desc) in enumerate(curation_list):
                     col = cur_cols[idx % 2]
                     col.markdown(f"""
-                    <a href="{url}" target="_blank" class="source-card">
+                    <a href="{url}" target="_blank" class="source-card source-tech">
                         <div class="source-info"><span class="source-name">{name}</span><span class="source-desc">{desc}</span></div>
                         <span style="font-size:1.2rem;">🔗</span>
                     </a>
@@ -388,42 +391,46 @@ with tab_home:
         with tab_memo: st.session_state.memo_pad = st.text_area("메모장", value=st.session_state.memo_pad, height=100)
 
 # ==========================================
-# 📂 TAB 2: 마켓 소스 (16개 2열 배치)
+# 📂 TAB 2: 마켓 소스 (Color Coded & Categorized)
 # ==========================================
 with tab_source:
     st.markdown("#### Market Intelligence Library (Core)")
-    col_gear, col_life = st.columns(2)
+    col_left, col_right = st.columns(2)
     
-    # 1. Gear & Tech (장비)
-    with col_gear:
-        st.markdown("<div class='capsule-title'>💻 IT / 📷 Camera</div>", unsafe_allow_html=True)
+    # Left Column: Tech (Cyan) & Camera (Orange)
+    with col_left:
+        st.markdown("<div class='category-header'>💻 Tech & Hardware (Cyan)</div>", unsafe_allow_html=True)
         st.markdown("""
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <a href="https://quasarzone.com" target="_blank" class="source-card"><div class="source-info"><span class="source-name">퀘이사존</span><span class="source-desc">PC/부품</span></div></a>
-            <a href="https://coolenjoy.net" target="_blank" class="source-card"><div class="source-info"><span class="source-name">쿨엔조이</span><span class="source-desc">하드웨어</span></div></a>
-            <a href="https://meeco.kr" target="_blank" class="source-card"><div class="source-info"><span class="source-name">미코</span><span class="source-desc">모바일</span></div></a>
-            <a href="https://www.clien.net" target="_blank" class="source-card"><div class="source-info"><span class="source-name">클리앙</span><span class="source-desc">알뜰구매</span></div></a>
-            <a href="http://www.slrclub.com" target="_blank" class="source-card"><div class="source-info"><span class="source-name">SLR클럽</span><span class="source-desc">카메라</span></div></a>
-            <a href="https://cafe.naver.com/filmcamera" target="_blank" class="source-card"><div class="source-info"><span class="source-name">필름카메라 클럽</span><span class="source-desc">빈티지 장비</span></div></a>
-            <a href="https://cafe.naver.com/leicaclub" target="_blank" class="source-card"><div class="source-info"><span class="source-name">라이카클럽</span><span class="source-desc">LEICA</span></div></a>
-            <a href="https://cafe.naver.com/doflook" target="_blank" class="source-card"><div class="source-info"><span class="source-name">DOF LOOK</span><span class="source-desc">촬영장비</span></div></a>
-        </div>
+        <a href="https://quasarzone.com" target="_blank" class="source-card source-tech"><div class="source-info"><span class="source-name">퀘이사존</span><span class="source-desc">PC/하드웨어 뉴스</span></div></a>
+        <a href="https://coolenjoy.net" target="_blank" class="source-card source-tech"><div class="source-info"><span class="source-name">쿨엔조이</span><span class="source-desc">PC 하드웨어 매니아</span></div></a>
+        <a href="https://meeco.kr" target="_blank" class="source-card source-tech"><div class="source-info"><span class="source-name">미코 (Meeco)</span><span class="source-desc">모바일/테크 정보</span></div></a>
+        <a href="https://www.clien.net" target="_blank" class="source-card source-tech"><div class="source-info"><span class="source-name">클리앙</span><span class="source-desc">IT/알뜰구매</span></div></a>
         """, unsafe_allow_html=True)
-    
-    # 2. Fashion & Life (라이프)
-    with col_life:
-        st.markdown("<div class='capsule-title'>👟 Fashion / 🍎 Life</div>", unsafe_allow_html=True)
+        
+        st.markdown("<div class='category-header'>📷 Camera & Gear (Orange)</div>", unsafe_allow_html=True)
         st.markdown("""
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <a href="https://cafe.naver.com/sssw" target="_blank" class="source-card"><div class="source-info"><span class="source-name">나이키매니아</span><span class="source-desc">스니커즈</span></div></a>
-            <a href="https://kream.co.kr" target="_blank" class="source-card"><div class="source-info"><span class="source-name">크림(KREAM)</span><span class="source-desc">시세비교</span></div></a>
-            <a href="https://eomisae.co.kr" target="_blank" class="source-card"><div class="source-info"><span class="source-name">어미새</span><span class="source-desc">세일정보</span></div></a>
-            <a href="https://cafe.naver.com/dieselmania" target="_blank" class="source-card"><div class="source-info"><span class="source-name">디젤매니아</span><span class="source-desc">남성패션</span></div></a>
-            <a href="https://cafe.naver.com/appleiphone" target="_blank" class="source-card"><div class="source-info"><span class="source-name">아사모</span><span class="source-desc">아이폰</span></div></a>
-            <a href="https://cafe.naver.com/inmacbook" target="_blank" class="source-card"><div class="source-info"><span class="source-name">맥쓰사</span><span class="source-desc">맥북/맥</span></div></a>
-            <a href="https://web.joongna.com" target="_blank" class="source-card"><div class="source-info"><span class="source-name">중고나라</span><span class="source-desc">종합장터</span></div></a>
-            <a href="https://bbs.ruliweb.com/market" target="_blank" class="source-card"><div class="source-info"><span class="source-name">루리웹</span><span class="source-desc">게임/취미</span></div></a>
-        </div>
+        <a href="http://www.slrclub.com" target="_blank" class="source-card source-cam"><div class="source-info"><span class="source-name">SLR클럽</span><span class="source-desc">국내 최대 카메라 장터</span></div></a>
+        <a href="https://cafe.naver.com/filmcamera" target="_blank" class="source-card source-cam"><div class="source-info"><span class="source-name">필름카메라 클럽</span><span class="source-desc">빈티지 필름 감성</span></div></a>
+        <a href="https://cafe.naver.com/leicaclub" target="_blank" class="source-card source-cam"><div class="source-info"><span class="source-name">라이카 클럽</span><span class="source-desc">LEICA 전문</span></div></a>
+        <a href="https://cafe.naver.com/doflook" target="_blank" class="source-card source-cam"><div class="source-info"><span class="source-name">DOF LOOK</span><span class="source-desc">전문 촬영 장비</span></div></a>
+        """, unsafe_allow_html=True)
+
+    # Right Column: Fashion (Purple) & Life (Green)
+    with col_right:
+        st.markdown("<div class='category-header'>👟 Fashion & Style (Purple)</div>", unsafe_allow_html=True)
+        st.markdown("""
+        <a href="https://cafe.naver.com/sssw" target="_blank" class="source-card source-fashion"><div class="source-info"><span class="source-name">나이키매니아</span><span class="source-desc">스니커즈 거래 1위</span></div></a>
+        <a href="https://kream.co.kr" target="_blank" class="source-card source-fashion"><div class="source-info"><span class="source-name">크림 (KREAM)</span><span class="source-desc">한정판 시세 확인</span></div></a>
+        <a href="https://eomisae.co.kr" target="_blank" class="source-card source-fashion"><div class="source-info"><span class="source-name">어미새</span><span class="source-desc">글로벌 세일 정보</span></div></a>
+        <a href="https://cafe.naver.com/dieselmania" target="_blank" class="source-card source-fashion"><div class="source-info"><span class="source-name">디젤매니아</span><span class="source-desc">남성 패션/라이프</span></div></a>
+        """, unsafe_allow_html=True)
+
+        st.markdown("<div class='category-header'>🍎 Apple & Life (Green)</div>", unsafe_allow_html=True)
+        st.markdown("""
+        <a href="https://cafe.naver.com/appleiphone" target="_blank" class="source-card source-life"><div class="source-info"><span class="source-name">아사모</span><span class="source-desc">아이폰/아이패드</span></div></a>
+        <a href="https://cafe.naver.com/inmacbook" target="_blank" class="source-card source-life"><div class="source-info"><span class="source-name">맥쓰사</span><span class="source-desc">맥북/맥 사용자</span></div></a>
+        <a href="https://web.joongna.com" target="_blank" class="source-card source-life"><div class="source-info"><span class="source-name">중고나라</span><span class="source-desc">대한민국 최대 장터</span></div></a>
+        <a href="https://bbs.ruliweb.com/market" target="_blank" class="source-card source-life"><div class="source-info"><span class="source-name">루리웹</span><span class="source-desc">게임/피규어/취미</span></div></a>
         """, unsafe_allow_html=True)
 
 # ==========================================
@@ -501,7 +508,6 @@ with tab_safety:
         </ul>
     </div>
     """, unsafe_allow_html=True)
-    # Ghost Button Implementation
     st.link_button("👮‍♂️ 더치트 무료 조회 바로가기", "https://thecheat.co.kr", type="secondary", use_container_width=True)
 
 st.markdown('<div class="legal-footer">© 2026 RADAR | Global Price Intelligence</div>', unsafe_allow_html=True)
