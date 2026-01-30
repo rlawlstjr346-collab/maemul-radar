@@ -102,9 +102,9 @@ def get_related_communities(keyword):
     
     if category == "CAMERA":
         return "📷 전문가급 카메라/장비 커뮤니티", [
-            ("SLR클럽", "http://www.slrclub.com", "slr"),
-            ("라이카 클럽", "https://cafe.naver.com/leicaclub", "leica"),
-            ("필름카메라 클럽", "https://cafe.naver.com/filmcamera", "film"),
+            ("SLR클럽", "https://www.slrclub.com", "slr"),
+            ("라이카 클럽", "http://www.leicaclub.net/", "leica"),
+            ("필름카메라 동호회", "https://cafe.naver.com/35mmcamera", "film"),
             ("DOF LOOK", "https://cafe.naver.com/doflook", "dof")
         ]
     elif category == "FASHION":
@@ -390,7 +390,7 @@ st.markdown(f"""
 # ------------------------------------------------------------------
 # [6] 메인 네비게이션
 # ------------------------------------------------------------------
-tab_home, tab_source, tab_tools, tab_safety = st.tabs(["🏠 시세 분석", "📂 즐겨찾기 (Core Sources)", "🧰 도구", "👮‍♂️ 사기 조회"])
+tab_home, tab_source, tab_tools, tab_safety = st.tabs(["🏠 시세 분석", "📂 Market Sources", "🧰 도구", "👮‍♂️ 사기 조회"])
 
 # ==========================================
 # 🏠 TAB 1: 홈
@@ -430,11 +430,11 @@ with tab_home:
             if curation_list:
                 st.markdown(f"<div style='margin-top:30px; margin-bottom:10px; color:#00FF88; font-weight:700;'>💡 {curation_title}</div>", unsafe_allow_html=True)
                 cur_cols = st.columns(2)
-                for idx, (name, url, _) in enumerate(curation_list):
+                for idx, (name, url, tag) in enumerate(curation_list):
                     col = cur_cols[idx % 2]
                     # 스마트 큐레이션은 심플한 카드로 표시 (여기서는 태그 스타일 미적용)
                     col.markdown(f"""
-                    <a href="{url}" target="_blank" class="source-card" style="border-left: 4px solid #00FF88;">
+                    <a href="{url}" target="_blank" class="source-card card-{tag}">
                         <div class="source-info"><span class="source-name">{name}</span></div>
                         <span style="font-size:1.2rem;">🔗</span>
                     </a>
@@ -498,39 +498,35 @@ with tab_home:
 # 📂 TAB 2: 마켓 소스 (Pro Dashboard Style)
 # ==========================================
 with tab_source:
-    st.markdown("#### 📂 즐겨찾기 (Core Sources)")
+    st.markdown("#### 📂 Market Sources")
     col_left, col_right = st.columns(2)
     
     # Left Column
     with col_left:
-        st.markdown("<div class='category-header'>💻 IT / Tech</div>", unsafe_allow_html=True)
         st.markdown("""
+        <div class='category-header'>💻 IT / Tech</div>
         <a href="https://quasarzone.com" target="_blank" class="source-card card-quasar"><div class="source-info"><span class="source-name">퀘이사존</span><span class="source-desc">PC/하드웨어 뉴스</span></div></a>
         <a href="https://coolenjoy.net" target="_blank" class="source-card card-cool"><div class="source-info"><span class="source-name">쿨엔조이</span><span class="source-desc">PC 하드웨어 매니아</span></div></a>
         <a href="https://meeco.kr" target="_blank" class="source-card card-meeco"><div class="source-info"><span class="source-name">미코 (Meeco)</span><span class="source-desc">모바일/테크 정보</span></div></a>
         <a href="https://www.clien.net" target="_blank" class="source-card card-clien"><div class="source-info"><span class="source-name">클리앙</span><span class="source-desc">IT/알뜰구매</span></div></a>
-        """, unsafe_allow_html=True)
         
-        st.markdown("<div class='category-header'>📷 Camera & Gear</div>", unsafe_allow_html=True)
-        st.markdown("""
-        <a href="http://www.slrclub.com" target="_blank" class="source-card card-slr"><div class="source-info"><span class="source-name">SLR클럽</span><span class="source-desc">국내 최대 카메라 장터</span></div></a>
-        <a href="https://cafe.naver.com/leicaclub" target="_blank" class="source-card card-leica"><div class="source-info"><span class="source-name">라이카 클럽</span><span class="source-desc">Leica 전문</span></div></a>
-        <a href="https://cafe.naver.com/filmcamera" target="_blank" class="source-card card-film"><div class="source-info"><span class="source-name">필름카메라 클럽</span><span class="source-desc">빈티지 필름 감성</span></div></a>
+        <div class='category-header'>📷 Camera & Gear</div>
+        <a href="https://www.slrclub.com" target="_blank" class="source-card card-slr"><div class="source-info"><span class="source-name">SLR클럽</span><span class="source-desc">국내 최대 카메라 장터</span></div></a>
+        <a href="http://www.leicaclub.net/" target="_blank" class="source-card card-leica"><div class="source-info"><span class="source-name">라이카 클럽</span><span class="source-desc">Leica 전문</span></div></a>
+        <a href="https://cafe.naver.com/35mmcamera" target="_blank" class="source-card card-film"><div class="source-info"><span class="source-name">필름카메라 동호회</span><span class="source-desc">빈티지 필름 감성</span></div></a>
         <a href="https://cafe.naver.com/doflook" target="_blank" class="source-card card-dof"><div class="source-info"><span class="source-name">DOF LOOK</span><span class="source-desc">전문 촬영 장비</span></div></a>
         """, unsafe_allow_html=True)
 
     # Right Column
     with col_right:
-        st.markdown("<div class='category-header'>👟 Fashion & Style</div>", unsafe_allow_html=True)
         st.markdown("""
+        <div class='category-header'>👟 Fashion & Style</div>
         <a href="https://kream.co.kr" target="_blank" class="source-card card-kream"><div class="source-info"><span class="source-name">KREAM</span><span class="source-desc">한정판 거래 플랫폼</span></div></a>
         <a href="https://cafe.naver.com/sssw" target="_blank" class="source-card card-nike"><div class="source-info"><span class="source-name">나이키매니아</span><span class="source-desc">스니커즈/스트릿</span></div></a>
         <a href="https://eomisae.co.kr" target="_blank" class="source-card card-eomisae"><div class="source-info"><span class="source-name">어미새</span><span class="source-desc">글로벌 세일 정보</span></div></a>
         <a href="https://cafe.naver.com/dieselmania" target="_blank" class="source-card card-diesel"><div class="source-info"><span class="source-name">디젤매니아</span><span class="source-desc">남성 패션 커뮤니티</span></div></a>
-        """, unsafe_allow_html=True)
-
-        st.markdown("<div class='category-header'>🍎 Apple & Life</div>", unsafe_allow_html=True)
-        st.markdown("""
+        
+        <div class='category-header'>🍎 Apple & Life</div>
         <a href="https://cafe.naver.com/appleiphone" target="_blank" class="source-card card-asamo"><div class="source-info"><span class="source-name">아사모</span><span class="source-desc">아이폰/아이패드 사용자</span></div></a>
         <a href="https://cafe.naver.com/inmacbook" target="_blank" class="source-card card-mac"><div class="source-info"><span class="source-name">맥쓰사</span><span class="source-desc">맥북/맥 사용자 모임</span></div></a>
         <a href="https://web.joongna.com" target="_blank" class="source-card card-joongna"><div class="source-info"><span class="source-name">중고나라</span><span class="source-desc">국내 최대 종합 장터</span></div></a>
@@ -630,16 +626,18 @@ sign_jpy = "🔺" if diff_jpy >= 0 else "▼"
 class_jpy = "ticker-up" if diff_jpy >= 0 else "ticker-down"
 jpy_text = f"{jpy:,.0f}원 <span class='{class_jpy}'>{sign_jpy} {abs(diff_jpy):.1f}</span>"
 
-us_limit = usd * 200
-jp_limit = usd * 150 
+us_limit_krw = usd * 200
+
+jp_limit_jpy = 150 * (usd / (jpy / 100))
+jp_limit_krw = usd * 150
 
 ticker_content = f"""
 <div class="ticker-wrap">
     <div class="ticker">
         <span class="ticker-item">USD/KRW <span class="ticker-val">{usd_text}</span></span>
         <span class="ticker-item">JPY/KRW <span class="ticker-val">{jpy_text}</span></span>
-        <span class="ticker-item">미국면세 한도 <span class="ticker-val">${us_limit:,.0f}</span></span>
-        <span class="ticker-item">일본면세 한도 <span class="ticker-val">{jp_limit:,.0f}원</span></span>
+        <span class="ticker-item">미국면세 한도 <span class="ticker-val">$200 (약 {us_limit_krw/10000:.0f}만원)</span></span>
+        <span class="ticker-item">일본면세 한도 <span class="ticker-val">¥{jp_limit_jpy:,.0f} (약 {jp_limit_krw/10000:.0f}만원)</span></span>
         <span class="ticker-item">SYSTEM <span class="ticker-val" style="color:#00ff88">ONLINE 🟢</span></span>
     </div>
 </div>
