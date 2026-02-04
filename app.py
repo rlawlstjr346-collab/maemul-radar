@@ -1339,6 +1339,16 @@ st.markdown("""
     [data-testid="stTabs"] > div { justify-content: center !important; }
     [data-baseweb="tab-list"] { display: flex !important; justify-content: center !important; }
     
+    /* [탭 선택 밑줄] 배포/로컬 동일하게 블루 (테마 그린 덮어씀) */
+    [data-testid="stTabs"] [data-baseweb="tab-list"] [aria-selected="true"] {
+        border-bottom: 2px solid #5C9EFF !important;
+        color: #5C9EFF !important;
+    }
+    /* Base Web 이동형 밑줄은 첫 로드 시 위치가 왼쪽으로 틀어지므로 숨기고, 선택 탭의 border-bottom만 사용 */
+    [data-testid="stTabs"] [data-baseweb="tab-highlight"] {
+        display: none !important;
+    }
+    
     /* [탭 전환] 애플 스타일 - 왼쪽에서 슬라이드 인 */
     [data-testid="stTabs"] > div:last-child {
         overflow: visible !important;
