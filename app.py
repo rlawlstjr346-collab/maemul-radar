@@ -2968,113 +2968,39 @@ components.html("""
 </style>
 
 <script>
-// 브라우저 탭 제목 고정 (이력서 링크 클릭 시 항상 RADAR로 보이게)
 (function() {
-    var targetTitle = 'RADAR';
-    function setTitle() { try { window.parent.document.title = targetTitle; } catch(e){} }
-    setTitle();
-    [50, 150, 400, 800, 1500, 2500, 4000].forEach(function(ms) { setTimeout(setTitle, ms); });
-    try {
-        var titleEl = window.parent.document.querySelector('title');
-        if (titleEl) {
-            var obs = new MutationObserver(function() { setTitle(); });
-            obs.observe(titleEl, { childList: true, characterData: true, subtree: true });
-        }
-    } catch(e) {}
+    window.scrollToTop = function() {};
+    window.toggleHelp = function() {};
+    window.saveRecentSearch = function() {};
+    function run() {
+        try {
+            var doc = null;
+            try { doc = window.parent && window.parent.document; } catch(e) {}
+            if (!doc) return;
+            function setTabTitle() { try { window.top.document.title = 'RADAR'; } catch(e) {} try { doc.title = 'RADAR'; } catch(e) {} }
+            setTabTitle();
+            setTimeout(setTabTitle, 400);
+            setTimeout(setTabTitle, 1200);
+            try { if (doc.body) doc.body.classList.remove('light-mode'); } catch(e) {}
+            window.scrollToTop = function() { try { var m = window.parent && window.parent.document && window.parent.document.querySelector('.main'); if (m) m.scrollTo({ top: 0, behavior: 'smooth' }); } catch(e) {} };
+            var main = doc.querySelector ? doc.querySelector('.main') : null;
+            if (main) try { main.addEventListener('scroll', function() { var btn = document.getElementById('backToTop'); if (btn) btn.classList.toggle('visible', this.scrollTop > 500); }); } catch(e) {}
+            var helpVisible = false;
+            window.toggleHelp = function() { helpVisible = !helpVisible; var h = document.getElementById('keyboardHint'); if (h) h.classList.toggle('show', helpVisible); };
+            if (doc.addEventListener) try {
+                doc.addEventListener('keydown', function(e) {
+                    if (e.key === '/') { e.preventDefault(); var i = doc.querySelector('input[placeholder*="여기에 검색"]'); if (i) i.focus(); }
+                    if (e.key === 'Escape') { var i = doc.querySelector('input[placeholder*="여기에 검색"]'); if (i && i === doc.activeElement) { i.value = ''; i.blur(); } }
+                    if (e.key === '?') { e.preventDefault(); window.toggleHelp(); }
+                });
+            } catch(e) {}
+            window.saveRecentSearch = function(kw) { try { var r = JSON.parse(localStorage.getItem('radar_recent_searches') || '[]'); r = r.filter(function(k) { return k !== kw; }); r.unshift(kw); localStorage.setItem('radar_recent_searches', JSON.stringify(r.slice(0, 5))); } catch(e) {} };
+            setTimeout(function() { try { var i = doc.querySelector('input[placeholder*="여기에 검색"]'); if (i && i.value) window.saveRecentSearch(i.value); } catch(e) {} }, 1500);
+        } catch(e) {}
+    }
+    if (document.readyState === 'complete') setTimeout(run, 0);
+    else window.addEventListener('load', function() { setTimeout(run, 0); });
 })();
-// Ensure body has no light-mode (다크 모드만 사용)
-(function(){ try { window.parent.document.body.classList.remove('light-mode'); } catch(e){} })();
-
-// Performance: Intersection Observer for animations
-const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            entry.target.style.animationPlayState = 'running';
-        }
-    });
-}, { threshold: 0.1 });
-
-setTimeout(() => {
-    const animatedElements = window.parent.document.querySelectorAll(
-        '.metric-card, .source-card, .search-pills a, [data-testid="stPlotlyChart"]'
-    );
-    animatedElements.forEach(el => {
-        el.style.animationPlayState = 'paused';
-        observer.observe(el);
-    });
-}, 500);
-
-// Back to Top
-function scrollToTop() {
-    window.parent.document.querySelector('.main').scrollTo({
-        top: 0,
-        behavior: 'smooth'
-    });
-}
-
-window.parent.document.querySelector('.main').addEventListener('scroll', function() {
-    var btn = document.getElementById('backToTop');
-    if (this.scrollTop > 500) {
-        btn.classList.add('visible');
-    } else {
-        btn.classList.remove('visible');
-    }
-});
-
-// Keyboard Shortcuts + Help
-let helpVisible = false;
-function toggleHelp() {
-    helpVisible = !helpVisible;
-    const hint = document.getElementById('keyboardHint');
-    if (helpVisible) {
-        hint.classList.add('show');
-    } else {
-        hint.classList.remove('show');
-    }
-}
-
-window.parent.document.addEventListener('keydown', function(e) {
-    // "/" - Focus search
-    if (e.key === '/' && !e.target.matches('input, textarea')) {
-        e.preventDefault();
-        const input = window.parent.document.querySelector('input[placeholder*="여기에 검색"]');
-        if (input) input.focus();
-    }
-    
-    // "ESC" - Clear search
-    if (e.key === 'Escape') {
-        const input = window.parent.document.querySelector('input[placeholder*="여기에 검색"]');
-        if (input && input === document.activeElement) {
-            input.value = '';
-            input.blur();
-        }
-    }
-    
-    // "?" - Toggle help
-    if (e.key === '?' && !e.target.matches('input, textarea')) {
-        e.preventDefault();
-        toggleHelp();
-    }
-});
-
-// LocalStorage Cache for recent searches
-function saveRecentSearch(keyword) {
-    try {
-        let recent = JSON.parse(localStorage.getItem('radar_recent_searches') || '[]');
-        recent = recent.filter(k => k !== keyword);
-        recent.unshift(keyword);
-        recent = recent.slice(0, 5);
-        localStorage.setItem('radar_recent_searches', JSON.stringify(recent));
-    } catch(e) {}
-}
-
-// Auto-save on search
-setTimeout(() => {
-    const input = window.parent.document.querySelector('input[placeholder*="여기에 검색"]');
-    if (input && input.value) {
-        saveRecentSearch(input.value);
-    }
-}, 1000);
 </script>
 """, height=0)
 
