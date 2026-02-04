@@ -2968,6 +2968,20 @@ components.html("""
 </style>
 
 <script>
+// 브라우저 탭 제목 고정 (이력서 링크 클릭 시 항상 RADAR로 보이게)
+(function() {
+    var targetTitle = 'RADAR';
+    function setTitle() { try { window.parent.document.title = targetTitle; } catch(e){} }
+    setTitle();
+    [50, 150, 400, 800, 1500, 2500, 4000].forEach(function(ms) { setTimeout(setTitle, ms); });
+    try {
+        var titleEl = window.parent.document.querySelector('title');
+        if (titleEl) {
+            var obs = new MutationObserver(function() { setTitle(); });
+            obs.observe(titleEl, { childList: true, characterData: true, subtree: true });
+        }
+    } catch(e) {}
+})();
 // Ensure body has no light-mode (다크 모드만 사용)
 (function(){ try { window.parent.document.body.classList.remove('light-mode'); } catch(e){} })();
 
