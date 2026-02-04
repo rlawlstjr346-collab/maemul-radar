@@ -13,10 +13,10 @@ import html
 import math
 import random
 
-CHART_BLUE = '#5C9EFF'
-CHART_BLUE_LIGHT = '#90CAF9'
-CHART_BLUE_FILL = 'rgba(92, 158, 255, 0.15)'
-CHART_BLUE_HIGHLIGHT = 'rgba(92, 158, 255, 0.35)'
+CHART_BLUE = '#0A84FF'
+CHART_BLUE_LIGHT = '#5CA4FF'
+CHART_BLUE_FILL = 'rgba(10, 132, 255, 0.2)'
+CHART_BLUE_HIGHLIGHT = 'rgba(10, 132, 255, 0.25)'
 
 # ------------------------------------------------------------------
 # [1] 앱 기본 설정 (RADAR V15.0: Pro Dashboard Cards)
@@ -603,7 +603,7 @@ if 'ticker_data' not in st.session_state:
     st.session_state.ticker_data = generate_new_data()
 if 'memo_pad' not in st.session_state:
     st.session_state.memo_pad = ""
-# [테마] 라이트 모드 개발 중단 - 다크 모드만 사용 (빠른 배포)
+# [테마] 다크 모드만 사용 (라이트 모드 제거)
 st.session_state.theme_light = False
 
 # ------------------------------------------------------------------
@@ -611,15 +611,133 @@ st.session_state.theme_light = False
 # ------------------------------------------------------------------
 st.markdown("""
 <style>
-    /* Global Theme */
+    /* Global Theme - Apple-like with Navy */
     .stApp { 
         background-color: #0E1117; 
         background: radial-gradient(circle at 50% -20%, #1c2333 0%, #0E1117 80%);
-        color: #EEEEEE; font-family: 'Inter', 'Pretendard', sans-serif; 
+        color: #F5F5F7; 
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        transition: all 0.3s ease;
+    }
+    
+    /* Light Mode Override - Cream & Black (강한 대비) */
+    body.light-mode .stApp, body.light-mode {
+        background-color: #EDE8E0 !important;
+        background: radial-gradient(circle at 50% -20%, #F5F0E6 0%, #E8E2D8 80%) !important;
+        color: #0D0D0D !important;
     }
     /* Streamlit 상단 초록색 바 제거 */
     [data-testid="stHeader"], header[data-testid="stHeader"] { display: none !important; }
     [data-testid="stDecoration"] { display: none !important; }
+    
+    /* Light Mode: Main Container - Cream 배경, 블랙 텍스트 */
+    body.light-mode .main,
+    body.light-mode .block-container,
+    body.light-mode [data-testid="stAppViewContainer"] {
+        background-color: #EDE8E0 !important;
+        color: #0D0D0D !important;
+    }
+    
+    /* Scroll Progress Bar - Apple Style */
+    .stApp::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 2px;
+        width: 100%;
+        background: linear-gradient(90deg, 
+            rgba(10, 132, 255, 0) 0%,
+            rgba(10, 132, 255, 0.8) 50%,
+            rgba(10, 132, 255, 0) 100%);
+        z-index: 9999;
+        opacity: 0.6;
+        animation: progress-glow 3s ease-in-out infinite;
+    }
+    @keyframes progress-glow {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 0.8; }
+    }
+    
+    /* Performance: reduce continuous animations (메인 펄스는 항상 재생) */
+    .stApp::before { animation: none !important; }
+    .radar-icon,
+    .radar-icon-wrap::before,
+    .radar-icon-wrap::after {
+        animation-play-state: paused;
+    }
+    .radar-left:hover .radar-icon,
+    .radar-left:hover .radar-icon-wrap::before,
+    .radar-left:hover .radar-icon-wrap::after,
+    .header-logo-standalone:hover .radar-icon,
+    .header-logo-standalone:hover .radar-icon-wrap::before,
+    .header-logo-standalone:hover .radar-icon-wrap::after {
+        animation-play-state: running;
+    }
+    /* 메인화면 홈 펄스(.home-sonar-wrap)는 항상 재생 */
+    .home-sonar-wrap .sonar-ring,
+    .home-sonar-wrap .sonar-dot,
+    .home-sonar-wrap .sonar-blip {
+        animation-play-state: running !important;
+    }
+    .bill-content { animation-duration: 60s; }
+    
+    /* Back to Top Button - Apple Style */
+    .back-to-top {
+        position: fixed;
+        bottom: 80px;
+        right: 32px;
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(245, 245, 247, 0.08));
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 0.5px solid rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: #F5F5F7;
+        cursor: pointer;
+        z-index: 1000;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        opacity: 0;
+        transform: translateY(20px) scale(0.8);
+        pointer-events: none;
+    }
+    .back-to-top.visible {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
+    }
+    .back-to-top:hover {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(245, 245, 247, 0.12));
+        transform: translateY(-4px) scale(1.05);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+    .back-to-top:active {
+        transform: translateY(-2px) scale(1.0);
+    }
+    
+    /* Loading Spinner - NO ROTATION */
+    [data-testid="stSpinner"] > div {
+        border: 3px solid rgba(10, 132, 255, 0.3) !important;
+        animation: none !important;
+        transform: none !important;
+    }
+    [data-testid="stSpinner"] {
+        animation: spinner-pulse 2s ease-in-out infinite !important;
+    }
+    @keyframes spinner-pulse {
+        0%, 100% { opacity: 0.5; }
+        50% { opacity: 1; }
+    }
     
     /* [Responsive] Centered Container (Max Width 1400px) */
     .block-container {
@@ -646,27 +764,67 @@ st.markdown("""
     .st-key-header_logo_toggle .element-container,
     .st-key-header_logo_toggle [data-testid="stVerticalBlock"],
     .st-key-header_logo_toggle [data-testid="stVerticalBlock"] > div { margin: 0 !important; padding: 0 !important; }
-    .st-key-header_logo_toggle { display: flex !important; flex-direction: column !important; align-items: flex-start !important; margin-top: 40px !important; gap: 8px !important; }
-    .header-logo-area { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin: 0 !important; }
+    .st-key-header_logo_toggle { display: flex !important; flex-direction: column !important; align-items: flex-start !important; margin-top: 0 !important; gap: 8px !important; }
+    .header-logo-area { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin: 0 !important; padding: 16px 0; }
     .header-logo-standalone {
         display: flex; flex-direction: column; align-items: flex-start; flex-shrink: 0;
         text-decoration: none !important; border-bottom: none !important; gap: 1px;
         position: relative;
     }
+    /* 로고 후광 - 부드러운 펄스 */
     .header-logo-standalone::before {
-        content: ''; position: absolute; inset: -14px -22px -14px -22px; border-radius: 26px;
-        z-index: -1; pointer-events: none;
-        background: radial-gradient(ellipse 120% 100% at 50% 50%, rgba(92,158,255,0.1) 0%, rgba(92,158,255,0.03) 50%, transparent 70%);
-        animation: logo-halo-pulse 3.5s ease-in-out infinite;
+        content: ''; 
+        position: absolute; 
+        inset: -14px -22px -14px -22px; 
+        border-radius: 26px;
+        z-index: -1; 
+        pointer-events: none;
+        background: radial-gradient(ellipse 120% 100% at 50% 50%, 
+                                    rgba(10,132,255,0.15) 0%, 
+                                    rgba(10,132,255,0.06) 40%, 
+                                    transparent 75%);
+        animation: logo-halo-breathe 5s ease-in-out infinite;
+        box-shadow: 0 0 30px rgba(10,132,255,0.2);
+        transition: opacity 0.5s ease, box-shadow 0.5s ease;
     }
-    @keyframes logo-halo-pulse { 0%, 100% { opacity: 0.6; transform: scale(0.98); } 50% { opacity: 1; transform: scale(1.02); } }
+    .header-logo-standalone:hover::before {
+        opacity: 1;
+        box-shadow: 0 0 50px rgba(10,132,255,0.35);
+    }
+    @keyframes logo-halo-breathe { 
+        0%, 100% { 
+            opacity: 0.5; 
+            transform: scale(0.97);
+        } 
+        50% { 
+            opacity: 0.75; 
+            transform: scale(1.02);
+        } 
+    }
     .header-logo-standalone:hover, .header-logo-standalone:focus, .header-logo-standalone:visited { text-decoration: none !important; border-bottom: none !important; }
     .header-logo-standalone *, .header-logo-standalone *:hover { text-decoration: none !important; border-bottom: none !important; }
-    .theme-toggle { font-size: 1.2rem; opacity: 0.85; transition: opacity 0.2s; flex-shrink: 0; padding: 8px 12px; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; }
-    .theme-toggle:hover { opacity: 1; background: rgba(255,255,255,0.08); }
+    .theme-toggle { 
+        font-size: 1.2rem; 
+        opacity: 0.85; 
+        transition: all 0.2s ease; 
+        flex-shrink: 0; 
+        padding: 8px 12px; 
+        display: inline-flex; 
+        align-items: center; 
+        justify-content: center; 
+        border-radius: 12px;
+        cursor: pointer;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.12);
+    }
+    .theme-toggle:hover { 
+        opacity: 1; 
+        background: rgba(255,255,255,0.08);
+        transform: scale(1.05);
+    }
     .theme-toggle-disabled { font-size: 1.2rem; opacity: 0.5; flex-shrink: 0; padding: 8px 12px; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; cursor: not-allowed; pointer-events: none; border: 1px solid rgba(255,255,255,0.2); }
     /* 빌보드 래퍼: 중앙 정렬 */
-    .radar-billboard-wrap { display: flex; justify-content: center; align-items: center; }
+    .radar-billboard-wrap { display: flex; justify-content: center; align-items: center; padding: 16px 0; }
     div[data-testid="stToggle"] { padding: 0 !important; }
     div[data-testid="stToggle"] label { display: none !important; }
     div[data-testid="stToggle"] [role="switch"] { 
@@ -693,30 +851,196 @@ st.markdown("""
     .header-logo-standalone .radar-sub { margin-left: 48px; }
     .radar-left { 
         display: flex; flex-direction: column; align-items: flex-start; position: relative; flex-shrink: 0; 
-        gap: 2px;
+        gap: 4px;
     }
-    .radar-top-row { display: flex; align-items: center; gap: 14px; }
-    .radar-icon-wrap { position: relative; display: inline-flex; }
-    .radar-icon-wrap::before { content: ''; position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%; background: radial-gradient(circle at center, rgba(92,158,255,0.18) 0%, rgba(120,180,255,0.08) 25%, transparent 55%); animation: icon-pulse 3.2s ease-in-out infinite 0.4s; pointer-events: none; z-index: 0; }
-    .radar-icon { font-size: 1.8rem; z-index: 2; line-height: 1; position: relative; filter: drop-shadow(0 0 8px rgba(92,158,255,0.5)) drop-shadow(0 0 3px rgba(255,255,255,0.4)) drop-shadow(0 1px 2px rgba(0,0,0,0.3)); animation: icon-glow 3.2s ease-in-out infinite; transition: transform 0.3s ease; }
-    .radar-left:hover .radar-icon, .header-logo-standalone:hover .radar-icon { transform: scale(1.12) rotate(-6deg); }
-    @keyframes icon-pulse { 0%, 100% { opacity: 0.2; transform: scale(0.92); } 50% { opacity: 0.5; transform: scale(1.05); } }
-    @keyframes icon-glow { 0%, 100% { filter: drop-shadow(0 0 5px rgba(92,158,255,0.3)) drop-shadow(0 0 2px rgba(255,255,255,0.2)); } 50% { filter: drop-shadow(0 0 12px rgba(92,158,255,0.5)) drop-shadow(0 0 3px rgba(255,255,255,0.35)); } }
+    .radar-top-row { display: flex; align-items: center; gap: 16px; }
+    .radar-icon-wrap { 
+        position: relative; 
+        display: inline-flex;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(245, 245, 247, 0.04));
+        border-radius: 18px;
+        padding: 10px 12px;
+        border: 0.5px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .radar-left:hover .radar-icon-wrap, 
+    .header-logo-standalone:hover .radar-icon-wrap {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(245, 245, 247, 0.08));
+        box-shadow: 0 8px 24px rgba(255, 255, 255, 0.12),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+    }
+    /* 로고 아이콘 - 레이더 스캔 효과 */
+    .radar-icon-wrap::before { 
+        content: ''; 
+        position: absolute; 
+        left: 50%; 
+        top: 50%; 
+        width: 52px; 
+        height: 52px; 
+        margin: -26px 0 0 -26px; 
+        border-radius: 50%; 
+        background: radial-gradient(circle at center, rgba(10,132,255,0.3) 0%, rgba(10,132,255,0.15) 25%, transparent 60%); 
+        animation: radar-pulse 3s ease-in-out infinite; 
+        pointer-events: none; 
+        z-index: 0;
+        transition: background 0.3s ease; 
+    }
+    .radar-left:hover .radar-icon-wrap::before,
+    .header-logo-standalone:hover .radar-icon-wrap::before {
+        background: radial-gradient(circle at center, rgba(10,132,255,0.45) 0%, rgba(10,132,255,0.2) 25%, transparent 60%);
+        opacity: 0.8;
+    }
+    .radar-icon-wrap::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 80px;
+        height: 80px;
+        margin: -40px 0 0 -40px;
+        border-radius: 50%;
+        border: 2px solid rgba(10,132,255,0.2);
+        animation: radar-ring 4s ease-out infinite;
+        pointer-events: none;
+        z-index: -1;
+        transition: border-color 0.3s ease, border-width 0.3s ease;
+    }
+    .radar-left:hover .radar-icon-wrap::after,
+    .header-logo-standalone:hover .radar-icon-wrap::after {
+        border-color: rgba(10,132,255,0.4);
+        border-width: 2px;
+    }
+    .radar-icon { 
+        font-size: 1.8rem; 
+        z-index: 2; 
+        line-height: 1; 
+        position: relative; 
+        filter: drop-shadow(0 0 12px rgba(10,132,255,0.7)) 
+                drop-shadow(0 0 5px rgba(255,255,255,0.5)); 
+        animation: radar-scan 3s ease-in-out infinite;
+        transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                    filter 0.5s ease; 
+    }
+    .radar-left:hover .radar-icon, .header-logo-standalone:hover .radar-icon { 
+        filter: drop-shadow(0 0 16px rgba(10,132,255,0.9)) 
+                drop-shadow(0 0 6px rgba(255,255,255,0.6));
+        animation: radar-hover-gentle 2s ease-in-out infinite;
+    }
+    @keyframes radar-hover-gentle {
+        0%, 100% {
+            transform: scale(1.05) rotate(-3deg);
+        }
+        50% {
+            transform: scale(1.1) rotate(3deg);
+        }
+    }
+    
+    /* 레이더 펄스 */
+    @keyframes radar-pulse { 
+        0%, 100% { 
+            opacity: 0.25; 
+            transform: scale(0.85); 
+        } 
+        50% { 
+            opacity: 0.6; 
+            transform: scale(1.1); 
+        } 
+    }
+    
+    /* 레이더 링 확산 */
+    @keyframes radar-ring {
+        0% {
+            transform: scale(0.5);
+            opacity: 0.6;
+            border-color: rgba(10,132,255,0.4);
+        }
+        50% {
+            opacity: 0.3;
+        }
+        100% {
+            transform: scale(1.5);
+            opacity: 0;
+            border-color: rgba(10,132,255,0);
+        }
+    }
+    
+    /* 레이더 스캔 (회전 + 깜빡임) */
+    @keyframes radar-scan {
+        0%, 100% {
+            filter: drop-shadow(0 0 8px rgba(10,132,255,0.5)) 
+                    drop-shadow(0 0 3px rgba(255,255,255,0.3));
+            transform: rotate(0deg);
+        }
+        25% {
+            filter: drop-shadow(0 0 15px rgba(10,132,255,0.8)) 
+                    drop-shadow(0 0 6px rgba(255,255,255,0.6));
+        }
+        50% {
+            filter: drop-shadow(0 0 8px rgba(10,132,255,0.5)) 
+                    drop-shadow(0 0 3px rgba(255,255,255,0.3));
+            transform: rotate(8deg);
+        }
+        75% {
+            filter: drop-shadow(0 0 15px rgba(10,132,255,0.8)) 
+                    drop-shadow(0 0 6px rgba(255,255,255,0.6));
+        }
+    }
+    
     .radar-title-wrap { position: relative; display: inline-block; }
+    /* 로고 텍스트 - Premium iOS Display Typography */
     .radar-title { 
-        font-size: 1.9rem; font-weight: 900; letter-spacing: -1px; font-style: italic; z-index: 2; line-height: 1;
-        background: linear-gradient(90deg, #ffffff 0%, #ffffff 68%, #fefefe 78%, #fcfcfc 86%, #f9f9f9 93%, #f6f6f6 100%);
-        background-size: 100% 100%;
-        background-position: 0% 0%;
-        -webkit-background-clip: text; background-clip: text;
-        -webkit-text-fill-color: transparent; color: transparent;
-        position: relative;
-        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+        font-size: 3.2rem; 
+        font-weight: 700; 
+        letter-spacing: -2.8px; 
+        line-height: 1; 
+        margin: 0; 
+        background: linear-gradient(145deg, #FFFFFF 0%, #F5F5F7 40%, #E5E5EA 100%); 
+        -webkit-background-clip: text; 
+        background-clip: text; 
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(0 2px 12px rgba(255, 255, 255, 0.1)); 
+        text-shadow: none;
+        filter: drop-shadow(0 2px 12px rgba(255, 255, 255, 0.3)) 
+                drop-shadow(0 1px 4px rgba(255, 255, 255, 0.5));
     }
-    .radar-sub { font-size: 0.65rem; color: #a5d8ff !important; -webkit-text-fill-color: #a5d8ff !important; letter-spacing: 3px; font-weight: 600; margin-left: 48px; text-transform: uppercase; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+    @keyframes title-shine {
+        0%, 100% {
+            background-position: 0% 0%;
+        }
+        50% {
+            background-position: 100% 0%;
+        }
+    }
+    
+    /* 서브 텍스트 - 깜빡임 */
+    .radar-sub { 
+        font-size: 0.65rem; 
+        color: #a5d8ff !important; 
+        -webkit-text-fill-color: #a5d8ff !important; 
+        letter-spacing: 3px; 
+        font-weight: 600; 
+        margin-left: 48px; 
+        text-transform: uppercase; 
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 0 10px rgba(10,132,255,0.3);
+        animation: sub-glow 4s ease-in-out infinite;
+    }
+    @keyframes sub-glow {
+        0%, 100% {
+            opacity: 0.8;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 0 8px rgba(10,132,255,0.2);
+        }
+        50% {
+            opacity: 1;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 0 15px rgba(10,132,255,0.5);
+        }
+    }
     
     
-    /* Billboard - 4x2 그리드, 유리 박스, 구분감 강화 */
+    /* Billboard - 4x2 그리드, 유리 박스, 터치 영역 개선 */
     .radar-billboard {
         display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, 1fr);
         gap: 10px 14px;
@@ -725,24 +1049,56 @@ st.markdown("""
         border: 1px solid rgba(255,255,255,0.18); border-radius: 16px;
         box-shadow: 0 4px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06);
         width: fit-content; max-width: 880px; flex-shrink: 0;
+        touch-action: pan-y;
+        -webkit-overflow-scrolling: touch;
     }
     
-    /* [Responsive] 화면이 좁으면 4x1 (상단 4개만) */
+    /* [Responsive] 화면이 좁으면 4x1, 모바일은 swipe 가능 */
     @media (max-width: 1100px) {
-        .radar-billboard { grid-template-rows: 1fr; max-width: 620px; width: fit-content; }
+        .radar-billboard { 
+            grid-template-rows: 1fr; 
+            max-width: 620px; 
+            width: fit-content;
+        }
         .c-vibe, .c-living, .c-game, .c-outdoor { display: none !important; }
     }
     @media (max-width: 768px) {
-        .radar-billboard { display: none !important; }
+        .radar-billboard-wrap { 
+            display: flex; 
+            overflow-x: auto; 
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            scroll-snap-type: x mandatory;
+            padding: 8px 0;
+        }
+        .radar-billboard { 
+            display: flex !important; 
+            flex-direction: row;
+            gap: 12px;
+            min-width: max-content;
+            scroll-snap-align: start;
+            padding: 10px 14px;
+        }
+        .bill-col {
+            min-width: 140px;
+            scroll-snap-align: start;
+        }
+        .c-vibe, .c-living, .c-game, .c-outdoor { display: flex !important; }
     }
     .bill-col { 
         display: flex; flex-direction: column; 
         min-width: 0; overflow: hidden;
     }
     .bill-head { 
-        font-size: 0.7rem; color: #888; font-weight: 800; margin-bottom: 6px; 
-        letter-spacing: 1px; text-transform: uppercase; 
-        border-bottom: 1px solid #444; padding-bottom: 4px; white-space: nowrap;
+        font-size: 0.7rem; 
+        font-weight: 800; 
+        margin-bottom: 6px; 
+        letter-spacing: 1px; 
+        text-transform: uppercase; 
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12); 
+        padding-bottom: 4px; 
+        white-space: nowrap;
+        color: #8E8E93;
     }
     .bill-win { 
         height: 60px; overflow: hidden; position: relative; 
@@ -753,7 +1109,6 @@ st.markdown("""
     .bill-content { 
         display: flex; flex-direction: column; 
         animation: rolling 40s infinite cubic-bezier(0.4, 0, 0.2, 1);
-        will-change: transform;
     }
     /* [플립 달력] 카테고리별 다른 시점에서 시작 (엇박자) */
     .c-trend .bill-content { animation-delay: 0s; }
@@ -771,8 +1126,25 @@ st.markdown("""
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         flex-shrink: 0;
     }
-    a.bill-item { color: inherit; text-decoration: none; display: block; cursor: pointer; transition: opacity 0.2s; }
-    a.bill-item:hover { opacity: 0.8; }
+    a.bill-item { 
+        color: inherit; 
+        text-decoration: none; 
+        display: block; 
+        cursor: pointer; 
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        padding: 2px 6px;
+        margin: -2px -6px;
+        border-radius: 6px;
+    }
+    a.bill-item:hover { 
+        background: rgba(10, 132, 255, 0.1);
+        transform: translateX(2px);
+    }
+    a.bill-item:active {
+        background: rgba(10, 132, 255, 0.18);
+        transform: translateX(1px) scale(0.98);
+    }
     
     /* Category Colors */
     .c-trend .bill-item { color: #00E5FF; }
@@ -822,57 +1194,238 @@ st.markdown("""
     .home-hero-sub { font-size: 1rem; color: #8a9aab; margin: 0; line-height: 1.6; }
     .home-hero-hidden { display: none !important; }
     
-    /* [홈 빈 상태] 전투기 레이더 스타일 - 펄스 + 타겟 블립 */
+    /* [홈 빈 상태] Apple-style 레이더 - 펄스 + 타겟 블립 */
+    .pulse-block { display: block; }
+    .pulse-block-hidden { display: none !important; }
     .home-sonar-wrap { text-align: center; padding: 40px 20px 60px; }
-    .home-sonar-wrap .sonar-wrap { width: 220px; height: 220px; margin: 0 auto; position: relative; display: flex; justify-content: center; align-items: center; }
-    .home-sonar-wrap .sonar-ring { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; border: 2px solid rgba(59,130,246,0.5); transform-origin: center center; animation: home-sonar-ping 8.5s ease-out infinite; will-change: transform; animation-fill-mode: both; z-index: 1; }
+    .home-sonar-wrap .sonar-wrap { 
+        width: 280px; 
+        height: 280px; 
+        margin: 0 auto; 
+        position: relative; 
+        display: flex; 
+        justify-content: center; 
+        align-items: center;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.02) 0%, transparent 70%);
+        border-radius: 50%;
+        border: 0.5px solid rgba(255, 255, 255, 0.08);
+        box-shadow: inset 0 0 40px rgba(255, 255, 255, 0.02);
+    }
+    .home-sonar-wrap .sonar-ring { 
+        position: absolute; 
+        left: 50%; 
+        top: 50%; 
+        width: 50px; 
+        height: 50px; 
+        margin: -25px 0 0 -25px; 
+        border-radius: 50%; 
+        border: 1.5px solid rgba(255, 255, 255, 0.25);
+        transform-origin: center center; 
+        animation: home-sonar-ping 10s cubic-bezier(0.4, 0, 0.2, 1) infinite; 
+        animation-fill-mode: both; 
+        z-index: 1;
+    }
     .home-sonar-wrap .sonar-ring:nth-child(1) { animation-delay: 0s; }
-    .home-sonar-wrap .sonar-ring:nth-child(2) { animation-delay: 1.8s; }
-    .home-sonar-wrap .sonar-ring:nth-child(3) { animation-delay: 3.6s; }
-    .home-sonar-wrap .sonar-ring:nth-child(4) { animation-delay: 5.4s; }
-    .home-sonar-wrap .sonar-ring:nth-child(5) { animation-delay: 7.2s; }
-    .home-sonar-wrap .sonar-dot { position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: #3B82F6; box-shadow: 0 0 12px rgba(59,130,246,0.6); transform-origin: center center; animation: sonar-dot-pulse 1.5s ease-in-out infinite; z-index: 10; }
-    @keyframes sonar-dot-pulse { 0%, 100% { transform: scale(0.95); opacity: 1; } 50% { transform: scale(1.1); opacity: 1; } }
-    .home-sonar-wrap .sonar-blip { position: absolute; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: rgba(92,158,255,0.95); box-shadow: 0 0 10px rgba(92,158,255,0.8), 0 0 20px rgba(92,158,255,0.4); opacity: 0; animation: radar-blip 9s linear infinite; animation-fill-mode: both; pointer-events: none; z-index: 2; }
-    @keyframes home-sonar-ping { 0% { transform: scale(0.15); opacity: 0.9; border-color: rgba(59,130,246,0.8); } 30% { opacity: 0.9; border-color: rgba(59,130,246,0.5); } 80% { opacity: 0.3; border-color: rgba(59,130,246,0.15); } 100% { transform: scale(5.5); opacity: 0; border-color: rgba(59,130,246,0.02); } }
-    @keyframes radar-blip { 0%, 8% { opacity: 0; } 10% { opacity: 1; } 12% { opacity: 1; } 18% { opacity: 0.5; } 22% { opacity: 0; } 100% { opacity: 0; } }
-    .home-sonar-hint { font-size: 1.1rem; margin: 24px 0 0 0; font-weight: 600; letter-spacing: 0.3px; display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; border-radius: 12px; background: linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(0,229,255,0.04) 100%); border: 1px solid rgba(59,130,246,0.2); color: #b8d4f0; text-shadow: 0 0 20px rgba(59,130,246,0.3); animation: hint-glow 3s ease-in-out infinite; }
-    .home-sonar-hint::before { content: '📡'; font-size: 1.2rem; opacity: 0.95; filter: drop-shadow(0 0 4px rgba(0,229,255,0.4)); }
-    @keyframes hint-glow { 0%, 100% { box-shadow: 0 0 0 rgba(59,130,246,0); } 50% { box-shadow: 0 0 16px rgba(59,130,246,0.15); } }
+    .home-sonar-wrap .sonar-ring:nth-child(2) { animation-delay: 2s; }
+    .home-sonar-wrap .sonar-ring:nth-child(3) { animation-delay: 4s; }
+    .home-sonar-wrap .sonar-ring:nth-child(4) { animation-delay: 6s; }
+    .home-sonar-wrap .sonar-ring:nth-child(5) { animation-delay: 8s; }
+    .home-sonar-wrap .sonar-dot { 
+        position: absolute; 
+        left: 50%; 
+        top: 50%; 
+        width: 18px; 
+        height: 18px; 
+        margin: -9px 0 0 -9px; 
+        border-radius: 50%; 
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(245, 245, 247, 0.7));
+        box-shadow: 0 0 24px rgba(255, 255, 255, 0.5), 
+                    0 0 48px rgba(255, 255, 255, 0.25),
+                    inset 0 1px 0 rgba(255, 255, 255, 1);
+        transform-origin: center center; 
+        animation: sonar-dot-pulse 2.5s ease-in-out infinite; 
+        z-index: 10;
+        border: 0.5px solid rgba(255, 255, 255, 0.4);
+    }
+    @keyframes sonar-dot-pulse { 
+        0%, 100% { 
+            transform: scale(0.85); 
+            opacity: 0.75;
+            box-shadow: 0 0 24px rgba(255, 255, 255, 0.5), 
+                        0 0 48px rgba(255, 255, 255, 0.25),
+                        inset 0 1px 0 rgba(255, 255, 255, 1);
+        } 
+        50% { 
+            transform: scale(1.15); 
+            opacity: 1;
+            box-shadow: 0 0 36px rgba(255, 255, 255, 0.7), 
+                        0 0 72px rgba(255, 255, 255, 0.35),
+                        inset 0 1px 0 rgba(255, 255, 255, 1);
+        } 
+    }
+    .home-sonar-wrap .sonar-blip { 
+        position: absolute; 
+        width: 7px; 
+        height: 7px; 
+        margin: -3.5px 0 0 -3.5px; 
+        border-radius: 50%; 
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(245, 245, 247, 0.85));
+        box-shadow: 0 0 16px rgba(255, 255, 255, 0.7), 
+                    0 0 32px rgba(255, 255, 255, 0.4),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.9); 
+        opacity: 0; 
+        animation: radar-blip 10s cubic-bezier(0.4, 0, 0.2, 1) infinite; 
+        animation-fill-mode: both; 
+        pointer-events: none; 
+        z-index: 2;
+        border: 0.5px solid rgba(255, 255, 255, 0.6);
+    }
+    @keyframes home-sonar-ping { 
+        0% { 
+            transform: scale(0.2); 
+            opacity: 0.7; 
+            border-color: rgba(255, 255, 255, 0.35);
+            border-width: 1.5px;
+        } 
+        30% { 
+            opacity: 0.5; 
+            border-color: rgba(255, 255, 255, 0.2);
+        } 
+        70% { 
+            opacity: 0.15; 
+            border-color: rgba(255, 255, 255, 0.08);
+            border-width: 1px;
+        } 
+        100% { 
+            transform: scale(5); 
+            opacity: 0; 
+            border-color: rgba(255, 255, 255, 0.02);
+            border-width: 0.5px;
+        } 
+    }
+    @keyframes radar-blip { 
+        0%, 8% { opacity: 0; transform: scale(0.4); } 
+        10% { opacity: 1; transform: scale(1); } 
+        12% { opacity: 0.95; transform: scale(1.15); } 
+        18% { opacity: 0.5; transform: scale(1); } 
+        24% { opacity: 0; transform: scale(0.8); } 
+        100% { opacity: 0; transform: scale(0.8); } 
+    }
+    .home-sonar-hint-wrap {
+        margin-top: 200px;
+        padding-top: 0;
+    }
+    .home-sonar-hint { 
+        font-size: 1.05rem; 
+        margin: 0; 
+        font-weight: 500; 
+        letter-spacing: 0.5px;
+        color: rgba(255, 255, 255, 0.5);
+        padding: 0;
+        background: none;
+        border: none;
+        text-shadow: none;
+        animation: none;
+    }
+    .home-sonar-hint::before { 
+        content: '📡'; 
+        font-size: 1.15rem; 
+        opacity: 0.7;
+        margin-right: 8px;
+    }
     
-    /* [탭 중앙 정렬] 시세 분석, 마켓소스 등 — 히어로와 통일감 */
+    /* [탭 중앙 정렬] 시세 분석, 마켓소스 등 */
     div[data-baseweb="tab-list"] { justify-content: center !important; }
     [data-testid="stTabs"] > div { justify-content: center !important; }
     [data-baseweb="tab-list"] { display: flex !important; justify-content: center !important; }
-
-    /* 4. Neon Glass Buttons (Direct Access) */
-    div[data-testid="stLinkButton"] > a { 
-        background-color: rgba(255, 255, 255, 0.03) !important; 
-        backdrop-filter: blur(5px);
-        border-radius: 16px; 
-        font-weight: 700; 
-        transition: all 0.3s ease; 
-        text-decoration: none; 
-        border-width: 2px !important;
-        border-style: solid !important;
-        height: 110px;
-        display: flex; flex-direction: column; align-items: center; justify-content: center; 
-        font-size: 1.1rem; letter-spacing: -0.5px;
-        color: #ddd !important; 
-        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    
+    /* [탭 전환] 애플 스타일 - 왼쪽에서 슬라이드 인 */
+    [data-testid="stTabs"] > div:last-child {
+        overflow: visible !important;
+        animation: tab-slide-in 0.42s cubic-bezier(0.32, 0.72, 0, 1) forwards;
     }
-    a[href*="bunjang"] { border-color: #D32F2F !important; }
-    a[href*="bunjang"]:hover { background-color: rgba(211, 47, 47, 0.15) !important; color: #FFF !important; box-shadow: 0 0 25px rgba(211, 47, 47, 0.5); transform: translateY(-3px); }
-    a[href*="daangn"] { border-color: #FF6F00 !important; }
-    a[href*="daangn"]:hover { background-color: rgba(255, 111, 0, 0.15) !important; color: #FFF !important; box-shadow: 0 0 25px rgba(255, 111, 0, 0.5); transform: translateY(-3px); }
-    a[href*="joongna"] { border-color: #2E7D32 !important; }
-    a[href*="joongna"]:hover { background-color: rgba(46, 125, 50, 0.15) !important; color: #FFF !important; box-shadow: 0 0 25px rgba(46, 125, 50, 0.5); transform: translateY(-3px); }
-    a[href*="fruits"] { border-color: #7B1FA2 !important; }
-    a[href*="fruits"]:hover { background-color: rgba(123, 31, 162, 0.15) !important; color: #FFF !important; box-shadow: 0 0 25px rgba(123, 31, 162, 0.5); transform: translateY(-3px); }
-    a[href*="ebay"] { border-color: #0055ff !important; }
-    a[href*="ebay"]:hover { background-color: rgba(0, 85, 255, 0.15) !important; color: #FFF !important; box-shadow: 0 0 25px rgba(0, 85, 255, 0.5); transform: translateY(-3px); }
-    a[href*="mercari"] { border-color: #999 !important; }
-    a[href*="mercari"]:hover { background-color: rgba(255, 255, 255, 0.15) !important; color: #FFF !important; box-shadow: 0 0 25px rgba(255, 255, 255, 0.4); transform: translateY(-3px); }
+    [data-testid="stTabs"] [data-testid="stVerticalBlock"] {
+        animation: tab-slide-in 0.42s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+    }
+    @keyframes tab-slide-in {
+        from {
+            opacity: 0;
+            transform: translateX(-32px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    /* Market Buttons - Apple Design System */
+    div[data-testid="stLinkButton"] > a { 
+        background: rgba(255, 255, 255, 0.06) !important; 
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 16px !important; 
+        font-weight: 600 !important; 
+        transition: all 0.2s ease !important; 
+        text-decoration: none !important; 
+        height: 100px !important;
+        display: flex !important; 
+        flex-direction: column !important; 
+        align-items: center !important; 
+        justify-content: center !important; 
+        font-size: 1rem !important; 
+        letter-spacing: -0.3px !important;
+        color: #F5F5F7 !important; 
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif !important;
+        position: relative !important;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif !important;
+    }
+    div[data-testid="stLinkButton"] > a::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, 
+            transparent 0%, 
+            rgba(255, 255, 255, 0.25) 50%, 
+            transparent 100%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    div[data-testid="stLinkButton"] > a:hover::before {
+        opacity: 1;
+    }
+    div[data-testid="stLinkButton"] > a:active {
+        transform: scale(0.97) !important;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.2), 
+                    inset 0 1px 0 rgba(255,255,255,0.1) !important;
+        animation: haptic-pulse 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    /* Haptic Feedback Animation */
+    @keyframes haptic-pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(0.94); }
+        100% { transform: scale(0.97); }
+    }
+    /* Market-specific colors (simplified) */
+    a[href*="bunjang"] { border-left: 3px solid #FF453A !important; }
+    a[href*="bunjang"]:hover { background: rgba(255, 69, 58, 0.1) !important; border-color: rgba(255, 69, 58, 0.25) !important; }
+    
+    a[href*="daangn"] { border-left: 3px solid #FF9F0A !important; }
+    a[href*="daangn"]:hover { background: rgba(255, 159, 10, 0.1) !important; border-color: rgba(255, 159, 10, 0.25) !important; }
+    
+    a[href*="joongna"] { border-left: 3px solid #30D158 !important; }
+    a[href*="joongna"]:hover { background: rgba(48, 209, 88, 0.1) !important; border-color: rgba(48, 209, 88, 0.25) !important; }
+    
+    a[href*="fruits"] { border-left: 3px solid #BF5AF2 !important; }
+    a[href*="fruits"]:hover { background: rgba(191, 90, 242, 0.1) !important; border-color: rgba(191, 90, 242, 0.25) !important; }
+    
+    a[href*="ebay"] { border-left: 3px solid #0A84FF !important; }
+    a[href*="ebay"]:hover { background: rgba(10, 132, 255, 0.1) !important; border-color: rgba(10, 132, 255, 0.25) !important; }
+    
+    a[href*="mercari"] { border-left: 3px solid #8E8E93 !important; }
+    a[href*="mercari"]:hover { background: rgba(142, 142, 147, 0.1) !important; }
     
     /* Ghost Button (TheCheat) */
     a[href*="thecheat"] {
@@ -882,92 +1435,137 @@ st.markdown("""
         background-color: #00B4DB !important; border-color: #00B4DB !important; color: #fff !important; box-shadow: 0 0 15px rgba(0, 180, 219, 0.5);
     }
 
-    /* 5. [NEW] Pro Dashboard Cards (Color Tag Style) */
+    /* Source Cards - Apple Design System */
     .source-card {
-        background-color: #1A1A1A; /* Dark Grey Base */
-        border: 1px solid #333; 
-        border-radius: 6px; 
-        padding: 15px 20px; 
-        display: flex; align-items: center; justify-content: space-between; 
-        margin-bottom: 10px; 
-        transition: all 0.2s ease-in-out; 
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12); 
+        border-radius: 12px; 
+        padding: 16px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: space-between; 
+        margin-bottom: 12px; 
+        transition: all 0.2s ease;
         text-decoration: none;
-        height: 60px;
-        position: relative;
-        overflow: hidden;
+        height: 64px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        cursor: pointer;
+    }
+    .source-card:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.18);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+    .source-card:active {
+        transform: translateY(0);
+    }
+    body.light-mode .source-card {
+        background: #FFFBF5;
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    }
+    body.light-mode .source-card:hover {
+        background: #FFF5E8;
+        border-color: rgba(0, 0, 0, 0.3);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
     
-    /* Hover Effects: Glow based on tag color */
-    .card-quasar:hover { background-color: rgba(255, 153, 0, 0.15); border-color: #FF9900; }
-    .card-cool:hover { background-color: rgba(255, 255, 255, 0.15); border-color: #FFF; }
-    .card-meeco:hover { background-color: rgba(52, 152, 219, 0.15); border-color: #3498db; }
-    .card-clien:hover { background-color: rgba(55, 96, 146, 0.2); border-color: #376092; }
+    /* Hover Effects - Apple Style Glow */
+    .card-quasar:hover { background: rgba(255, 159, 10, 0.12); border-color: rgba(255, 159, 10, 0.3); }
+    .card-cool:hover { background: rgba(229, 229, 234, 0.12); border-color: rgba(229, 229, 234, 0.3); }
+    .card-meeco:hover { background: rgba(0, 122, 255, 0.12); border-color: rgba(0, 122, 255, 0.3); }
+    .card-clien:hover { background: rgba(94, 92, 230, 0.12); border-color: rgba(94, 92, 230, 0.3); }
     
-    .card-slr:hover { background-color: rgba(66, 165, 245, 0.15); border-color: #42A5F5; }
-    .card-leica:hover { background-color: rgba(213, 0, 0, 0.15); border-color: #D50000; }
-    .card-film:hover { background-color: rgba(244, 208, 63, 0.15); border-color: #F4D03F; }
-    .card-dof:hover { background-color: rgba(189, 195, 199, 0.15); border-color: #BDC3C7; }
+    .card-slr:hover { background: rgba(10, 132, 255, 0.12); border-color: rgba(10, 132, 255, 0.3); }
+    .card-leica:hover { background: rgba(255, 59, 48, 0.12); border-color: rgba(255, 59, 48, 0.3); }
+    .card-film:hover { background: rgba(255, 214, 10, 0.12); border-color: rgba(255, 214, 10, 0.3); }
+    .card-dof:hover { background: rgba(142, 142, 147, 0.12); border-color: rgba(142, 142, 147, 0.3); }
     
-    .card-nike:hover { background-color: rgba(255, 255, 255, 0.1); border-color: #AAA; }
-    .card-kream:hover { background-color: rgba(255, 255, 255, 0.1); border-color: #FFF; font-style: italic; }
-    .card-eomisae:hover { background-color: rgba(142, 36, 170, 0.15); border-color: #8E24AA; }
-    .card-diesel:hover { background-color: rgba(100, 100, 100, 0.2); border-color: #777; }
+    .card-nike:hover { background: rgba(99, 99, 102, 0.12); border-color: rgba(99, 99, 102, 0.3); }
+    .card-kream:hover { background: rgba(245, 245, 247, 0.12); border-color: rgba(245, 245, 247, 0.3); }
+    .card-eomisae:hover { background: rgba(191, 90, 242, 0.12); border-color: rgba(191, 90, 242, 0.3); }
+    .card-diesel:hover { background: rgba(99, 99, 102, 0.12); border-color: rgba(99, 99, 102, 0.3); }
     
-    .card-asamo:hover { background-color: rgba(46, 204, 113, 0.15); border-color: #2ecc71; }
-    .card-mac:hover { background-color: rgba(200, 200, 200, 0.15); border-color: #CCC; }
-    .card-joongna:hover { background-color: rgba(0, 211, 105, 0.15); border-color: #00d369; }
-    .card-ruli:hover { background-color: rgba(46, 117, 182, 0.2); border-color: #2E75B6; }
-    .card-pompu:hover { background-color: rgba(255, 69, 0, 0.15); border-color: #FF4500; }
-    .card-bobaedream:hover { background-color: rgba(34, 139, 34, 0.15); border-color: #228B22; }
-    .card-ohou:hover { background-color: rgba(255, 105, 180, 0.15); border-color: #FF69B4; }
-    .card-gmarket:hover { background-color: rgba(255, 215, 0, 0.15); border-color: #FFD700; }
-    .card-musinsa:hover { background-color: rgba(0, 0, 0, 0.2); border-color: #333; }
-    .card-bunjang:hover { background-color: rgba(211, 47, 47, 0.15); border-color: #D32F2F; }
-    .card-daangn:hover { background-color: rgba(255, 111, 0, 0.15); border-color: #FF6F00; }
-    .card-fruits:hover { background-color: rgba(156, 39, 176, 0.15); border-color: #9C27B0; }
-    .card-auction:hover { background-color: rgba(244, 67, 54, 0.15); border-color: #F44336; }
-    .card-ebay:hover { background-color: rgba(0, 85, 255, 0.15); border-color: #0055ff; }
-    .card-mercari:hover { background-color: rgba(255, 255, 255, 0.15); border-color: #999; }
+    .card-asamo:hover { background: rgba(50, 215, 75, 0.12); border-color: rgba(50, 215, 75, 0.3); }
+    .card-mac:hover { background: rgba(152, 152, 157, 0.12); border-color: rgba(152, 152, 157, 0.3); }
+    .card-joongna:hover { background: rgba(48, 209, 88, 0.12); border-color: rgba(48, 209, 88, 0.3); }
+    .card-ruli:hover { background: rgba(94, 92, 230, 0.12); border-color: rgba(94, 92, 230, 0.3); }
+    .card-pompu:hover { background: rgba(255, 159, 10, 0.12); border-color: rgba(255, 159, 10, 0.3); }
+    .card-bobaedream:hover { background: rgba(50, 215, 75, 0.12); border-color: rgba(50, 215, 75, 0.3); }
+    .card-ohou:hover { background: rgba(255, 55, 95, 0.12); border-color: rgba(255, 55, 95, 0.3); }
+    .card-gmarket:hover { background: rgba(255, 214, 10, 0.12); border-color: rgba(255, 214, 10, 0.3); }
+    .card-musinsa:hover { background: rgba(28, 28, 30, 0.12); border-color: rgba(28, 28, 30, 0.3); }
+    .card-bunjang:hover { background: rgba(255, 69, 58, 0.12); border-color: rgba(255, 69, 58, 0.3); }
+    .card-daangn:hover { background: rgba(255, 159, 10, 0.12); border-color: rgba(255, 159, 10, 0.3); }
+    .card-fruits:hover { background: rgba(191, 90, 242, 0.12); border-color: rgba(191, 90, 242, 0.3); }
+    .card-auction:hover { background: rgba(255, 69, 58, 0.12); border-color: rgba(255, 69, 58, 0.3); }
+    .card-ebay:hover { background: rgba(10, 132, 255, 0.12); border-color: rgba(10, 132, 255, 0.3); }
+    .card-mercari:hover { background: rgba(142, 142, 147, 0.12); border-color: rgba(142, 142, 147, 0.3); }
 
-    /* Left Color Tags */
-    .card-quasar { border-left: 6px solid #FF9900 !important; }
-    .card-cool { border-left: 6px solid #DDD !important; }
-    .card-meeco { border-left: 6px solid #3498db !important; }
-    .card-clien { border-left: 6px solid #376092 !important; }
+    /* Left Color Tags - Apple Colors */
+    .card-quasar { border-left: 3px solid #FF9F0A !important; }
+    .card-cool { border-left: 3px solid #E5E5EA !important; }
+    .card-meeco { border-left: 3px solid #007AFF !important; }
+    .card-clien { border-left: 3px solid #5E5CE6 !important; }
     
-    .card-slr { border-left: 6px solid #42A5F5 !important; }
-    .card-leica { border-left: 6px solid #D50000 !important; }
-    .card-film { border-left: 6px solid #F4D03F !important; }
-    .card-dof { border-left: 6px solid #95a5a6 !important; }
+    .card-slr { border-left: 3px solid #0A84FF !important; }
+    .card-leica { border-left: 3px solid #FF3B30 !important; }
+    .card-film { border-left: 3px solid #FFD60A !important; }
+    .card-dof { border-left: 3px solid #8E8E93 !important; }
     
-    .card-nike { border-left: 6px solid #333 !important; }
-    .card-kream { border-left: 6px solid #FFF !important; }
-    .card-eomisae { border-left: 6px solid #8E24AA !important; }
-    .card-diesel { border-left: 6px solid #555 !important; }
+    .card-nike { border-left: 3px solid #636366 !important; }
+    .card-kream { border-left: 3px solid #F5F5F7 !important; }
+    .card-eomisae { border-left: 3px solid #BF5AF2 !important; }
+    .card-diesel { border-left: 3px solid #636366 !important; }
     
-    .card-asamo { border-left: 6px solid #2ecc71 !important; }
-    .card-mac { border-left: 6px solid #aaa !important; }
-    .card-joongna { border-left: 6px solid #00d369 !important; }
-    .card-ruli { border-left: 6px solid #2E75B6 !important; }
-    .card-pompu { border-left: 6px solid #FF4500 !important; }
-    .card-bobaedream { border-left: 6px solid #228B22 !important; }
-    .card-ohou { border-left: 6px solid #FF69B4 !important; }
-    .card-gmarket { border-left: 6px solid #FFD700 !important; }
-    .card-musinsa { border-left: 6px solid #333 !important; }
-    .card-bunjang { border-left: 6px solid #D32F2F !important; }
-    .card-daangn { border-left: 6px solid #FF6F00 !important; }
-    .card-fruits { border-left: 6px solid #9C27B0 !important; }
-    .card-auction { border-left: 6px solid #F44336 !important; }
-    .card-ebay { border-left: 6px solid #0055ff !important; }
-    .card-mercari { border-left: 6px solid #999 !important; }
+    .card-asamo { border-left: 3px solid #32D74B !important; }
+    .card-mac { border-left: 3px solid #98989D !important; }
+    .card-joongna { border-left: 3px solid #30D158 !important; }
+    .card-ruli { border-left: 3px solid #5E5CE6 !important; }
+    .card-pompu { border-left: 3px solid #FF9F0A !important; }
+    .card-bobaedream { border-left: 3px solid #32D74B !important; }
+    .card-ohou { border-left: 3px solid #FF375F !important; }
+    .card-gmarket { border-left: 3px solid #FFD60A !important; }
+    .card-musinsa { border-left: 3px solid #1C1C1E !important; }
+    .card-bunjang { border-left: 3px solid #FF453A !important; }
+    .card-daangn { border-left: 3px solid #FF9F0A !important; }
+    .card-fruits { border-left: 3px solid #BF5AF2 !important; }
+    .card-auction { border-left: 3px solid #FF453A !important; }
+    .card-ebay { border-left: 3px solid #0A84FF !important; }
+    .card-mercari { border-left: 3px solid #8E8E93 !important; }
 
-    .source-info { display: flex; flex-direction: column; gap: 2px; }
-    .source-name { font-weight: 800; color: #eee; font-size: 1.05rem; letter-spacing: -0.5px; }
-    .source-desc { font-size: 0.8rem; color: #777; font-weight: 400; }
+    .source-info { display: flex; flex-direction: column; gap: 4px; }
+    .source-name { 
+        font-size: 1rem; 
+        font-weight: 600; 
+        color: #F5F5F7; 
+        letter-spacing: -0.3px;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+    .source-desc { 
+        font-size: 0.75rem; 
+        color: #8E8E93; 
+        font-weight: 400; 
+        letter-spacing: -0.1px;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
     
-    .category-header { font-size: 0.8rem; font-weight: 700; color: #777; margin-top: 24px; margin-bottom: 8px; letter-spacing: 1.5px; text-transform: uppercase; border-bottom: 1px solid #2a2a2a; padding-bottom: 6px; }
+    /* Category Header - Apple Design System */
+    .category-header { 
+        font-size: 0.75rem; 
+        font-weight: 600; 
+        color: #8E8E93; 
+        margin-top: 32px; 
+        margin-bottom: 12px; 
+        letter-spacing: 0.5px; 
+        text-transform: uppercase; 
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08); 
+        padding-bottom: 8px;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
     .category-header:first-of-type { margin-top: 0; }
-    .source-card { margin-bottom: 8px !important; }
+    .source-card { margin-bottom: 12px !important; }
 
     /* Ticker (다크모드 - 항목별 색상) */
     .ticker-wrap { position: fixed; bottom: 0; left: 0; width: 100%; height: 32px; background-color: #0E1117; border-top: 1px solid #1C1C1E; z-index: 999; display: flex; align-items: center; }
@@ -984,52 +1582,155 @@ st.markdown("""
     .ticker-down { color: #4b89ff; background: rgba(75, 137, 255, 0.1); padding: 2px 4px; border-radius: 4px; font-size: 0.75rem; }
     @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
     
-    /* Scam Box */
-    .scam-box { border: 1px solid #333; border-left: 4px solid #ff4b4b; background-color: #1A0505; padding: 25px; border-radius: 12px; margin-bottom: 20px; }
-    .scam-list { margin-top: 10px; padding-left: 0; list-style-type: none; }
-    .scam-item { color: #ddd; margin-bottom: 15px; line-height: 1.5; font-size: 1rem; border-bottom: 1px solid #333; padding-bottom: 10px; }
-    .scam-item:last-child { border-bottom: none; }
-    .scam-head { color: #ff4b4b; font-weight: 800; font-size: 1.1rem; display: block; margin-bottom: 4px; }
+    /* Scam Box - Apple Design System */
+    .scam-box { 
+        border: 1px solid rgba(255, 69, 58, 0.25); 
+        border-left: 3px solid #FF453A; 
+        background: rgba(255, 69, 58, 0.08);
+        padding: 32px; 
+        border-radius: 12px; 
+        margin-bottom: 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    .scam-list { 
+        margin-top: 12px; 
+        padding-left: 0; 
+        list-style-type: none; 
+    }
+    .scam-item { 
+        color: #F5F5F7; 
+        margin-bottom: 24px; 
+        line-height: 1.6; 
+        font-size: 0.9375rem; 
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08); 
+        padding-bottom: 24px; 
+    }
+    .scam-item:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+    .scam-head { 
+        color: #FF453A; 
+        font-weight: 600; 
+        font-size: 1rem; 
+        display: block; 
+        margin-bottom: 8px; 
+        letter-spacing: -0.2px;
+    }
     
     .legal-footer { font-size: 0.7rem; color: #333; margin-top: 80px; text-align: center; margin-bottom: 50px; }
+    
+    /* Buttons - Apple Design System */
+    button[kind="primary"],
+    button[kind="secondary"] {
+        background: rgba(10, 132, 255, 0.15) !important;
+        border: 1px solid rgba(10, 132, 255, 0.3) !important;
+        border-radius: 12px !important;
+        color: #0A84FF !important;
+        font-weight: 500 !important;
+        padding: 10px 20px !important;
+        transition: all 0.2s ease !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif !important;
+        font-size: 1rem !important;
+    }
+    body.light-mode button[kind="primary"],
+    body.light-mode button[kind="secondary"] {
+        background: rgba(0, 122, 255, 0.1) !important;
+        border: 1px solid rgba(0, 122, 255, 0.3) !important;
+        color: #007AFF !important;
+    }
+    button[kind="primary"]:hover,
+    button[kind="secondary"]:hover {
+        background: rgba(10, 132, 255, 0.25) !important;
+        border-color: rgba(10, 132, 255, 0.4) !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+    }
+    body.light-mode button[kind="primary"]:hover,
+    body.light-mode button[kind="secondary"]:hover {
+        background: rgba(0, 122, 255, 0.2) !important;
+        border-color: rgba(0, 122, 255, 0.4) !important;
+        box-shadow: 0 2px 8px rgba(0, 122, 255, 0.15) !important;
+    }
+    button[kind="primary"]:active,
+    button[kind="secondary"]:active {
+        transform: translateY(0) !important;
+    }
+    
+    /* Search Input - 통합 스타일은 아래에서 정의 */
+    .stTextInput,
+    .stTextInput > div,
+    .stTextInput > div > div {
+        background: transparent !important;
+        border: none !important;
+        outline: none !important;
+        padding: 0 !important;
+    }
+    
+    /* Other Inputs - Apple Design System */
+    .stSelectbox > div > div,
+    .stNumberInput > div > div,
+    textarea,
+    input[type="number"],
+    input[type="text"] {
+        background: rgba(255, 255, 255, 0.06) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 12px !important;
+        color: #F5F5F7 !important;
+        transition: all 0.2s ease !important;
+        padding: 12px 16px !important;
+        font-size: 1rem !important;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif !important;
+    }
+    .stSelectbox > div > div > div {
+        background: transparent !important;
+        border: none !important;
+    }
+    .stNumberInput > div > div,
+    input[type="number"],
+    textarea {
+        height: auto !important;
+        min-height: 44px !important;
+    }
+    .stSelectbox > div > div:focus-within,
+    .stNumberInput > div > div:focus-within,
+    input[type="number"]:focus,
+    input[type="text"]:focus,
+    textarea:focus {
+        border-color: rgba(10, 132, 255, 0.5) !important;
+        background: rgba(255, 255, 255, 0.08) !important;
+        outline: none !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    }
+    .stSelectbox > div > div:hover,
+    .stNumberInput > div > div:hover,
+    input:hover,
+    textarea:hover {
+        background: rgba(255, 255, 255, 0.07) !important;
+    }
 
-    /* [NEW] Metric Cards (Blue Accent, Compact) */
-    .metric-card { 
-        background: linear-gradient(90deg, rgba(26,26,26,1) 0%, rgba(26,26,26,0.5) 100%);
-        border: 1px solid #333; border-left: 3px solid #5C9EFF;
-        padding: 6px 10px; border-radius: 10px; margin-bottom: 6px; position: relative; 
-        transition: all 0.3s ease;
-    }
-    .metric-card:hover {
-        border-color: #555; border-left-color: #5C9EFF;
-        box-shadow: 0 0 20px rgba(92, 158, 255, 0.15); transform: translateX(3px);
-    }
-    .metric-label { font-size: 0.65rem; color: #888; font-weight: 500; margin-bottom: 1px; }
-    .metric-value { font-size: 1.05rem; font-weight: 800; color: #eee; letter-spacing: -0.5px; font-family: 'Inter', sans-serif; }
-    .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
-    .metric-sub { font-size: 0.8rem; color: #666; margin-top: 5px; font-family: 'Inter', sans-serif; }
+    /* Ticker */
     .ticker-up { color: #ff4b4b; font-weight: 700; font-size: 0.9rem; }
     .ticker-down { color: #4b89ff; font-weight: 700; font-size: 0.9rem; }
 
-    /* [NEW] Capsule Title (Section Header) */
+    .capsule-sub { font-size: 0.72rem; color: #8E8E93; margin-left: 10px; font-weight: 500; letter-spacing: 0.6px; }
+    
+    /* Capsule Title - Apple Design System */
     .capsule-title {
-        font-size: 1.1rem;
-        font-weight: 800;
-        color: #fff;
-        margin-top: 30px;
-        margin-bottom: 15px;
-        display: inline-flex;
-        align-items: center;
-        background: #1A1A1A;
-        padding: 8px 20px;
-        border-radius: 30px;
-        border: 1px solid #333;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        display: inline-block; 
+        padding: 10px 20px; 
+        background: rgba(10, 132, 255, 0.12);
+        color: #0A84FF; 
+        border: 1px solid rgba(10, 132, 255, 0.25);
+        border-radius: 20px;
+        font-size: 1rem; 
+        font-weight: 600; 
+        margin-top: 32px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif; 
+        margin-bottom: 16px; 
+        letter-spacing: -0.3px;
     }
-    .capsule-sub { font-size: 0.75rem; color: #666; margin-left: 10px; font-weight: 400; letter-spacing: 0.5px; }
 
-    /* 섹션 제목 (HTML div - p:only-child 숨김 대상 제외) */
-    .section-title { font-size: 1.1rem; font-weight: 700; color: #eee; margin-bottom: 8px; }
+    /* Section Title - unified below */
     
     /* Waiting for Signal - 차분한 펄스 */
     .waiting-signal { 
@@ -1085,15 +1786,7 @@ st.markdown("""
     .sonar-ring:nth-child(5) { animation-delay: 2s; }
     @keyframes sonar-ping { 0% { transform: scale(0.3); opacity: 1; border-color: rgba(59,130,246,0.8); } 100% { transform: scale(4); opacity: 0; border-color: rgba(59,130,246,0.1); } }
     
-    /* 차트: 아이덴티티 - 둥근 모서리 + 부드러운 그림자 */
-    [data-testid="stPlotlyChart"] { 
-        border-radius: 16px !important; overflow: hidden;
-        margin-top: 4px !important; margin-bottom: 4px !important;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.25), 0 0 1px rgba(92,158,255,0.15);
-        border: 1px solid rgba(255,255,255,0.06);
-    }
-    [data-testid="stPlotlyChart"] > div { border-radius: 16px !important; }
-
+    /* 차트 스타일은 하단 카드 규칙 사용 */
     /* None 숨기기 - 단일 p만 있는 블록만 숨김 (메트릭 카드 등 HTML 블록은 유지) */
     div[data-testid="stMarkdown"]:has(p:only-child) {
         font-size: 0 !important; line-height: 0 !important;
@@ -1103,72 +1796,741 @@ st.markdown("""
     }
 
     /* [NEW] 스켈레톤 로딩 - 차트/카드 영역 */
-    .skeleton-wrap { background: rgba(20,25,35,0.6); border-radius: 12px; padding: 16px; margin: 8px 0; border: 1px solid rgba(255,255,255,0.06); }
-    .skeleton-card { background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%); background-size: 200% 100%; animation: skeleton-shimmer 1.5s infinite; border-radius: 10px; height: 52px; margin-bottom: 6px; }
-    .skeleton-chart { background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%); background-size: 200% 100%; animation: skeleton-shimmer 1.5s infinite; border-radius: 12px; height: 280px; margin: 8px 0; }
-    .skeleton-chart-sm { background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%); background-size: 200% 100%; animation: skeleton-shimmer 1.5s infinite; border-radius: 12px; height: 220px; margin: 8px 0; }
-    .skeleton-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
-    @keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    /* Skeleton Loading - Apple Style */
+    .skeleton-wrap { 
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(245, 245, 247, 0.01)); 
+        border-radius: 20px; 
+        padding: 24px; 
+        margin: 20px 0; 
+        border: 0.5px solid rgba(255,255,255,0.08);
+        animation: skeleton-fade 1.5s ease-in-out infinite;
+    }
+    .skeleton-card { 
+        background: linear-gradient(90deg, 
+            rgba(255, 255, 255, 0.04) 0%, 
+            rgba(255, 255, 255, 0.08) 50%, 
+            rgba(255, 255, 255, 0.04) 100%); 
+        background-size: 200% 100%; 
+        animation: skeleton-shimmer 2s cubic-bezier(0.4, 0, 0.2, 1) infinite; 
+        border-radius: 16px; 
+        height: 60px; 
+        margin-bottom: 12px;
+        border: 0.5px solid rgba(255, 255, 255, 0.06);
+    }
+    .skeleton-chart { 
+        background: linear-gradient(90deg, 
+            rgba(255, 255, 255, 0.04) 0%, 
+            rgba(255, 255, 255, 0.08) 50%, 
+            rgba(255, 255, 255, 0.04) 100%); 
+        background-size: 200% 100%; 
+        animation: skeleton-shimmer 2s cubic-bezier(0.4, 0, 0.2, 1) infinite; 
+        border-radius: 20px; 
+        height: 320px; 
+        margin: 16px 0;
+        border: 0.5px solid rgba(255, 255, 255, 0.08);
+    }
+    .skeleton-chart-sm { 
+        background: linear-gradient(90deg, 
+            rgba(255, 255, 255, 0.04) 0%, 
+            rgba(255, 255, 255, 0.08) 50%, 
+            rgba(255, 255, 255, 0.04) 100%); 
+        background-size: 200% 100%; 
+        animation: skeleton-shimmer 2s cubic-bezier(0.4, 0, 0.2, 1) infinite; 
+        border-radius: 20px; 
+        height: 260px; 
+        margin: 16px 0;
+        border: 0.5px solid rgba(255, 255, 255, 0.08);
+    }
+    .skeleton-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @keyframes skeleton-shimmer { 
+        0% { background-position: -200% 0; } 
+        100% { background-position: 200% 0; } 
+    }
+    @keyframes skeleton-fade {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
 
-    /* [NEW] 검색 자동완성 - 미니멀 pill (중앙 정렬), 모바일에서 시세 요약 가림 방지 */
-    .search-pills { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-top: 8px; margin-bottom: 12px; align-items: center; justify-content: center; }
-    .search-pills a { 
-        display: inline-block; padding: 4px 10px; font-size: 0.8rem; color: #8a9aab; 
-        background: rgba(255,255,255,0.04); border: 1px solid #333; border-radius: 20px; 
-        text-decoration: none; transition: all 0.2s; white-space: nowrap;
+    /* Search Pills - Premium iOS Style */
+    .search-pills { 
+        display: flex; 
+        flex-wrap: wrap; 
+        gap: 10px; 
+        margin: 18px 0 28px 0; 
+        align-items: center; 
+        justify-content: center;
+        padding: 2px 0;
     }
-    .search-pills a:hover { color: #5C9EFF; border-color: rgba(92,158,255,0.4); background: rgba(92,158,255,0.08); }
+    .search-pills a {
+        display: inline-block; 
+        padding: 8px 16px; 
+        background: rgba(10, 132, 255, 0.12);
+        color: #0A84FF;
+        border-radius: 16px; 
+        border: 1px solid rgba(10, 132, 255, 0.25); 
+        font-size: 0.875rem; 
+        font-weight: 500; 
+        text-decoration: none;
+        white-space: nowrap; 
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        letter-spacing: -0.2px;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+    /* Category Colors - Premium Palette */
+    .search-pills a[href*="조던"], .search-pills a[href*="덩크"], .search-pills a[href*="나이키"] {
+        background: rgba(255, 69, 0, 0.12); color: #FF6B35; border-color: rgba(255, 69, 0, 0.25);
+    }
+    .search-pills a[href*="조던"]:hover, .search-pills a[href*="덩크"]:hover, .search-pills a[href*="나이키"]:hover {
+        background: rgba(255, 69, 0, 0.2); border-color: rgba(255, 69, 0, 0.35);
+    }
+    .search-pills a[href*="롤렉스"], .search-pills a[href*="샤넬"], .search-pills a[href*="에르메스"], .search-pills a[href*="루이비통"] {
+        background: rgba(255, 204, 0, 0.12); color: #FFCC00; border-color: rgba(255, 204, 0, 0.25);
+    }
+    .search-pills a[href*="롤렉스"]:hover, .search-pills a[href*="샤넬"]:hover, .search-pills a[href*="에르메스"]:hover, .search-pills a[href*="루이비통"]:hover {
+        background: rgba(255, 204, 0, 0.2); border-color: rgba(255, 204, 0, 0.35);
+    }
+    .search-pills a[href*="아이폰"], .search-pills a[href*="맥북"], .search-pills a[href*="갤럭시"], .search-pills a[href*="RTX"] {
+        background: rgba(10, 132, 255, 0.12); color: #0A84FF; border-color: rgba(10, 132, 255, 0.25);
+    }
+    .search-pills a[href*="아이폰"]:hover, .search-pills a[href*="맥북"]:hover, .search-pills a[href*="갤럭시"]:hover, .search-pills a[href*="RTX"]:hover {
+        background: rgba(10, 132, 255, 0.2); border-color: rgba(10, 132, 255, 0.35);
+    }
+    .search-pills a[href*="스투시"], .search-pills a[href*="아크테릭스"], .search-pills a[href*="카피탈"] {
+        background: rgba(52, 199, 89, 0.12); color: #34C759; border-color: rgba(52, 199, 89, 0.25);
+    }
+    .search-pills a[href*="스투시"]:hover, .search-pills a[href*="아크테릭스"]:hover, .search-pills a[href*="카피탈"]:hover {
+        background: rgba(52, 199, 89, 0.2); border-color: rgba(52, 199, 89, 0.35);
+    }
+    .search-pills a:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+    .search-pills a:active {
+        transform: translateY(0);
+    }
     
-    /* 시세 요약 섹션 (다크모드) */
-    .section-title--price-summary { 
-        margin-top: 20px; margin-bottom: 12px; 
-        font-weight: 800; font-size: 1.15rem; color: #eee;
-        padding-bottom: 10px; border-bottom: 2px solid rgba(92,158,255,0.35);
-        letter-spacing: -0.3px; text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    /* Section Title - Apple Design System */
+    .section-title {
+        margin-top: 32px; 
+        margin-bottom: 0; 
+        font-weight: 600; 
+        font-size: 1.375rem; 
+        color: #F5F5F7;
+        padding: 18px 20px;
+        letter-spacing: -0.5px;
+        position: relative;
+        display: block;
+        line-height: 1.3;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 16px;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
     }
-    .metric-grid { gap: 10px 14px; margin-bottom: 4px; }
-    .metric-card { 
-        background: linear-gradient(135deg, rgba(26,32,45,0.95) 0%, rgba(20,26,38,0.9) 100%);
-        border: 1px solid rgba(92,158,255,0.2); border-left: 4px solid #5C9EFF;
-        padding: 10px 14px; border-radius: 12px; 
-        box-shadow: 0 2px 12px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04);
-        transition: all 0.25s ease;
+    body.light-mode .section-title {
+        color: #0D0D0D;
+        background: #FFFBF5;
+        border: 1px solid rgba(0, 0, 0, 0.22);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    .section-title--chart {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        border-bottom: none;
+    }
+    .section-title--price-summary { 
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        border-bottom: none;
+        position: relative;
+        padding-right: 200px;
+    }
+    .section-title .title-icon {
+        display: inline-block;
+        margin-right: 10px;
+        font-size: 1.2em;
+        vertical-align: middle;
+        transition: transform 0.3s ease;
+    }
+    .section-title:hover .title-icon {
+        transform: scale(1.15) rotate(5deg);
+        animation: icon-bounce 0.6s ease;
+    }
+    @keyframes icon-bounce {
+        0%, 100% { transform: scale(1.15) rotate(5deg); }
+        50% { transform: scale(1.25) rotate(-5deg); }
+    }
+    /* Metric Grid - Apple Design System */
+    .metric-grid { 
+        display: grid; 
+        grid-template-columns: 1fr 1fr; 
+        gap: 12px; 
+        margin: 0; 
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-top: none;
+        border-radius: 0 0 16px 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin-bottom: 24px;
+        transition: all 0.3s ease;
+    }
+    body.light-mode .metric-grid {
+        background: #FFFBF5;
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        border-top: none;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    .metric-card {
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.12); 
+        border-radius: 12px; 
+        padding: 16px;
+        display: flex; 
+        flex-direction: column; 
+        gap: 6px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+    body.light-mode .metric-card {
+        background: #FFFBF5;
+        border: 1px solid rgba(0, 0, 0, 0.18);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    }
+    body.light-mode .metric-card:hover {
+        background: #FFF5E8;
+        border-color: rgba(0, 0, 0, 0.28);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, 
+            transparent 0%, 
+            rgba(10, 132, 255, 0.08) 50%, 
+            transparent 100%);
+        transition: left 0.5s ease;
+    }
+    .metric-card:hover::before {
+        left: 100%;
     }
     .metric-card:hover {
-        border-color: rgba(92,158,255,0.4); border-left-color: #5C9EFF;
-        box-shadow: 0 4px 20px rgba(92,158,255,0.12), 0 2px 12px rgba(0,0,0,0.25);
-        transform: translateX(2px);
+        background: rgba(10, 132, 255, 0.1);
+        border-color: rgba(10, 132, 255, 0.3);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 16px rgba(10, 132, 255, 0.2);
     }
-    .metric-label { font-size: 0.7rem; color: #8a9aab; font-weight: 600; margin-bottom: 2px; letter-spacing: 0.3px; text-transform: uppercase; }
-    .metric-value { font-size: 1.1rem; font-weight: 800; color: #eee; letter-spacing: -0.5px; }
-    .signal-help { color: #8a9aab !important; font-size: 0.8rem; line-height: 1.5; }
+    .metric-card:active {
+        transform: translateY(-1px);
+    }
+    .metric-card > * {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .metric-label { 
+        font-size: 0.75rem; 
+        color: #8E8E93; 
+        font-weight: 500; 
+        text-transform: uppercase; 
+        letter-spacing: 0.5px;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+        transition: color 0.3s ease;
+    }
+    body.light-mode .metric-label {
+        color: #3A3A3C;
+    }
+    .metric-value { 
+        font-size: 1.75rem; 
+        font-weight: 600; 
+        color: #F5F5F7; 
+        letter-spacing: -0.5px;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+        transition: color 0.3s ease;
+    }
+    body.light-mode .metric-value {
+        color: #0D0D0D;
+    }
+    .metric-change { 
+        font-size: 0.75rem; 
+        font-weight: 600;
+        margin-top: 6px;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+        opacity: 0.95;
+    }
+    .metric-change-label {
+        display: inline;
+        font-size: 0.65rem;
+        font-weight: 500;
+        opacity: 0.7;
+        margin-left: 6px;
+    }
+
+    /* Price data label */
+    .price-data-label {
+        position: absolute;
+        top: 50%;
+        right: 20px;
+        transform: translateY(-50%);
+        font-size: 0.75rem;
+        color: #8E8E93;
+        font-weight: 400;
+        background: rgba(142, 142, 147, 0.12);
+        padding: 6px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(142, 142, 147, 0.2);
+    }
+    .price-data-label strong {
+        color: #F5F5F7;
+        font-weight: 500;
+        margin-left: 4px;
+    }
+    
+    /* Tool Header - Apple Design System */
+    .tool-header {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #F5F5F7;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        letter-spacing: -0.4px;
+        line-height: 1.3;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+    }
+    
+    /* Compare Tab - Apple Design System */
+    .compare-intro {
+        text-align: center;
+        padding: 32px 20px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        margin-bottom: 32px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    .compare-intro-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #F5F5F7;
+        margin-bottom: 12px;
+        letter-spacing: -0.4px;
+    }
+    .compare-intro-desc {
+        font-size: 1rem;
+        color: #8E8E93;
+        font-weight: 400;
+    }
+    .vs-badge {
+        background: rgba(255, 255, 255, 0.1);
+        color: #F5F5F7;
+        font-weight: 700;
+        font-size: 1.125rem;
+        text-align: center;
+        padding: 12px 0;
+        border-radius: 12px;
+        margin-top: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        letter-spacing: 0.5px;
+    }
+    .compare-result-box {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 16px;
+        padding: 32px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: all 0.2s ease;
+    }
+    .compare-result-box:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.18);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+    .result-label {
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.55);
+        font-weight: 600;
+        margin-bottom: 18px;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    }
+    .result-content {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #F5F5F7;
+        margin-bottom: 22px;
+        line-height: 1.6;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    .winner-badge {
+        background: rgba(255, 255, 255, 0.15);
+        color: #FFFFFF;
+        padding: 8px 16px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        font-weight: 600;
+        font-size: 1.25rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        display: inline-block;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+    }
+    .price-diff {
+        color: #0A84FF;
+        font-weight: 600;
+        font-size: 1.75rem;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+        letter-spacing: -0.5px;
+    }
+    .result-detail {
+        font-size: 0.9375rem;
+        color: #C7C7CC;
+        padding-top: 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+    .result-detail strong {
+        color: #F5F5F7;
+        font-weight: 500;
+    }
+    /* Empty State - Apple Design System */
+    .empty-state {
+        text-align: center;
+        padding: 64px 32px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        border: 1px dashed rgba(255, 255, 255, 0.2);
+        margin: 32px 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    .empty-state .empty-icon {
+        font-size: 3.5rem;
+        margin-bottom: 20px;
+        opacity: 0.6;
+        transition: all 0.3s ease;
+        display: inline-block;
+    }
+    .empty-state:hover .empty-icon {
+        transform: scale(1.15) rotate(12deg);
+        opacity: 0.85;
+        animation: search-wobble 0.5s ease;
+    }
+    @keyframes search-wobble {
+        0%, 100% { transform: scale(1.15) rotate(12deg); }
+        25% { transform: scale(1.2) rotate(-8deg); }
+        50% { transform: scale(1.25) rotate(12deg); }
+        75% { transform: scale(1.2) rotate(-8deg); }
+    }
+    .empty-state .empty-title {
+        font-size: 1.375rem;
+        font-weight: 600;
+        color: #F5F5F7;
+        margin-bottom: 12px;
+        letter-spacing: -0.4px;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+    }
+    .empty-state .empty-desc {
+        font-size: 1rem;
+        color: #8E8E93;
+        margin-bottom: 32px;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+        line-height: 1.5;
+    }
+    body.light-mode .empty-state {
+        background: #FFFBF5;
+        border: 1px dashed rgba(0, 0, 0, 0.25);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
+    body.light-mode .empty-state .empty-title {
+        color: #0D0D0D;
+    }
+    body.light-mode .empty-state .empty-desc {
+        color: #3A3A3C;
+    }
+    .empty-suggestions {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    .suggestion-item {
+        text-align: left;
+        padding: 12px 20px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        border: 0.5px solid rgba(255, 255, 255, 0.1);
+        font-size: 0.9rem;
+        color: #C7C7CC;
+        transition: all 0.3s ease;
+    }
+    .suggestion-item:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(10, 132, 255, 0.3);
+        transform: translateX(4px);
+    }
+    .compare-empty {
+        text-align: center;
+        padding: 80px 20px;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 20px;
+        border: 1px dashed rgba(255, 255, 255, 0.2);
+    }
+    .empty-icon {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+    .empty-text {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #F5F5F7;
+        margin-bottom: 12px;
+    }
+    .empty-subtext {
+        font-size: 0.9rem;
+        color: #8E8E93;
+    }
+    
+    /* Tools Tab Styles */
+    .tools-intro {
+        text-align: center;
+        padding: 40px 20px 30px 20px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(245, 245, 247, 0.02) 100%);
+        border-radius: 20px;
+        margin-bottom: 40px;
+        border: 0.5px solid rgba(255, 255, 255, 0.12);
+    }
+    .tools-intro-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #F5F5F7;
+        margin-bottom: 12px;
+        letter-spacing: -0.5px;
+    }
+    .tools-intro-desc {
+        font-size: 0.95rem;
+        color: #8E8E93;
+        font-weight: 400;
+    }
+    .tool-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(245, 245, 247, 0.02) 100%);
+        border: 0.5px solid rgba(255, 255, 255, 0.12);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+    .tool-card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+    .tool-icon {
+        font-size: 2rem;
+    }
+    .tool-card-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #F5F5F7;
+        letter-spacing: -0.4px;
+    }
+    .tool-card-desc {
+        font-size: 0.9rem;
+        color: #8E8E93;
+        line-height: 1.5;
+        margin-bottom: 8px;
+    }
+    .tool-hint {
+        background: rgba(255, 255, 255, 0.03);
+        border: 0.5px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-top: 20px;
+        font-size: 0.9rem;
+        color: #8E8E93;
+        text-align: center;
+    }
+    
+    /* Chart Container - Apple Design System */
+    [data-testid="stPlotlyChart"] {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-top: none !important;
+        border-radius: 0 0 16px 16px !important;
+        padding: 16px !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+        margin-top: 0 !important;
+        margin-bottom: 24px !important;
+    }
+    [data-testid="stPlotlyChart"]:hover {
+        box-shadow: 0 12px 48px rgba(10, 132, 255, 0.12), 
+                    0 4px 16px rgba(0, 0, 0, 0.12),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+                    inset 0 0 30px rgba(10, 132, 255, 0.03) !important;
+        border-color: rgba(10, 132, 255, 0.25) !important;
+    }
+    /* Chart Inner - Remove Plotly's background */
+    [data-testid="stPlotlyChart"] .plotly {
+        background: transparent !important;
+    }
+    [data-testid="stPlotlyChart"] > div {
+        border-radius: 16px !important;
+        overflow: hidden !important;
+    }
+    /* Title + Chart = single card */
+    .section-title + [data-testid="stPlotlyChart"] {
+        margin-top: 0 !important;
+        border-top: none !important;
+        border-top-left-radius: 0 !important;
+        border-top-right-radius: 0 !important;
+    }
+    .section-title + [data-testid="stPlotlyChart"] > div {
+        border-top-left-radius: 0 !important;
+        border-top-right-radius: 0 !important;
+    }
+    .section-title + .skeleton-chart,
+    .section-title + .skeleton-chart-sm {
+        margin-top: 0 !important;
+        border-top-left-radius: 0 !important;
+        border-top-right-radius: 0 !important;
+    }
+    
+    /* Custom Message Boxes - No Streamlit Boxes */
+    .hint-text {
+        color: #8E8E93;
+        font-size: 0.95rem;
+        text-align: center;
+        padding: 16px;
+        margin: 12px 0;
+        line-height: 1.5;
+    }
+    .calc-result {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #0A84FF;
+        text-align: center;
+        margin: 20px 0;
+        letter-spacing: -0.5px;
+    }
+    .result-safe {
+        background: rgba(52, 199, 89, 0.12);
+        border: 0.5px solid rgba(52, 199, 89, 0.3);
+        border-radius: 12px;
+        color: #34C759;
+        padding: 12px 16px;
+        margin: 12px 0;
+        font-weight: 600;
+        text-align: center;
+    }
+    .result-warning {
+        background: rgba(255, 69, 58, 0.12);
+        border: 0.5px solid rgba(255, 69, 58, 0.3);
+        border-radius: 12px;
+        color: #FF453A;
+        padding: 12px 16px;
+        margin: 12px 0;
+        font-weight: 600;
+        text-align: center;
+    }
+    .compare-result {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: #F5F5F7;
+        text-align: center;
+        padding: 20px;
+        line-height: 1.6;
+    }
+    .highlight-price {
+        color: #0A84FF;
+        font-weight: 700;
+        font-size: 1.6rem;
+    }
+    /* 중복 metric 스타일 제거 - 위에서 이미 정의됨 */
+    .metric-sub { 
+        font-size: 0.78rem; 
+        color: #8E8E93; 
+        margin-top: 4px; 
+        font-weight: 500;
+    }
+    .signal-help { 
+        color: #8E8E93 !important; 
+        font-size: 0.82rem; 
+        line-height: 1.5; 
+    }
 
     /* [반응형] 태블릿 (768px 이하) */
     @media (max-width: 768px) {
         .block-container { padding: 1rem 1rem 6rem !important; max-width: 100% !important; }
         .logo-demo-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        .radar-title { font-size: 1.8rem !important; }
+        .radar-title { font-size: 2.2rem !important; }
         .metric-grid { grid-template-columns: 1fr !important; }
         .skeleton-grid { grid-template-columns: 1fr !important; }
         .market-grid { grid-template-columns: 1fr !important; }
         .source-card { height: 54px !important; padding: 10px 14px !important; }
         .source-name { font-size: 0.95rem !important; }
         .capsule-title { font-size: 1rem !important; padding: 6px 14px !important; }
-        .section-title { font-size: 1rem !important; }
+        .section-title { font-size: 1.4rem !important; }
         .skeleton-chart { height: 220px !important; }
         .skeleton-chart-sm { height: 180px !important; }
         [data-testid="stPlotlyChart"] { min-height: 200px !important; }
+        /* Chart Columns - Stack on Tablet */
+        [data-testid="stHorizontalBlock"] { flex-direction: column !important; }
+        [data-testid="stColumn"] { width: 100% !important; }
+        .back-to-top { bottom: 60px !important; right: 20px !important; width: 44px !important; height: 44px !important; }
     }
-    /* [반응형] 모바일 (480px 이하) - 추천검색어 영역 축소, 시세 요약 가림 방지 */
+    /* [반응형] 모바일 (480px 이하) - Touch Optimized */
     @media (max-width: 480px) {
         .block-container { padding: 0.75rem 0.75rem 5rem !important; }
-        .radar-title { font-size: 1.5rem !important; }
-        .metric-card { padding: 8px 10px !important; }
-        .metric-value { font-size: 0.95rem !important; }
+        .radar-title { font-size: 1.8rem !important; }
+        .radar-icon-wrap { padding: 8px 10px !important; }
+        .radar-icon { font-size: 1.5rem !important; }
+        .metric-card { 
+            padding: 12px 14px !important; 
+            min-height: 70px !important;
+            touch-action: manipulation !important;
+        }
+        .metric-value { font-size: 1.1rem !important; }
+        .metric-label { font-size: 0.75rem !important; }
+        .metric-change { font-size: 0.7rem !important; }
+        .metric-change-label { font-size: 0.6rem !important; margin-left: 4px !important; }
         .ticker-wrap { height: 28px; }
         .ticker-item { font-size: 0.7rem !important; margin-right: 24px !important; }
-        .search-pills { gap: 5px 8px; margin-bottom: 16px; }
-        .search-pills a { padding: 3px 8px; font-size: 0.75rem; }
+        .search-pills { gap: 8px; margin-bottom: 16px; }
+        .search-pills a { 
+            padding: 10px 16px !important; 
+            font-size: 0.85rem !important;
+            min-height: 38px !important;
+            touch-action: manipulation !important;
+        }
+        .section-title { font-size: 1.3rem !important; }
+        .back-to-top { 
+            bottom: 50px !important; 
+            right: 16px !important; 
+            width: 44px !important; 
+            height: 44px !important;
+            font-size: 1.3rem !important;
+        }
+        .source-card {
+            height: 60px !important;
+            padding: 12px 16px !important;
+            touch-action: manipulation !important;
+        }
+        div[data-testid="stLinkButton"] > a {
+            min-height: 52px !important;
+            touch-action: manipulation !important;
+        }
     }
     
     /* [로고 컨셉 예시] 크림이 좋아할 법한 6가지 방향 */
@@ -1219,55 +2581,126 @@ st.markdown("""
 if not st.session_state.theme_light:
     st.markdown("""
     <style>
-    div[data-baseweb="input"] { 
-        background: rgba(255,255,255,0.04) !important; 
-        border: 1px solid rgba(92,158,255,0.18) !important; 
+    /* 검색창 - Apple Design System + 왼쪽 돋보기 아이콘 */
+    div[data-baseweb="input"],
+    .stTextInput [data-baseweb="base-input"] { 
+        background: rgba(255, 255, 255, 0.06) !important; 
+        border: 1px solid rgba(255, 255, 255, 0.12) !important; 
         border-radius: 12px !important; 
-        color: white !important; 
-        height: 56px !important; 
-        box-shadow: none !important;
-        transition: all 0.25s ease;
+        height: auto !important; 
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+        transition: all 0.2s ease !important;
+        padding: 0 !important;
+        position: relative !important;
     }
-    div[data-baseweb="input"] > div > input {
-        color: white !important; 
-        font-family: -apple-system, 'Inter', 'Pretendard', sans-serif !important;
-        font-size: 1.05rem !important;
-        padding: 0 24px !important;
+    div[data-baseweb="input"]::before,
+    .stTextInput [data-baseweb="base-input"]::before {
+        content: "🔍";
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.95rem;
+        opacity: 0.65;
+        pointer-events: none;
+        z-index: 1;
     }
-    div[data-baseweb="input"]:focus-within { 
-        border-color: rgba(92,158,255,0.45) !important; 
-        background: rgba(92,158,255,0.06) !important;
-        box-shadow: 0 0 0 1px rgba(92,158,255,0.15) !important;
+    div[data-baseweb="input"] > div,
+    div[data-baseweb="input"] > div > div {
+        background: transparent !important;
+        border: none !important;
     }
-    div[data-baseweb="input"]:hover { 
-        border-color: rgba(92,158,255,0.35) !important; 
-        background: rgba(92,158,255,0.05) !important;
+    div[data-baseweb="input"] > div > input,
+    .stTextInput input {
+        color: #F5F5F7 !important; 
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif !important;
+        font-size: 1rem !important;
+        font-weight: 400 !important;
+        padding: 14px 16px 14px 42px !important;
+        background: transparent !important;
+        border: none !important;
+        outline: none !important;
     }
-    input::placeholder { color: rgba(255,255,255,0.25) !important; font-size: 1rem; }
+    div[data-baseweb="input"]:focus-within,
+    .stTextInput [data-baseweb="base-input"]:focus-within { 
+        border-color: rgba(10, 132, 255, 0.5) !important; 
+        background: rgba(255, 255, 255, 0.08) !important;
+    }
+    div[data-baseweb="input"]:hover,
+    .stTextInput [data-baseweb="base-input"]:hover { 
+        background: rgba(255, 255, 255, 0.07) !important;
+    }
+    input::placeholder { 
+        color: #8E8E93 !important; 
+        font-size: 1rem !important;
+        font-weight: 400 !important;
+    }
+    
+    /* Light Mode: Search Input - Cream & Black */
+    body.light-mode div[data-baseweb="input"],
+    body.light-mode .stTextInput [data-baseweb="base-input"] {
+        background: #FFFBF5 !important;
+        border: 1px solid rgba(0, 0, 0, 0.25) !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+    }
+    body.light-mode div[data-baseweb="input"]::before,
+    body.light-mode .stTextInput [data-baseweb="base-input"]::before {
+        opacity: 0.55;
+    }
+    body.light-mode div[data-baseweb="input"] > div > input,
+    body.light-mode .stTextInput input {
+        color: #0D0D0D !important;
+        padding-left: 42px !important;
+    }
+    body.light-mode div[data-baseweb="input"]:focus-within,
+    body.light-mode .stTextInput [data-baseweb="base-input"]:focus-within {
+        border-color: rgba(0, 0, 0, 0.4) !important;
+        background: #FFF5E8 !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+    }
+    body.light-mode .radar-title { color: #0D0D0D !important; -webkit-text-fill-color: #0D0D0D !important; background: none !important; filter: none !important; }
+    body.light-mode .radar-sub { color: #3A3A3C !important; }
+    body.light-mode .tool-header { color: #0D0D0D !important; }
+    body.light-mode .capsule-title { color: #0D0D0D !important; background: rgba(0,0,0,0.06) !important; border: 1px solid rgba(0,0,0,0.12) !important; }
+    body.light-mode .category-header { color: #3A3A3C !important; border-bottom-color: rgba(0,0,0,0.2) !important; }
+    body.light-mode .source-name { color: #0D0D0D !important; }
+    body.light-mode .source-url, body.light-mode .source-desc { color: #3A3A3C !important; }
+    body.light-mode .home-hero-title { color: #0D0D0D !important; }
+    body.light-mode .home-hero-sub { color: #3A3A3C !important; }
+    body.light-mode p, body.light-mode span, body.light-mode div { color: inherit; }
     </style>
     """, unsafe_allow_html=True)
 
-# [차트 테마] 다크 모드 전용
-CHART_PAPER = "#0E1117"
-CHART_PLOT = "rgba(20,25,35,0.8)"
-CHART_FONT = "#b8c5d4"
+# [차트 테마] Apple Style Dark - Premium iOS Design
+CHART_PAPER = "rgba(0, 0, 0, 0)"
+CHART_PLOT = "rgba(0, 0, 0, 0)"
+CHART_FONT = "#F5F5F7"
 CHART_TEMPLATE = "plotly_dark"
-CHART_LEGEND_BG = "#0E1117"
-CHART_LEGEND_BORDER = "rgba(255,255,255,0.1)"
-CHART_GRID = "rgba(92,158,255,0.12)"
-CHART_HOVER_BG = "#1e2a38"
-CHART_HOVER_FONT = "#e8eef4"
-CHART_ZEROLINE = "rgba(255,255,255,0.1)"
-CHART_MARKER_LINE = "#ffffff"
-CHART_ACCENT = CHART_BLUE
-CHART_ACCENT_LIGHT = CHART_BLUE_LIGHT
-CHART_ACCENT_HIGHLIGHT = CHART_BLUE_HIGHLIGHT
-CHART_ACCENT_FILL = CHART_BLUE_FILL
-CHART_GRAY_LINE = "#7B8B9C"
-CHART_GRAY_FILL = "rgba(123,139,156,0.06)"
-CHART_DOTTED = "#8B9BAB"
-CHART_BAR_SCALE = [[0, 'rgba(92,158,255,0.35)'], [0.4, 'rgba(92,158,255,0.7)'], [0.7, CHART_BLUE], [1, CHART_BLUE_LIGHT]]
-CHART_HOVER_BORDER = "rgba(92,158,255,0.4)"
+CHART_LEGEND_BG = "rgba(0, 0, 0, 0)"
+CHART_LEGEND_BORDER = "rgba(255,255,255,0)"
+CHART_GRID = "rgba(255, 255, 255, 0.04)"  # 더 은은한 그리드
+
+# [시맨틱 컬러 시스템] Apple HIG
+COLOR_SUCCESS = "#32D74B"  # 초록 (성공, 상승)
+COLOR_WARNING = "#FF9F0A"  # 주황 (경고)
+COLOR_ERROR = "#FF453A"    # 빨강 (에러)
+COLOR_INFO = "#0A84FF"     # 파랑 (정보)
+COLOR_MINT = "#63E6E2"     # 민트 (하락)
+CHART_HOVER_BG = "rgba(28, 28, 30, 0.95)"  # iOS 스타일 반투명
+CHART_HOVER_FONT = "#FFFFFF"
+CHART_ZEROLINE = "rgba(255,255,255,0.08)"
+CHART_MARKER_LINE = "rgba(255,255,255,0.95)"
+# 메인 액센트 - 아이폰 블루 그라데이션
+CHART_ACCENT = "#0A84FF"
+CHART_ACCENT_LIGHT = "#64B5FF"
+CHART_ACCENT_HIGHLIGHT = "rgba(10, 132, 255, 0.25)"
+CHART_ACCENT_FILL = "rgba(10, 132, 255, 0.15)"
+# 그레이 톤 - iOS 스타일
+CHART_GRAY_LINE = "#8E8E93"
+CHART_GRAY_FILL = "rgba(142,142,147,0.08)"
+CHART_DOTTED = "#98989D"
+CHART_BAR_SCALE = [[0, 'rgba(10,132,255,0.2)'], [0.5, 'rgba(10,132,255,0.5)'], [1, 'rgba(10,132,255,0.8)']]
+CHART_HOVER_BORDER = "rgba(10,132,255,0.3)"
 
 # [인라인 색상] 다크 모드
 TEXT_PRIMARY = "#eee"
@@ -1424,7 +2857,7 @@ def _theme_url(t):
         return f"?theme={t}"
 
 # [헤더] 로고(빌보드 중앙 왼쪽) + 빌보드(화면 중앙) | 토글(개발중 비활성화)
-_header_c1, _header_c2, _header_c3 = st.columns([1.5, 5, 1.5], vertical_alignment="top", gap="small")
+_header_c1, _header_c2, _header_c3 = st.columns([1.5, 5, 1.5], vertical_alignment="center", gap="small")
 with _header_c1:
     _header_box = st.container(key="header_logo_toggle")
     with _header_box:
@@ -1453,15 +2886,181 @@ _nav_col1, _nav_col2, _nav_col3 = st.columns([1, 5, 1])
 with _nav_col2:
     tab_home, tab_source, tab_tools, tab_safety, tab_compare = st.tabs(["🏠 시세 분석", "📂 Market Sources", "🧰 도구", "👮‍♂️ 사기 조회", "⚖️ 비교"])
 
-# [빌보드/최근검색 클릭] query params → 검색창에 반영 후 URL에서 q 제거 (다른 검색 가능하도록)
+# [Back to Top + Keyboard Shortcuts + Performance]
+components.html("""
+<div class="back-to-top" id="backToTop" onclick="scrollToTop()">↑</div>
+<div class="keyboard-hint" id="keyboardHint">
+    <div style="font-size: 0.75rem; margin-bottom: 8px; color: #8E8E93;">⌨️ 단축키</div>
+    <div style="font-size: 0.7rem; line-height: 1.6;">
+        <div><kbd>/</kbd> 검색 포커스</div>
+        <div><kbd>ESC</kbd> 검색 초기화</div>
+        <div><kbd>?</kbd> 도움말</div>
+    </div>
+</div>
+<div class="help-button" onclick="toggleHelp()">?</div>
+
+<style>
+.keyboard-hint {
+    position: fixed;
+    bottom: 140px;
+    right: 32px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(245, 245, 247, 0.08));
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 0.5px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 12px 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateY(10px);
+    z-index: 1001;
+    color: #F5F5F7;
+}
+.keyboard-hint.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+.keyboard-hint kbd {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border: 0.5px solid rgba(255, 255, 255, 0.2);
+    color: #F5F5F7;
+    font-family: 'SF Mono', 'Monaco', monospace;
+}
+.help-button {
+    position: fixed;
+    bottom: 140px;
+    right: 32px;
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, rgba(10, 132, 255, 0.15), rgba(10, 132, 255, 0.08));
+    backdrop-filter: blur(20px);
+    border: 0.5px solid rgba(10, 132, 255, 0.3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0A84FF;
+    cursor: pointer;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+.help-button:hover {
+    background: linear-gradient(135deg, rgba(10, 132, 255, 0.25), rgba(10, 132, 255, 0.15));
+    transform: scale(1.1);
+}
+</style>
+
+<script>
+// Ensure body has no light-mode (다크 모드만 사용)
+(function(){ try { window.parent.document.body.classList.remove('light-mode'); } catch(e){} })();
+
+// Performance: Intersection Observer for animations
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.style.animationPlayState = 'running';
+        }
+    });
+}, { threshold: 0.1 });
+
+setTimeout(() => {
+    const animatedElements = window.parent.document.querySelectorAll(
+        '.metric-card, .source-card, .search-pills a, [data-testid="stPlotlyChart"]'
+    );
+    animatedElements.forEach(el => {
+        el.style.animationPlayState = 'paused';
+        observer.observe(el);
+    });
+}, 500);
+
+// Back to Top
+function scrollToTop() {
+    window.parent.document.querySelector('.main').scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
+}
+
+window.parent.document.querySelector('.main').addEventListener('scroll', function() {
+    var btn = document.getElementById('backToTop');
+    if (this.scrollTop > 500) {
+        btn.classList.add('visible');
+    } else {
+        btn.classList.remove('visible');
+    }
+});
+
+// Keyboard Shortcuts + Help
+let helpVisible = false;
+function toggleHelp() {
+    helpVisible = !helpVisible;
+    const hint = document.getElementById('keyboardHint');
+    if (helpVisible) {
+        hint.classList.add('show');
+    } else {
+        hint.classList.remove('show');
+    }
+}
+
+window.parent.document.addEventListener('keydown', function(e) {
+    // "/" - Focus search
+    if (e.key === '/' && !e.target.matches('input, textarea')) {
+        e.preventDefault();
+        const input = window.parent.document.querySelector('input[placeholder*="여기에 검색"]');
+        if (input) input.focus();
+    }
+    
+    // "ESC" - Clear search
+    if (e.key === 'Escape') {
+        const input = window.parent.document.querySelector('input[placeholder*="여기에 검색"]');
+        if (input && input === document.activeElement) {
+            input.value = '';
+            input.blur();
+        }
+    }
+    
+    // "?" - Toggle help
+    if (e.key === '?' && !e.target.matches('input, textarea')) {
+        e.preventDefault();
+        toggleHelp();
+    }
+});
+
+// LocalStorage Cache for recent searches
+function saveRecentSearch(keyword) {
+    try {
+        let recent = JSON.parse(localStorage.getItem('radar_recent_searches') || '[]');
+        recent = recent.filter(k => k !== keyword);
+        recent.unshift(keyword);
+        recent = recent.slice(0, 5);
+        localStorage.setItem('radar_recent_searches', JSON.stringify(recent));
+    } catch(e) {}
+}
+
+// Auto-save on search
+setTimeout(() => {
+    const input = window.parent.document.querySelector('input[placeholder*="여기에 검색"]');
+    if (input && input.value) {
+        saveRecentSearch(input.value);
+    }
+}, 1000);
+</script>
+""", height=0)
+
+# [빌보드/최근검색 클릭] query params
 try:
-    q = getattr(st, "query_params", None)
-    if q and q.get("q"):
-        st.session_state.search_input = q.get("q")
-        try:
-            del st.query_params["q"]  # URL에서 q 제거 → 다음 rerun에서 사용자 입력 덮어쓰기 방지
-        except Exception:
-            pass
+    qp = getattr(st, "query_params", None)
+    if qp and qp.get("q"):
+        st.session_state.search_input = qp.get("q")
+        try: del st.query_params["q"]
+        except Exception: pass
 except Exception:
     pass
 
@@ -1486,28 +3085,6 @@ with tab_home:
             <p class="home-hero-sub">모델명·브랜드명을 검색하면 국내 시세와 해외 직구 비용을 비교할 수 있어요</p>
         </div>
         """, unsafe_allow_html=True)
-        if st.session_state.theme_light:
-            st.markdown("""
-            <style>
-            /* 검색창: 크림 팔레트 */
-            .stApp div[data-baseweb="input"], [data-testid="stAppViewContainer"] div[data-baseweb="input"],
-            div[data-baseweb="input"], div[data-baseweb="input"] > div { 
-                background: #faf7f0 !important; background-color: #faf7f0 !important;
-                border: 1px solid #e5e0d5 !important; border-radius: 10px !important;
-                box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
-            }
-            div[data-baseweb="input"] > div > input, input[placeholder*="여기에 검색"] { 
-                color: #1c1b19 !important; background: transparent !important; background-color: transparent !important;
-            }
-            div[data-baseweb="input"]:focus-within, div[data-baseweb="input"]:focus-within > div { 
-                background: #faf7f0 !important; background-color: #faf7f0 !important; border-color: #1c1b19 !important;
-            }
-            div[data-baseweb="input"]:hover, div[data-baseweb="input"]:hover > div { 
-                background: #faf7f0 !important; background-color: #faf7f0 !important; border-color: #d9d3c5 !important;
-            }
-            input::placeholder { color: #6b6560 !important; }
-            </style>
-            """, unsafe_allow_html=True)
         keyword = st.text_input("시세 검색", placeholder="여기에 검색하세요 · 라이카 M6, 나이키 조던, 아이폰 16 Pro", key="search_input", label_visibility="collapsed")
         if not _has_search:
             components.html("""
@@ -1524,6 +3101,56 @@ with tab_home:
             </script>
             """, height=0)
     
+    # 메인화면: 검색창 하단 펄스 애니메이션 (components.html iframe으로 무조건 표시)
+    if not (keyword and keyword.strip()):
+        _n = 8
+        _items = []
+        for _ in range(_n):
+            a, r = random.uniform(0, 360), random.uniform(12, 35)
+            l = 50 + r * math.cos(math.radians(a))
+            t = 50 + r * math.sin(math.radians(a))
+            _items.append((f"left:{l:.1f}%;top:{t:.1f}%", 2.0 + (r - 12) / 23 * 5.0, 9.0))
+        _blip = "".join([f'<div class="sb" style="{p};animation-delay:{d:.1f}s;animation-duration:{u:.1f}s;"></div>' for p, d, u in _items])
+        _pulse_html = f'''<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+        * {{ margin:0; padding:0; box-sizing:border-box; }}
+        body {{ background: transparent; min-height: 400px; font-family: -apple-system, sans-serif; }}
+        .wrap {{ text-align: center; padding: 40px 20px 60px; }}
+        .sonar {{ width: 280px; height: 280px; margin: 0 auto; position: relative; display: flex; justify-content: center; align-items: center;
+            background: radial-gradient(circle, rgba(255,255,255,0.02) 0%, transparent 70%); border-radius: 50%;
+            border: 0.5px solid rgba(255,255,255,0.08); box-shadow: inset 0 0 40px rgba(255,255,255,0.02); }}
+        .ring {{ position: absolute; left: 50%; top: 50%; width: 50px; height: 50px; margin: -25px 0 0 -25px;
+            border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.25); transform-origin: center center;
+            animation: ping 10s cubic-bezier(0.4,0,0.2,1) infinite; animation-fill-mode: both; z-index: 1; }}
+        .ring:nth-child(1) {{ animation-delay: 0s; }} .ring:nth-child(2) {{ animation-delay: 2s; }}
+        .ring:nth-child(3) {{ animation-delay: 4s; }} .ring:nth-child(4) {{ animation-delay: 6s; }}
+        .ring:nth-child(5) {{ animation-delay: 8s; }}
+        .dot {{ position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px;
+            border-radius: 50%; background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(245,245,247,0.7));
+            box-shadow: 0 0 24px rgba(255,255,255,0.5), 0 0 48px rgba(255,255,255,0.25), inset 0 1px 0 rgba(255,255,255,1);
+            animation: dotpulse 2.5s ease-in-out infinite; z-index: 10; border: 0.5px solid rgba(255,255,255,0.4); }}
+        .sb {{ position: absolute; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(245,245,247,0.85));
+            box-shadow: 0 0 16px rgba(255,255,255,0.7), 0 0 32px rgba(255,255,255,0.4), inset 0 1px 0 rgba(255,255,255,0.9);
+            opacity: 0; animation: blip 10s cubic-bezier(0.4,0,0.2,1) infinite; animation-fill-mode: both;
+            pointer-events: none; z-index: 2; border: 0.5px solid rgba(255,255,255,0.6); }}
+        @keyframes ping {{ 0% {{ transform: scale(0.2); opacity: 0.7; border-color: rgba(255,255,255,0.35); border-width: 1.5px; }}
+            30% {{ opacity: 0.5; border-color: rgba(255,255,255,0.2); }}
+            70% {{ opacity: 0.15; border-color: rgba(255,255,255,0.08); border-width: 1px; }}
+            100% {{ transform: scale(5); opacity: 0; border-color: rgba(255,255,255,0.02); border-width: 0.5px; }} }}
+        @keyframes dotpulse {{ 0%,100% {{ transform: scale(0.85); opacity: 0.75;
+            box-shadow: 0 0 24px rgba(255,255,255,0.5), 0 0 48px rgba(255,255,255,0.25), inset 0 1px 0 rgba(255,255,255,1); }}
+            50% {{ transform: scale(1.15); opacity: 1;
+            box-shadow: 0 0 36px rgba(255,255,255,0.7), 0 0 72px rgba(255,255,255,0.35), inset 0 1px 0 rgba(255,255,255,1); }} }}
+        @keyframes blip {{ 0%,8% {{ opacity: 0; transform: scale(0.4); }} 10% {{ opacity: 1; transform: scale(1); }}
+            12% {{ opacity: 0.95; transform: scale(1.15); }} 18% {{ opacity: 0.5; transform: scale(1); }}
+            24% {{ opacity: 0; transform: scale(0.8); }} 100% {{ opacity: 0; transform: scale(0.8); }} }}
+        .hint {{ margin-top: 60px; font-size: 1.05rem; font-weight: 500; color: rgba(255,255,255,0.5); letter-spacing: 0.5px; }}
+        .hint::before {{ content: "📡 "; font-size: 1.15rem; opacity: 0.7; margin-right: 8px; }}
+        </style></head><body><div class="wrap"><div class="sonar">
+        <div class="ring"></div><div class="ring"></div><div class="ring"></div><div class="ring"></div><div class="ring"></div>
+        <div class="dot"></div>{_blip}</div><p class="hint">레이더가 매물을 찾고 있어요</p></div></body></html>'''
+        components.html(_pulse_html, height=420, scrolling=False)
+    
     df_prices = load_price_data() if (keyword and keyword.strip()) else pd.DataFrame()
     
     # [스켈레톤 로딩] 검색 시 데이터 로드 전 차트/카드 영역에 스켈레톤 표시
@@ -1532,16 +3159,16 @@ with tab_home:
         with skel_ph.container():
             st.markdown("""
             <div class="skeleton-wrap">
-                <div class="section-title section-title--price-summary">📊 시세 요약</div>
+                <div class="section-title section-title--price-summary section-title--pretty"><span class="title-icon">📊</span>시세 요약</div>
                 <div class="skeleton-grid">
                     <div class="skeleton-card"></div>
                     <div class="skeleton-card"></div>
                     <div class="skeleton-card"></div>
                     <div class="skeleton-card"></div>
                 </div>
-                <div class="section-title">📈 전체 시세</div>
+                <div class="section-title section-title--chart section-title--pretty"><span class="title-icon">📶</span>시세 추이</div>
                 <div class="skeleton-chart"></div>
-                <div class="section-title">📊 가격 분포</div>
+                <div class="section-title section-title--chart section-title--pretty"><span class="title-icon">🔷</span>가격 분포</div>
                 <div class="skeleton-chart-sm"></div>
             </div>
             """, unsafe_allow_html=True)
@@ -1603,7 +3230,7 @@ with tab_home:
             
             st.markdown(f"<div style='margin-top:20px; font-size:1.3rem; font-weight:700; color:{TEXT_PRIMARY};'>'{html.escape(keyword)}' 분석 결과</div>", unsafe_allow_html=True)
 
-            # [Fruits Name Fixed] - HTML 링크로 변경 (link_button의 None 라벨 이슈 회피)
+            # [기존 카드 UI] - 새 탭
             st.markdown("<div class='capsule-title'>🇰🇷 국내 마켓</div>", unsafe_allow_html=True)
             st.markdown(f"""
             <div class="market-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
@@ -1616,8 +3243,8 @@ with tab_home:
             st.markdown("<div class='capsule-title'>🌎 해외 직구</div>", unsafe_allow_html=True)
             st.markdown(f"""
             <div class="market-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-                <a href="https://www.ebay.com/sch/i.html?_nkw={encoded_eng}" target="_blank" class="source-card card-ebay" style="text-decoration:none;"><div class="source-info"><span class="source-name">🔵 eBay ({eng_keyword})</span></div><span>🔗</span></a>
-                <a href="https://jp.mercari.com/search?keyword={encoded_jp}" target="_blank" class="source-card card-mercari" style="text-decoration:none;"><div class="source-info"><span class="source-name">⚪ Mercari ({jp_keyword})</span></div><span>🔗</span></a>
+                <a href="https://www.ebay.com/sch/i.html?_nkw={encoded_eng}" target="_blank" class="source-card card-ebay" style="text-decoration:none;"><div class="source-info"><span class="source-name">🔵 eBay ({html.escape(eng_keyword)})</span></div><span>🔗</span></a>
+                <a href="https://jp.mercari.com/search?keyword={encoded_jp}" target="_blank" class="source-card card-mercari" style="text-decoration:none;"><div class="source-info"><span class="source-name">⚪ Mercari ({html.escape(jp_keyword)})</span></div><span>🔗</span></a>
             </div>
             """, unsafe_allow_html=True)
             
@@ -1631,7 +3258,7 @@ with tab_home:
             except Exception:
                 curation_title, curation_list = None, None
             if curation_title and curation_list:
-                st.markdown(f"<div style='margin-top:30px; margin-bottom:10px; color:{ACCENT_CURATION}; font-weight:700;'>💡 {curation_title}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='margin-top:30px; margin-bottom:10px; color:{ACCENT_CURATION}; font-weight:700;'>💡 {html.escape(str(curation_title))}</div>", unsafe_allow_html=True)
                 cards_html = "".join([
                     f'<a href="{url}" target="_blank" class="source-card card-{tag}" style="text-decoration:none;"><div class="source-info"><span class="source-name">{html.escape(name)}</span><span class="source-desc">{html.escape(desc)}</span></div><span style="font-size:1.2rem;">🔗</span></a>'
                     for (name, url, tag, desc) in curation_list
@@ -1659,6 +3286,28 @@ with tab_home:
                 df_full = pd.DataFrame({"날짜": dates, "가격(만원)": prices})
                 df_1m = df_full.tail(4) if len(df_full) >= 4 else df_full
                 
+                # 가격 변동률 계산 (지난 데이터 대비)
+                price_change_pct = 0
+                price_change_symbol = ""
+                price_change_color = "#8E8E93"
+                price_change_label = ""
+                if len(prices) >= 2:
+                    current_price = prices[-1]
+                    prev_price = prices[-2]
+                    if prev_price > 0:
+                        price_change_pct = ((current_price - prev_price) / prev_price) * 100
+                        if price_change_pct > 0:
+                            price_change_symbol = "↗"
+                            price_change_color = "#FF453A"
+                        elif price_change_pct < 0:
+                            price_change_symbol = "↘"
+                            price_change_color = "#0A84FF"
+                        else:
+                            price_change_symbol = "→"
+                        # 시점 라벨 계산
+                        if len(dates) >= 2:
+                            price_change_label = f"({dates[-2]} 대비)"
+                
                 # [1] 시세 요약 2x2 + 시그널 (다크 모드 색상)
                 def _signal_strength(n):
                     if n >= 15: return ("●●●●", "강함", "#5C9EFF")
@@ -1667,162 +3316,138 @@ with tab_home:
                     return ("●", "희미", "#B8D5FF")
                 sig_bar, sig_text, sig_color = _signal_strength(n_data)
                 _data_label = matched.get("matched_keyword") or keyword
-                _sec1, _sec2 = st.columns(2)
-                with _sec1:
-                    st.markdown("<div class='section-title section-title--price-summary'>📊 시세 요약</div>", unsafe_allow_html=True)
-                with _sec2:
-                    st.markdown(f"<div class='section-title' style='margin-top:0;text-align:right;font-size:0.85rem;color:{SIGNAL_HELP_COLOR};'>📋 시세 데이터: <strong>{html.escape(str(_data_label))}</strong></div>", unsafe_allow_html=True)
+                st.markdown(f"""
+                <div class='section-title section-title--price-summary section-title--pretty'>
+                    <span class='title-icon'>📊</span>시세 요약
+                    <div class='price-data-label'>📋 <strong>{html.escape(str(_data_label))}</strong></div>
+                </div>
+                """, unsafe_allow_html=True)
                 st.markdown(f"""
                 <div class="metric-grid">
-                    <div class="metric-card"><div class="metric-label">평균가</div><div class="metric-value">{kr_avg:,.1f}만</div></div>
+                    <div class="metric-card">
+                        <div class="metric-label">평균가</div>
+                        <div class="metric-value">{kr_avg:,.1f}만</div>
+                        <div class="metric-change" style="color:{price_change_color};">
+                            {price_change_symbol} {abs(price_change_pct):.1f}%<span class="metric-change-label">{price_change_label}</span>
+                        </div>
+                    </div>
                     <div class="metric-card"><div class="metric-label">시그널</div><div class="metric-value" style="font-size:0.9rem;"><span style="color:{sig_color};">{sig_bar}</span> {sig_text}</div></div>
                     <div class="metric-card"><div class="metric-label">최고가</div><div class="metric-value">{kr_max:,.1f}만</div></div>
                     <div class="metric-card"><div class="metric-label">최저가</div><div class="metric-value">{kr_min:,.1f}만</div></div>
+                    <p class="signal-help" style="grid-column: 1 / -1; margin:14px 0 0 0;font-size:0.78rem;color:{SIGNAL_HELP_COLOR};line-height:1.5;">
+                        💡 시그널은 수집된 거래 데이터 건수에 비례합니다. ●●●●(강함)일수록 가격분포 데이터가 풍부해 <strong>검색 결과 신뢰도</strong>가 높습니다.
+                    </p>
                 </div>
-                <p class="signal-help" style="margin-top:8px;font-size:0.8rem;color:{SIGNAL_HELP_COLOR};line-height:1.4;">
-                    💡 시그널은 수집된 거래 데이터 건수에 비례합니다. ●●●●(강함)일수록 가격분포 데이터가 풍부해 <strong>검색 결과 신뢰도</strong>가 높습니다.
-                </p>
                 """, unsafe_allow_html=True)
                 
-                # [2] 전체 시세 (전체 회색 + 최근 1달 파란색 강조)
-                st.markdown("<div class='section-title'>📈 전체 시세</div>", unsafe_allow_html=True)
+                # [2] 전체 시세 (세로 배치) - iOS Style Premium
+                st.markdown("<div class='section-title section-title--chart section-title--pretty'><span class='title-icon'>📶</span>시세 추이</div>", unsafe_allow_html=True)
                 fig = go.Figure()
+                # 전체 시세 레이어 - 부드러운 그레이 톤
                 fig.add_trace(go.Scatter(x=dates, y=prices, mode='lines+markers', name='전체 시세',
-                    line=dict(color=CHART_GRAY_LINE, width=2, shape='spline', smoothing=0.5),
-                    marker=dict(size=6, color=CHART_GRAY_LINE, line=dict(width=0), symbol='circle'),
+                    line=dict(color=CHART_GRAY_LINE, width=2.5, shape='spline', smoothing=1.3),
+                    marker=dict(size=7, color=CHART_GRAY_LINE, line=dict(width=1.5, color='rgba(255,255,255,0.3)'), symbol='circle'),
                     fill='tozeroy', fillcolor=CHART_GRAY_FILL,
                     hovertemplate='<b>%{x}</b><br>%{y:,.1f}만원<extra></extra>'))
+                # 최근 1달 하이라이트 - 애플 블루 그라데이션
                 if len(df_1m) >= 2:
                     d1m = df_1m['날짜'].tolist()
                     p1m = df_1m['가격(만원)'].tolist()
                     fig.add_trace(go.Scatter(x=d1m, y=p1m, mode='lines+markers', name='최근 1달',
-                        line=dict(color=CHART_ACCENT, width=3.2, shape='spline', smoothing=0.55),
-                        marker=dict(size=10, color=CHART_ACCENT_LIGHT, line=dict(width=1, color=CHART_MARKER_LINE)),
+                        line=dict(color=CHART_ACCENT, width=3.5, shape='spline', smoothing=1.2),
+                        marker=dict(size=10, color=CHART_ACCENT_LIGHT, line=dict(width=2, color=CHART_MARKER_LINE), 
+                                    opacity=0.95),
                         fill='tozeroy', fillcolor=CHART_ACCENT_HIGHLIGHT,
                         hovertemplate='<b>%{x}</b> (최근 1달)<br>%{y:,.1f}만원<extra></extra>'))
+                # 해외직구 참고선 - 점선
                 if global_krw > 0:
                     fig.add_trace(go.Scatter(x=dates, y=[global_krw]*len(dates), mode='lines', name='해외직구',
-                        line=dict(color=CHART_DOTTED, width=1.8, dash='dot', shape='spline', smoothing=0.3),
+                        line=dict(color=CHART_DOTTED, width=1.5, dash='dot'),
                         hovertemplate=f'해외직구 추산: {global_krw:,.1f}만원<extra></extra>'))
                 y_min = max(0, min(prices)*0.92) if prices else 0
                 y_max = max(prices)*1.1 if prices else 100
                 if y_max - y_min < 10: y_max = y_min + 20
-                fig.update_layout(height=280, margin=dict(l=52, r=24, t=12, b=40),
+                fig.update_layout(height=340, margin=dict(l=15, r=15, t=15, b=35),
                     title=dict(text=''), annotations=[],
                     hovermode='x unified',
-                    hoverlabel=dict(bgcolor=CHART_HOVER_BG, font_size=13, font_color=CHART_HOVER_FONT,
-                        bordercolor=CHART_HOVER_BORDER, align='left'),
-                    xaxis=dict(showgrid=False, title='', tickfont=dict(size=12, color=CHART_FONT), fixedrange=True),
-                    yaxis=dict(title='만원', title_font=dict(size=13, color=CHART_FONT), tickfont=dict(size=12, color=CHART_FONT),
-                        showgrid=True, gridcolor=CHART_GRID, zeroline=True, zerolinecolor=CHART_ZEROLINE, range=[y_min, y_max], fixedrange=True),
+                    hoverlabel=dict(bgcolor=CHART_HOVER_BG, font_size=14, font_color=CHART_HOVER_FONT,
+                        bordercolor=CHART_HOVER_BORDER, align='left', namelength=-1),
+                    xaxis=dict(showgrid=False, title='', tickfont=dict(size=11, color=CHART_FONT, family='-apple-system'), 
+                               fixedrange=True, showline=False),
+                    yaxis=dict(title='만원', title_font=dict(size=12, color=CHART_FONT), 
+                               tickfont=dict(size=11, color=CHART_FONT),
+                        showgrid=True, gridcolor=CHART_GRID, gridwidth=0.5, 
+                        zeroline=True, zerolinecolor=CHART_ZEROLINE, zerolinewidth=0.5,
+                        range=[y_min, y_max], fixedrange=True, showline=False),
                     paper_bgcolor=CHART_PAPER, plot_bgcolor=CHART_PLOT, font_color=CHART_FONT,
-                    showlegend=True, legend=dict(orientation='h', y=1.05, x=0, xanchor='left', font=dict(size=12), bgcolor=CHART_LEGEND_BG, bordercolor=CHART_LEGEND_BORDER),
-                    template=CHART_TEMPLATE, dragmode=False)
-                st.plotly_chart(fig, use_container_width=True, config={
-                    'displayModeBar': True, 'displaylogo': False, 'scrollZoom': False,
-                    'modeBarButtonsToRemove': ['lasso2d', 'select2d']
-                }, key="radar_trend_chart")
+                    showlegend=False,
+                    template=CHART_TEMPLATE, dragmode=False,
+                    transition={'duration': 400, 'easing': 'cubic-in-out'})
+                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key="radar_trend_chart")
                 
-                # [3] 가격 분포
-                st.markdown("<div class='section-title'>📊 가격 분포</div>", unsafe_allow_html=True)
+                # [3] 가격 분포 (세로 배치) - iOS Style Premium
+                st.markdown("<div class='section-title section-title--chart section-title--pretty'><span class='title-icon'>🔷</span>가격 분포</div>", unsafe_allow_html=True)
                 if len(raw) >= 1:
                     n_bins = min(15, max(3, len(raw)//2)) if len(raw) > 1 else 5
                     hist, edges = np.histogram(raw, bins=n_bins)
                     mid = [(edges[i]+edges[i+1])/2 for i in range(len(hist))]
-                    fig2 = go.Figure(go.Bar(x=mid, y=hist, marker=dict(
-                        color=hist, colorscale=CHART_BAR_SCALE,
-                        line=dict(width=0), cornerradius=12, opacity=0.92, cmin=0),
+                    fig2 = go.Figure(go.Scatter(x=mid, y=hist, mode='lines+markers', name='가격 분포',
+                        line=dict(color=CHART_ACCENT, width=3.5, shape='spline', smoothing=1.3),
+                        marker=dict(size=10, color=CHART_ACCENT_LIGHT, line=dict(width=2, color=CHART_MARKER_LINE),
+                                    opacity=0.95),
+                        fill='tozeroy', fillcolor=CHART_ACCENT_HIGHLIGHT,
                         hovertemplate='<b>%{x:,.0f}만원대</b><br>%{y}건<extra></extra>'))
-                    fig2.update_layout(height=220, margin=dict(l=48, r=24, t=12, b=40), bargap=0.2, bargroupgap=0.05,
+                    fig2.update_layout(height=340, margin=dict(l=15, r=15, t=15, b=35),
                         title=dict(text=''), annotations=[],
                         hovermode='x unified',
-                        hoverlabel=dict(bgcolor=CHART_HOVER_BG, font_size=13, font_color=CHART_HOVER_FONT,
-                            bordercolor=CHART_HOVER_BORDER, align='left'),
-                        xaxis=dict(title='가격(만원)', title_font=dict(size=12), showgrid=False, tickfont=dict(size=11, color=CHART_FONT)),
-                        yaxis=dict(title='건수', title_font=dict(size=12), showgrid=True, gridcolor=CHART_GRID, tickfont=dict(size=11, color=CHART_FONT)),
-                        paper_bgcolor=CHART_PAPER, plot_bgcolor=CHART_PLOT, font_color=CHART_FONT, showlegend=False, template=CHART_TEMPLATE)
+                        hoverlabel=dict(bgcolor=CHART_HOVER_BG, font_size=14, font_color=CHART_HOVER_FONT,
+                            bordercolor=CHART_HOVER_BORDER, align='left', namelength=-1),
+                        xaxis=dict(title='가격(만원)', title_font=dict(size=12, color=CHART_FONT), 
+                                   showgrid=False, tickfont=dict(size=11, color=CHART_FONT, family='-apple-system'),
+                                   showline=False),
+                        yaxis=dict(title='건수', title_font=dict(size=12, color=CHART_FONT), 
+                                   showgrid=True, gridcolor=CHART_GRID, gridwidth=0.5,
+                                   tickfont=dict(size=11, color=CHART_FONT),
+                                   showline=False),
+                        paper_bgcolor=CHART_PAPER, plot_bgcolor=CHART_PLOT, font_color=CHART_FONT, 
+                        showlegend=False, template=CHART_TEMPLATE,
+                        transition={'duration': 400, 'easing': 'cubic-in-out'})
                     st.plotly_chart(fig2, use_container_width=True, config={'displayModeBar': False}, key="radar_dist_chart")
             
             else:
                 if keyword:
-                    # 검색했는데 시세 데이터 없음 → 아이폰처럼 동일 레이아웃에 "데이터 없음" 표시
-                    st.markdown("<div class='section-title section-title--price-summary'>📊 시세 요약</div>", unsafe_allow_html=True)
-                _placeholder_color = CHART_FONT
-                st.markdown(f"""
-                <div class="metric-grid">
-                    <div class="metric-card"><div class="metric-label">평균가</div><div class="metric-value" style="color:{_placeholder_color};">—</div></div>
-                    <div class="metric-card"><div class="metric-label">시그널</div><div class="metric-value" style="font-size:0.9rem;"><span style="color:{CHART_ACCENT};">●</span> 없음</div></div>
-                    <div class="metric-card"><div class="metric-label">최고가</div><div class="metric-value" style="color:{_placeholder_color};">—</div></div>
-                    <div class="metric-card"><div class="metric-label">최저가</div><div class="metric-value" style="color:{_placeholder_color};">—</div></div>
-                </div>
-                <p class="signal-help" style="margin-top:8px;font-size:0.8rem;color:{SIGNAL_HELP_COLOR};line-height:1.4;">
-                    💡 시그널은 수집된 거래 데이터 건수에 비례합니다. ●●●●(강함)일수록 가격분포 데이터가 풍부해 <strong>검색 결과 신뢰도</strong>가 높습니다.
-                </p>
-                """, unsafe_allow_html=True)
-                st.markdown("<div class='section-title'>📈 전체 시세</div>", unsafe_allow_html=True)
-                fig_empty = go.Figure()
-                fig_empty.update_layout(height=280, margin=dict(l=52, r=24, t=12, b=40), title=dict(text=''),
-                    annotations=[dict(text="데이터 없음", xref="paper", yref="paper", x=0.5, y=0.5, showarrow=False, font=dict(size=16, color=CHART_FONT))],
-                    hovermode='x unified',
-                    hoverlabel=dict(bgcolor=CHART_HOVER_BG, font_size=13, font_color=CHART_HOVER_FONT,
-                        bordercolor=CHART_HOVER_BORDER, align='left'),
-                    xaxis=dict(showgrid=False, title='', tickfont=dict(size=12, color=CHART_FONT), fixedrange=True),
-                    yaxis=dict(title='만원', title_font=dict(size=13, color=CHART_FONT), tickfont=dict(size=12, color=CHART_FONT),
-                        showgrid=True, gridcolor=CHART_GRID, zeroline=True, zerolinecolor=CHART_ZEROLINE, range=[0, 100], fixedrange=True),
-                    paper_bgcolor=CHART_PAPER, plot_bgcolor=CHART_PLOT, font_color=CHART_FONT,
-                    showlegend=True, legend=dict(orientation='h', y=1.05, x=0, xanchor='left', font=dict(size=12), bgcolor=CHART_LEGEND_BG, bordercolor=CHART_LEGEND_BORDER),
-                    template=CHART_TEMPLATE, dragmode=False)
-                st.plotly_chart(fig_empty, use_container_width=True, config={
-                    'displayModeBar': True, 'displaylogo': False, 'scrollZoom': False,
-                    'modeBarButtonsToRemove': ['lasso2d', 'select2d']
-                }, key="radar_empty_trend")
-                st.markdown("<div class='section-title'>📊 가격 분포</div>", unsafe_allow_html=True)
-                fig_empty2 = go.Figure(go.Bar(x=[], y=[]))
-                fig_empty2.update_layout(height=220, margin=dict(l=48, r=24, t=12, b=40), bargap=0.2, bargroupgap=0.05,
-                    title=dict(text=''),
-                    annotations=[dict(text="데이터 없음", xref="paper", yref="paper", x=0.5, y=0.5, showarrow=False, font=dict(size=16, color=CHART_FONT))],
-                    hovermode='x unified',
-                    hoverlabel=dict(bgcolor=CHART_HOVER_BG, font_size=13, font_color=CHART_HOVER_FONT,
-                        bordercolor=CHART_HOVER_BORDER, align='left'),
-                    xaxis=dict(title='가격(만원)', title_font=dict(size=12), showgrid=False, tickfont=dict(size=11, color=CHART_FONT)),
-                    yaxis=dict(title='건수', title_font=dict(size=12), showgrid=True, gridcolor=CHART_GRID, tickfont=dict(size=11, color=CHART_FONT)),
-                    paper_bgcolor=CHART_PAPER, plot_bgcolor=CHART_PLOT, font_color=CHART_FONT, showlegend=False, template=CHART_TEMPLATE)
-                st.plotly_chart(fig_empty2, use_container_width=True, config={'displayModeBar': False}, key="radar_empty_dist")
+                    # 검색했는데 시세 데이터 없음 → 명확한 메시지
+                    st.markdown(f"""
+                    <div class="empty-state">
+                        <div class="empty-icon">🔍</div>
+                        <div class="empty-title">'{html.escape(keyword)}' 시세 데이터가 없습니다</div>
+                        <div class="empty-desc">
+                            현재 데이터베이스에 등록되지 않은 상품입니다<br>
+                            다른 상품명으로 검색해보세요
+                        </div>
+                        <div class="empty-suggestions">
+                            <div class="suggestion-item">✓ 정확한 상품명으로 검색 (예: 아이폰 16 Pro)</div>
+                            <div class="suggestion-item">✓ 다른 키워드로 검색 (예: 브랜드명, 모델명)</div>
+                            <div class="suggestion-item">✓ 유사 검색어를 참고해보세요</div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                # 빈 그래프 대신 추천 검색어 표시
+                if pills:
+                    st.markdown("""
+                    <div class="empty-suggestions" style="margin-top: 40px;">
+                        <div style="text-align: center; font-size: 1.1rem; color: #8E8E93; margin-bottom: 20px;">
+                            💡 이런 검색어는 어떠세요?
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
     else:
-        # 메인화면 (검색 전) → 전투기 레이더: 펄스가 닿으면 한번 빛나고 사라짐, 다음 사이클엔 랜덤 다른 위치
-        _c1, _c2, _c3 = st.columns([1, 3, 1])
-        with _c2:
-            _n_blips = 8
-            _blip_items = []
-            for _ in range(_n_blips):
-                a, r = random.uniform(0, 360), random.uniform(12, 35)
-                l = 50 + r * math.cos(math.radians(a))
-                t = 50 + r * math.sin(math.radians(a))
-                pos = f"left:{l:.1f}%;top:{t:.1f}%"
-                delay = 2.0 + (r - 12) / 23 * 5.0
-                dur = 9.0
-                _blip_items.append((pos, delay, dur))
-            _blip_html = "".join([f'<div class="sonar-blip" style="{p};animation-delay:{d:.1f}s;animation-duration:{u:.1f}s;"></div>' for p, d, u in _blip_items])
-            st.markdown(f"""
-            <div class="home-sonar-wrap">
-                <div class="sonar-wrap">
-                    <div class="sonar-ring"></div>
-                    <div class="sonar-ring"></div>
-                    <div class="sonar-ring"></div>
-                    <div class="sonar-ring"></div>
-                    <div class="sonar-ring"></div>
-                    <div class="sonar-dot"></div>
-                    {_blip_html}
-                </div>
-                <p class="home-sonar-hint">레이더가 매물을 찾고 있어요</p>
-            </div>
-            """, unsafe_allow_html=True)
+        pass  # 메인화면(검색 없음): 펄스는 검색창 하단에서 이미 표시
 
 # ==========================================
 # 📂 TAB 2: 마켓 소스 (Pro Dashboard Style)
 # ==========================================
 with tab_source:
-    st.markdown("#### 📂 Market Sources")
     col_left, col_right = st.columns(2, gap="large")
     
     with col_left:
@@ -1860,10 +3485,10 @@ with tab_source:
         <a href="https://cafe.naver.com/inmacbook" target="_blank" class="source-card card-mac"><div class="source-info"><span class="source-name">맥쓰사</span><span class="source-desc">맥북/맥 사용자 모임</span></div></a>
         
         <div class='category-header'>🏠 종합 마켓</div>
-        <a href="https://m.bunjang.co.kr" target="_blank" class="source-card card-bunjang"><div class="source-info"><span class="source-name">번개장터</span><span class="source-desc">중고 거래 플랫폼</span></div></a>
-        <a href="https://www.daangn.com" target="_blank" class="source-card card-daangn"><div class="source-info"><span class="source-name">당근마켓</span><span class="source-desc">지역 중고 거래</span></div></a>
-        <a href="https://web.joongna.com" target="_blank" class="source-card card-joongna"><div class="source-info"><span class="source-name">중고나라</span><span class="source-desc">국내 최대 종합 장터</span></div></a>
-        <a href="https://fruitsfamily.com" target="_blank" class="source-card card-fruits"><div class="source-info"><span class="source-name">Fruits</span><span class="source-desc">중고 거래 플랫폼</span></div></a>
+        <a href="https://m.bunjang.co.kr" target="_blank" class="source-card card-bunjang" style="text-decoration:none;"><div class="source-info"><span class="source-name">번개장터</span><span class="source-desc">중고 거래 플랫폼</span></div><span>🔗</span></a>
+        <a href="https://www.daangn.com" target="_blank" class="source-card card-daangn" style="text-decoration:none;"><div class="source-info"><span class="source-name">당근마켓</span><span class="source-desc">지역 중고 거래</span></div><span>🔗</span></a>
+        <a href="https://web.joongna.com" target="_blank" class="source-card card-joongna" style="text-decoration:none;"><div class="source-info"><span class="source-name">중고나라</span><span class="source-desc">국내 최대 종합 장터</span></div><span>🔗</span></a>
+        <a href="https://fruitsfamily.com" target="_blank" class="source-card card-fruits" style="text-decoration:none;"><div class="source-info"><span class="source-name">Fruits</span><span class="source-desc">중고 거래 플랫폼</span></div><span>🔗</span></a>
         <a href="https://www.gmarket.co.kr" target="_blank" class="source-card card-gmarket"><div class="source-info"><span class="source-name">G마켓</span><span class="source-desc">종합 이커머스</span></div></a>
         <a href="https://www.auction.co.kr" target="_blank" class="source-card card-auction"><div class="source-info"><span class="source-name">옥션</span><span class="source-desc">종합 이커머스</span></div></a>
         
@@ -1878,62 +3503,92 @@ with tab_source:
 # 🧰 TAB 3: 도구
 # ==========================================
 with tab_tools:
-    with st.expander("📋 구글 시트 연결 확인 (검색 안 될 때)"):
-        _df = load_price_data()
-        if _df.empty:
-            st.warning("시트 데이터를 불러오지 못했습니다. secrets.toml의 google_sheet_url을 확인하세요.")
-        else:
-            st.caption(f"행 {len(_df)}개 · 컬럼: {list(_df.columns)}")
-            _kw = get_sheet_keywords(_df)
-            st.caption(f"검색 가능 키워드 {len(_kw)}개 (일부): {_kw[:15]}")
-    t1, t2 = st.columns(2)
+    st.markdown('''
+    <div class="tools-intro">
+        <div class="tools-intro-title">🧰 유틸리티 도구</div>
+        <div class="tools-intro-desc">배송 추적부터 관세 계산까지, 필요한 도구를 한 곳에서</div>
+    </div>
+    ''', unsafe_allow_html=True)
+    
+    t1, t2 = st.columns(2, gap="large")
+    
     with t1:
-        st.markdown("#### 📦 배송 조회")
-        carrier = st.selectbox("택배사 선택", ["CJ대한통운", "우체국택배", "한진택배", "롯데택배", "로젠택배", "CU편의점택배", "GS25반값택배"])
-        track_no = st.text_input("운송장 번호", placeholder="- 없이 숫자만 입력")
+        st.markdown('''
+        <div class="tool-card">
+            <div class="tool-card-header">
+                <span class="tool-icon">📦</span>
+                <div class="tool-card-title">배송 조회</div>
+            </div>
+            <div class="tool-card-desc">택배 운송장 번호로 실시간 배송 상태를 확인하세요</div>
+        </div>
+        ''', unsafe_allow_html=True)
+        
+        carrier = st.selectbox("택배사 선택", ["CJ대한통운", "우체국택배", "한진택배", "롯데택배", "로젠택배", "CU편의점택배", "GS25반값택배"], key="tool_carrier")
+        track_no = st.text_input("운송장 번호", placeholder="- 없이 숫자만 입력", key="tool_track")
         
         if track_no:
             query = f"{carrier} {track_no}"
             encoded_query = urllib.parse.quote(query)
-            st.link_button(f"{carrier} 조회하기 (네이버)", f"https://search.naver.com/search.naver?query={encoded_query}", use_container_width=True)
+            st.markdown('<div style="margin-top:20px;"></div>', unsafe_allow_html=True)
+            st.link_button(f"🔍 {carrier} 조회하기", f"https://search.naver.com/search.naver?query={encoded_query}", use_container_width=True)
         else:
-            st.info("택배사와 운송장 번호를 입력하세요.")
+            st.markdown('<div class="tool-hint">💡 운송장 번호를 입력하면 네이버에서 배송을 조회할 수 있습니다</div>', unsafe_allow_html=True)
             
     with t2:
-        st.markdown("#### 💱 관세 계산기")
-        currency_mode = st.radio("통화 선택", ["USD", "JPY"], horizontal=True)
+        st.markdown('''
+        <div class="tool-card">
+            <div class="tool-card-header">
+                <span class="tool-icon">💱</span>
+                <div class="tool-card-title">관세 계산기</div>
+            </div>
+            <div class="tool-card-desc">해외 직구 시 예상 관세와 부가세를 미리 계산해보세요</div>
+        </div>
+        ''', unsafe_allow_html=True)
+        
+        currency_mode = st.radio("통화 선택", ["USD", "JPY"], horizontal=True, key="tool_currency")
+        
         if "USD" in currency_mode:
-            st.caption(f"적용 환율: {usd:,.1f}원")
-            p_u = st.number_input("물품 가격 ($)", 190, step=10)
+            st.caption(f"💵 적용 환율: {usd:,.1f}원")
+            p_u = st.number_input("물품 가격 ($)", 190, step=10, key="tool_usd")
             krw_val = p_u * usd
-            st.markdown(f"### ≈ {krw_val:,.0f} 원")
-            if p_u <= 200: st.success("✅ 면세 범위 (안전)")
+            
+            st.markdown('<div style="margin-top:24px;"></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="calc-result">≈ {krw_val:,.0f} 원</div>', unsafe_allow_html=True)
+            
+            if p_u <= 200: 
+                st.markdown('<div class="result-safe">✅ 면세 범위 (안전)</div>', unsafe_allow_html=True)
             else: 
                 duty = krw_val * 0.08
                 vat = (krw_val + duty) * 0.1
                 total_tax = duty + vat
-                st.error(f"🚨 과세 대상 (약 {total_tax:,.0f}원 부과 예상)")
+                st.markdown(f'<div class="result-warning">🚨 과세 대상 (약 {total_tax:,.0f}원 부과 예상)</div>', unsafe_allow_html=True)
                 st.caption("ℹ️ 관세 8% + 부가세 10% 기준 (일반 품목)")
         else:
-            st.caption(f"적용 환율: {jpy:,.1f}원")
-            p_j = st.number_input("물품 가격 (¥)", 15000, step=1000)
+            st.caption(f"💴 적용 환율: {jpy:,.1f}원")
+            p_j = st.number_input("물품 가격 (¥)", 15000, step=1000, key="tool_jpy")
             krw_val = p_j * (jpy/100)
-            st.markdown(f"### ≈ {krw_val:,.0f} 원")
-            if (krw_val/usd) <= 150: st.success("✅ 면세 범위 (안전)")
+            
+            st.markdown('<div style="margin-top:24px;"></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="calc-result">≈ {krw_val:,.0f} 원</div>', unsafe_allow_html=True)
+            
+            if (krw_val/usd) <= 150: 
+                st.markdown('<div class="result-safe">✅ 면세 범위 (안전)</div>', unsafe_allow_html=True)
             else: 
                 duty = krw_val * 0.08
                 vat = (krw_val + duty) * 0.1
                 total_tax = duty + vat
-                st.error(f"🚨 과세 대상 (약 {total_tax:,.0f}원 부과 예상)")
+                st.markdown(f'<div class="result-warning">🚨 과세 대상 (약 {total_tax:,.0f}원 부과 예상)</div>', unsafe_allow_html=True)
                 st.caption("ℹ️ 관세 8% + 부가세 10% 기준 (일반 품목)")
         
-        st.markdown(f"<span style='font-size:0.8rem; color:{TEXT_SECONDARY};'>⚠️ 품목별 관세율은 달라질 수 있습니다. 정확한 세율은 관세청에서 확인하세요.</span>", unsafe_allow_html=True)
+        st.caption("⚠️ 품목별 관세율은 달라질 수 있습니다. 정확한 세율은 관세청에서 확인하세요.")
 
 # ==========================================
 # 👮‍♂️ TAB 4: 사기 조회 (Ghost Button)
 # ==========================================
 with tab_safety:
-    st.markdown("#### 👮‍♂️ 사기 피해 방지 (The Cheat)")
+    st.markdown('<div style="margin-bottom: 32px;"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">👮‍♂️ 사기 피해 방지</div>', unsafe_allow_html=True)
+    st.markdown('<div style="margin-bottom: 24px;"></div>', unsafe_allow_html=True)
     st.markdown("""
     <div class="scam-box">
         <ul class="scam-list">
@@ -1960,18 +3615,29 @@ with tab_safety:
         </ul>
     </div>
     """, unsafe_allow_html=True)
+    st.markdown('<div style="margin-top: 48px; margin-bottom: 24px;"></div>', unsafe_allow_html=True)
     st.link_button("👮‍♂️ 더치트 무료 조회 바로가기", "https://thecheat.co.kr", type="secondary", use_container_width=True)
 
 # ==========================================
 # ⚖️ TAB 5: 2개 상품 비교
 # ==========================================
 with tab_compare:
-    st.markdown("#### ⚖️ 2개 상품 시세 비교")
-    comp_col1, comp_col2 = st.columns(2)
+    st.markdown('''
+    <div class="compare-intro">
+        <div class="compare-intro-title">⚖️ 2개 상품 시세 비교</div>
+        <div class="compare-intro-desc">두 상품의 평균 가격과 시세 추이를 비교해보세요</div>
+    </div>
+    ''', unsafe_allow_html=True)
+    
+    comp_col1, vs_col, comp_col2 = st.columns([5, 1, 5])
     with comp_col1:
         kw1 = st.text_input("상품 A", placeholder="예: 라이카 M6", key="compare_kw1")
+    with vs_col:
+        st.markdown('<div class="vs-badge">VS</div>', unsafe_allow_html=True)
     with comp_col2:
         kw2 = st.text_input("상품 B", placeholder="예: 나이키 조던 1", key="compare_kw2")
+    
+    st.markdown('<div style="margin:40px 0;"></div>', unsafe_allow_html=True)
     
     if kw1 and kw2:
         df_prices = load_price_data()
@@ -1980,43 +3646,113 @@ with tab_compare:
         
         comp_left, comp_right = st.columns(2, gap="large")
         with comp_left:
-            st.markdown(f"**{kw1}**")
+            st.markdown(f'<div class="tool-header">{html.escape(kw1)}</div>', unsafe_allow_html=True)
             if m1:
                 avg1 = m1.get('summary_avg', sum(m1['trend_prices'])/len(m1['trend_prices']) if m1['trend_prices'] else 0)
                 min1 = m1.get('summary_min', min(m1['raw_prices']) if m1['raw_prices'] else 0)
                 max1 = m1.get('summary_max', max(m1['raw_prices']) if m1['raw_prices'] else 0)
-                st.metric("평균가", f"{avg1:,.1f}만", None)
-                st.metric("최저~최고", f"{min1:,.0f}~{max1:,.0f}만", None)
+                
+                st.markdown(f'''
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">평균가</div>
+                        <div class="metric-value">{avg1:,.1f}만</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">최저~최고</div>
+                        <div class="metric-value" style="font-size:0.92rem;">{min1:,.0f}~{max1:,.0f}만</div>
+                    </div>
+                </div>
+                ''', unsafe_allow_html=True)
+                
                 fig1 = go.Figure(go.Scatter(x=m1['dates'], y=m1['trend_prices'], mode='lines+markers', name=kw1,
-                    line=dict(color=CHART_ACCENT, width=2), fill='tozeroy', fillcolor=CHART_ACCENT_FILL))
-                fig1.update_layout(height=200, margin=dict(l=0,r=0,t=0,b=0), paper_bgcolor=CHART_PAPER, plot_bgcolor=CHART_PLOT,
-                    xaxis=dict(showticklabels=True, tickfont=dict(size=10, color=CHART_FONT)), yaxis=dict(title='만원', title_font=dict(color=CHART_FONT)), template=CHART_TEMPLATE, showlegend=False)
+                    line=dict(color=CHART_ACCENT, width=3.5, shape='spline', smoothing=1.3),
+                    marker=dict(size=9, color=CHART_ACCENT_LIGHT, line=dict(width=2, color=CHART_MARKER_LINE), opacity=0.95),
+                    fill='tozeroy', fillcolor=CHART_ACCENT_FILL))
+                fig1.update_layout(height=220, margin=dict(l=10,r=10,t=10,b=25), 
+                    paper_bgcolor=CHART_PAPER, plot_bgcolor=CHART_PLOT,
+                    xaxis=dict(showticklabels=True, tickfont=dict(size=10, color=CHART_FONT, family='-apple-system'),
+                               showgrid=False, showline=False), 
+                    yaxis=dict(title='만원', title_font=dict(size=11, color=CHART_FONT), 
+                               tickfont=dict(size=10, color=CHART_FONT),
+                               showgrid=True, gridcolor=CHART_GRID, gridwidth=0.5, showline=False), 
+                    template=CHART_TEMPLATE, showlegend=False,
+                    hoverlabel=dict(bgcolor=CHART_HOVER_BG, font_size=13, font_color=CHART_HOVER_FONT),
+                    transition={'duration': 600, 'easing': 'cubic-in-out'})
                 st.plotly_chart(fig1, use_container_width=True, config={'displayModeBar': False}, key="comp_chart1")
             else:
-                st.info("데이터 없음")
+                st.caption("📊 데이터 없음")
+            
         with comp_right:
-            st.markdown(f"**{kw2}**")
+            st.markdown(f'<div class="tool-header">{html.escape(kw2)}</div>', unsafe_allow_html=True)
             if m2:
                 avg2 = m2.get('summary_avg', sum(m2['trend_prices'])/len(m2['trend_prices']) if m2['trend_prices'] else 0)
                 min2 = m2.get('summary_min', min(m2['raw_prices']) if m2['raw_prices'] else 0)
                 max2 = m2.get('summary_max', max(m2['raw_prices']) if m2['raw_prices'] else 0)
-                st.metric("평균가", f"{avg2:,.1f}만", None)
-                st.metric("최저~최고", f"{min2:,.0f}~{max2:,.0f}만", None)
+                
+                st.markdown(f'''
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">평균가</div>
+                        <div class="metric-value">{avg2:,.1f}만</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">최저~최고</div>
+                        <div class="metric-value" style="font-size:0.92rem;">{min2:,.0f}~{max2:,.0f}만</div>
+                    </div>
+                </div>
+                ''', unsafe_allow_html=True)
+                
                 fig2 = go.Figure(go.Scatter(x=m2['dates'], y=m2['trend_prices'], mode='lines+markers', name=kw2,
-                    line=dict(color=CHART_ACCENT, width=2), fill='tozeroy', fillcolor=CHART_ACCENT_FILL))
-                fig2.update_layout(height=200, margin=dict(l=0,r=0,t=0,b=0), paper_bgcolor=CHART_PAPER, plot_bgcolor=CHART_PLOT,
-                    xaxis=dict(showticklabels=True, tickfont=dict(size=10, color=CHART_FONT)), yaxis=dict(title='만원', title_font=dict(color=CHART_FONT)), template=CHART_TEMPLATE, showlegend=False)
+                    line=dict(color=CHART_ACCENT, width=3.5, shape='spline', smoothing=1.3),
+                    marker=dict(size=9, color=CHART_ACCENT_LIGHT, line=dict(width=2, color=CHART_MARKER_LINE), opacity=0.95),
+                    fill='tozeroy', fillcolor=CHART_ACCENT_FILL))
+                fig2.update_layout(height=220, margin=dict(l=10,r=10,t=10,b=25), 
+                    paper_bgcolor=CHART_PAPER, plot_bgcolor=CHART_PLOT,
+                    xaxis=dict(showticklabels=True, tickfont=dict(size=10, color=CHART_FONT, family='-apple-system'),
+                               showgrid=False, showline=False), 
+                    yaxis=dict(title='만원', title_font=dict(size=11, color=CHART_FONT), 
+                               tickfont=dict(size=10, color=CHART_FONT),
+                               showgrid=True, gridcolor=CHART_GRID, gridwidth=0.5, showline=False), 
+                    template=CHART_TEMPLATE, showlegend=False,
+                    hoverlabel=dict(bgcolor=CHART_HOVER_BG, font_size=13, font_color=CHART_HOVER_FONT),
+                    transition={'duration': 600, 'easing': 'cubic-in-out'})
                 st.plotly_chart(fig2, use_container_width=True, config={'displayModeBar': False}, key="comp_chart2")
             else:
-                st.info("데이터 없음")
+                st.caption("📊 데이터 없음")
         
         if m1 and m2:
             avg1 = sum(m1['trend_prices'])/len(m1['trend_prices'])
             avg2 = sum(m2['trend_prices'])/len(m2['trend_prices'])
             diff = avg1 - avg2
-            st.markdown(f"**차이:** {kw1} 평균이 {abs(diff):,.1f}만원 {'더 비쌈' if diff > 0 else '더 쌈'}")
+            
+            st.markdown('<div style="margin:50px 0 30px 0;"></div>', unsafe_allow_html=True)
+            
+            winner = kw1 if diff > 0 else kw2
+            comparison_text = "더 비쌈" if diff > 0 else "더 쌈"
+            
+            st.markdown(f'''
+            <div class="compare-result-box">
+                <div class="result-label">📊 비교 결과</div>
+                <div class="result-content">
+                    <span class="winner-badge">{html.escape(winner)}</span> 평균가가
+                    <span class="price-diff">{abs(diff):,.1f}만원</span> {html.escape(comparison_text)}
+                </div>
+                <div class="result-detail">
+                    {html.escape(kw1)}: <strong>{avg1:,.1f}만원</strong> &nbsp;|&nbsp; {html.escape(kw2)}: <strong>{avg2:,.1f}만원</strong>
+                </div>
+            </div>
+            ''', unsafe_allow_html=True)
     else:
-        st.info("비교할 두 상품을 입력하세요.")
+        st.markdown('''
+        <div class="compare-empty">
+            <div class="empty-icon">⚖️</div>
+            <div class="empty-text">비교할 두 상품을 입력하세요</div>
+            <div class="empty-subtext">상품명을 정확히 입력하면 더 정확한 결과를 얻을 수 있습니다</div>
+        </div>
+        ''', unsafe_allow_html=True)
+
+
 
 st.markdown('<div class="legal-footer">© 2026 RADAR | Global Price Intelligence</div>', unsafe_allow_html=True)
 
