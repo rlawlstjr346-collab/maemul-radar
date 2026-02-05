@@ -18,6 +18,9 @@ CHART_BLUE_LIGHT = '#5CA4FF'
 CHART_BLUE_FILL = 'rgba(10, 132, 255, 0.2)'
 CHART_BLUE_HIGHLIGHT = 'rgba(10, 132, 255, 0.25)'
 
+# 네이버 검색/공유용 (og:image는 대표 이미지 URL 넣으면 링크 미리보기에 표시됨)
+SEO_OG_IMAGE = ""
+
 # ------------------------------------------------------------------
 # [1] 앱 기본 설정 (RADAR V15.0: Pro Dashboard Cards)
 # ------------------------------------------------------------------
@@ -2977,7 +2980,37 @@ components.html("""
             var doc = null;
             try { doc = window.parent && window.parent.document; } catch(e) {}
             if (!doc) return;
-            function setTabTitle() { try { window.top.document.title = 'RADAR'; } catch(e) {} try { doc.title = 'RADAR'; } catch(e) {} }
+            var head = doc.head || doc.getElementsByTagName('head')[0];
+            if (head) {
+                var baseUrl = (window.top && window.top.location && window.top.location.href) ? window.top.location.href.split('?')[0] : '';
+                var ogImage = '__SEO_OG_IMAGE__';
+                var meta = [
+                    { n: 'description', c: '중고나라, 번개장터, 당근마켓 매물을 한 번에. 실패 없는 중고 거래를 위한 통합 검색 및 빈티지/카메라 시세 분석 서비스 RADAR.' },
+                    { n: 'keywords', c: '중고매물 통합검색, 중고 통합검색, 중고 시세 조회, 빈티지 시세, 중고 카메라 시세, RADAR, 라다, 중고거래 통합검색, 중고 시세 통합, 번개장터 시세, 중고나라 시세, 당근마켓 시세, 중고 가격 비교, 중고 시세 분석, 직구 시세, 해외직구 시세, 빈티지 카메라 시세, 중고 물품 시세, 중고 가격 추이, 중고 통합 검색기, 시세 통합 사이트, 중고 시세 검색' },
+                    { n: 'author', c: '김진석' },
+                    { n: 'naver-site-verification', c: '8a4e84698543f5c3404697202b190be23532de00' }
+                ];
+                for (var i = 0; i < meta.length; i++) {
+                    var el = doc.querySelector('meta[name="' + meta[i].n + '"]');
+                    if (!el) { el = doc.createElement('meta'); el.setAttribute('name', meta[i].n); head.appendChild(el); }
+                    el.setAttribute('content', meta[i].c);
+                }
+                var og = [
+                    { p: 'og:type', c: 'website' },
+                    { p: 'og:site_name', c: 'RADAR' },
+                    { p: 'og:title', c: 'RADAR - 중고매물 통합검색 & 빈티지 시세 조회' },
+                    { p: 'og:description', c: '여기저기 다닐 필요 없습니다. 중고 시세와 매물을 데이터로 통합해 드립니다.' },
+                    { p: 'og:url', c: baseUrl }
+                ];
+                if (ogImage) og.push({ p: 'og:image', c: ogImage });
+                for (var j = 0; j < og.length; j++) {
+                    var o = doc.querySelector('meta[property="' + og[j].p + '"]');
+                    if (!o) { o = doc.createElement('meta'); o.setAttribute('property', og[j].p); head.appendChild(o); }
+                    o.setAttribute('content', og[j].c);
+                }
+            }
+            doc.title = 'RADAR - 중고매물 통합검색 & 빈티지 시세 조회';
+            function setTabTitle() { try { window.top.document.title = doc.title; } catch(e) {} try { doc.title = doc.title; } catch(e) {} }
             setTabTitle();
             setTimeout(setTabTitle, 400);
             setTimeout(setTabTitle, 1200);
@@ -3002,7 +3035,7 @@ components.html("""
     else window.addEventListener('load', function() { setTimeout(run, 0); });
 })();
 </script>
-""", height=0)
+""".replace("__SEO_OG_IMAGE__", (SEO_OG_IMAGE or "").replace("\\", "\\\\").replace("'", "\\'")), height=0)
 
 # [빌보드/최근검색 클릭] query params
 try:
