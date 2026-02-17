@@ -2847,16 +2847,17 @@ _BILL_COLS = [
 ]
 if 'billboard_data' not in st.session_state:
     _shuffled = random.sample(_BILL_COLS, 8)
-    st.session_state.billboard_data = {k: random.sample(pool, min(28, len(pool))) for k, _, pool, _ in _shuffled}
+    # 빌보드 풀에서 더 많은 항목을 샘플링하도록 확대 (최대 40개)
+    st.session_state.billboard_data = {k: random.sample(pool, min(40, len(pool))) for k, _, pool, _ in _shuffled}
     st.session_state.billboard_order = _shuffled
 
 def _bill_cols():
     return st.session_state.get('billboard_order', _BILL_COLS)
 
 def make_bill_html(items):
-    # [Seamless Loop] 10개 스크롤 + 처음 2개 반복 (12 items × 30px = 360px)
+    # [Seamless Loop] 14개 스크롤 + 처음 2개 반복 (16 items × 30px = 480px)
     # [빌보드 클릭 → 자동 검색] 클릭 시 ?q=키워드로 검색
-    display_items = items[:10] + items[:2]
+    display_items = items[:14] + items[:2]
     return "".join([f'<a href="?q={urllib.parse.quote(item)}" target="_self" class="bill-item" title="클릭하여 검색">· {html.escape(item)}</a>' for item in display_items])
 
 # [테마 전환] URL 링크 방식 - 클릭 시 ?theme=dark/light로 이동, 확실한 전환
@@ -3368,34 +3369,9 @@ with tab_home:
                     transition={'duration': 400, 'easing': 'cubic-in-out'})
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key="radar_trend_chart")
                 
-                # [3] 가격 분포 (세로 배치) - iOS Style Premium
-                st.markdown("<div class='section-title section-title--chart section-title--pretty'><span class='title-icon'>🔷</span>가격 분포</div>", unsafe_allow_html=True)
-                if len(raw) >= 1:
-                    n_bins = min(15, max(3, len(raw)//2)) if len(raw) > 1 else 5
-                    hist, edges = np.histogram(raw, bins=n_bins)
-                    mid = [(edges[i]+edges[i+1])/2 for i in range(len(hist))]
-                    fig2 = go.Figure(go.Scatter(x=mid, y=hist, mode='lines+markers', name='가격 분포',
-                        line=dict(color=CHART_ACCENT, width=3.5, shape='spline', smoothing=1.3),
-                        marker=dict(size=10, color=CHART_ACCENT_LIGHT, line=dict(width=2, color=CHART_MARKER_LINE),
-                                    opacity=0.95),
-                        fill='tozeroy', fillcolor=CHART_ACCENT_HIGHLIGHT,
-                        hovertemplate='<b>%{x:,.0f}만원대</b><br>%{y}건<extra></extra>'))
-                    fig2.update_layout(height=340, margin=dict(l=15, r=15, t=15, b=35),
-                        title=dict(text=''), annotations=[],
-                        hovermode='x unified',
-                        hoverlabel=dict(bgcolor=CHART_HOVER_BG, font_size=14, font_color=CHART_HOVER_FONT,
-                            bordercolor=CHART_HOVER_BORDER, align='left', namelength=-1),
-                        xaxis=dict(title='가격(만원)', title_font=dict(size=12, color=CHART_FONT), 
-                                   showgrid=False, tickfont=dict(size=11, color=CHART_FONT, family='-apple-system'),
-                                   showline=False),
-                        yaxis=dict(title='건수', title_font=dict(size=12, color=CHART_FONT), 
-                                   showgrid=True, gridcolor=CHART_GRID, gridwidth=0.5,
-                                   tickfont=dict(size=11, color=CHART_FONT),
-                                   showline=False),
-                        paper_bgcolor=CHART_PAPER, plot_bgcolor=CHART_PLOT, font_color=CHART_FONT, 
-                        showlegend=False, template=CHART_TEMPLATE,
-                        transition={'duration': 400, 'easing': 'cubic-in-out'})
-                    st.plotly_chart(fig2, use_container_width=True, config={'displayModeBar': False}, key="radar_dist_chart")
+                # [3] 가격 분포: 사용자 요청으로 그래프를 제거함
+                # 원본 가격 분포 그래프 렌더링 코드가 삭제되었습니다.
+                # 필요 시 이 자리에는 대체 UI(예: 통계 요약)를 추가할 수 있습니다.
             
             else:
                 if keyword:
